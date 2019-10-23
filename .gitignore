@@ -1,5 +1,6 @@
-# ./src/*.mod
-# ./src/*.pyf
-# ./scr/*.so
-# ./src/*.dll
-# ./input/*
+/src/*.mod
+/src/*.pyf
+/src/*.so
+/src/*.dll
+#/src/__pycache__
+/input/*
