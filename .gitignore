@@ -3,4 +3,4 @@
 /src/*.so
 /src/*.dll
 /src/__pycache__
-/input/*
+#/input/*
