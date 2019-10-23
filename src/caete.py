@@ -279,6 +279,8 @@ class gridcell_dyn:
         
         # TODO 
         # Define the time control system: Storage, Save outputs, flush data from grid - cell - Try to mantain only metadata
+        def update_neighbors(self):
+            raise NotImplementedError
 
         def get_ndays(self):
             """return the number of days to be simulated"""

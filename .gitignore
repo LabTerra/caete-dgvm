@@ -1,0 +1,5 @@
+# ./src/*.mod
+# ./src/*.pyf
+# ./scr/*.so
+# ./src/*.dll
+# ./input/*

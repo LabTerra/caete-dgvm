@@ -31,7 +31,7 @@ python module caete_module ! in
             real(kind=8), public,parameter,optional :: rfrac_wood=0.45d0
             real(kind=4), public,parameter,optional :: nodata=-9999.0
             integer(kind=4), public,parameter,optional :: npls=500
-            integer(kind=4), public,parameter,optional :: nt1=25567
+            integer(kind=4), public,parameter,optional :: nt1=42369
             integer(kind=4), public,parameter,optional :: ntraits=15
             logical(kind=4), public,parameter,optional :: debug=.false.
             logical(kind=4), public,parameter,optional :: text_ts=.false.
@@ -472,37 +472,37 @@ python module caete_module ! in
                 real(kind=8) dimension(500),intent(in) :: dcl
                 real(kind=8) dimension(500),intent(in) :: dca
                 real(kind=8) dimension(500),intent(in) :: dcf
-                real(kind=4) dimension(25567),intent(in) :: prec
-                real(kind=4) dimension(25567),intent(in) :: temp
-                real(kind=4) dimension(25567),intent(in) :: p0
-                real(kind=4) dimension(25567),intent(in) :: par
-                real(kind=4) dimension(25567),intent(in) :: rhs
+                real(kind=4) dimension(42369),intent(in) :: prec
+                real(kind=4) dimension(42369),intent(in) :: temp
+                real(kind=4) dimension(42369),intent(in) :: p0
+                real(kind=4) dimension(42369),intent(in) :: par
+                real(kind=4) dimension(42369),intent(in) :: rhs
                 real(kind=4) dimension(500),intent(in) :: cleaf_ini
                 real(kind=4) dimension(500),intent(in) :: cawood_ini
                 real(kind=4) dimension(500),intent(in) :: cfroot_ini
-                real(kind=4) dimension(25567),intent(out) :: emaxm
-                real(kind=4) dimension(25567),intent(out) :: tsoil
-                real(kind=8) dimension(25567),intent(out) :: photo_comm
-                real(kind=8) dimension(25567),intent(out) :: aresp_comm
-                real(kind=8) dimension(25567),intent(out) :: npp_comm
-                real(kind=8) dimension(25567),intent(out) :: lai_comm
-                real(kind=4) dimension(2,25567),intent(out) :: c_litter
-                real(kind=4) dimension(3,25567),intent(out) :: c_soil
-                real(kind=4) dimension(25567),intent(out) :: het_resp
-                real(kind=8) dimension(25567),intent(out) :: rcm_comm
-                real(kind=8) dimension(25567),intent(out) :: f51
-                real(kind=8) dimension(25567),intent(out) :: runom_comm
-                real(kind=8) dimension(25567),intent(out) :: evapm_comm
-                real(kind=8) dimension(25567),intent(out) :: wsoil_comm
-                real(kind=8) dimension(25567),intent(out) :: rm_comm
-                real(kind=8) dimension(25567),intent(out) :: rg_comm
-                real(kind=8) dimension(25567),intent(out) :: cleaf_comm
-                real(kind=8) dimension(25567),intent(out) :: cawood_comm
-                real(kind=8) dimension(25567),intent(out) :: cfroot_comm
+                real(kind=4) dimension(42369),intent(out) :: emaxm
+                real(kind=4) dimension(42369),intent(out) :: tsoil
+                real(kind=8) dimension(42369),intent(out) :: photo_comm
+                real(kind=8) dimension(42369),intent(out) :: aresp_comm
+                real(kind=8) dimension(42369),intent(out) :: npp_comm
+                real(kind=8) dimension(42369),intent(out) :: lai_comm
+                real(kind=4) dimension(2,42369),intent(out) :: c_litter
+                real(kind=4) dimension(3,42369),intent(out) :: c_soil
+                real(kind=4) dimension(42369),intent(out) :: het_resp
+                real(kind=8) dimension(42369),intent(out) :: rcm_comm
+                real(kind=8) dimension(42369),intent(out) :: f51
+                real(kind=8) dimension(42369),intent(out) :: runom_comm
+                real(kind=8) dimension(42369),intent(out) :: evapm_comm
+                real(kind=8) dimension(42369),intent(out) :: wsoil_comm
+                real(kind=8) dimension(42369),intent(out) :: rm_comm
+                real(kind=8) dimension(42369),intent(out) :: rg_comm
+                real(kind=8) dimension(42369),intent(out) :: cleaf_comm
+                real(kind=8) dimension(42369),intent(out) :: cawood_comm
+                real(kind=8) dimension(42369),intent(out) :: cfroot_comm
                 real(kind=8) dimension(500),intent(out) :: grid_area
-                real(kind=8) dimension(25567),intent(out) :: wue
-                real(kind=8) dimension(25567),intent(out) :: cue
-                real(kind=8) dimension(25567),intent(out) :: cdef
+                real(kind=8) dimension(42369),intent(out) :: wue
+                real(kind=8) dimension(42369),intent(out) :: cue
+                real(kind=8) dimension(42369),intent(out) :: cdef
                 real(kind=4) dimension(500),intent(out) :: wfim
                 real(kind=4) dimension(500),intent(out) :: gfim
                 real(kind=4) dimension(500),intent(out) :: sfim
@@ -512,17 +512,17 @@ python module caete_module ! in
                 real(kind=8) dimension(500),intent(out) :: clf
                 real(kind=8) dimension(500),intent(out) :: caf
                 real(kind=8) dimension(500),intent(out) :: cff
-                real(kind=4) dimension(25567),intent(out) :: nitro_min
-                real(kind=4) dimension(25567),intent(out) :: phop_lab
-                real(kind=4) dimension(25567),intent(out) :: vcmax
-                real(kind=4) dimension(25567),intent(out) :: specific_la
-                real(kind=4) dimension(25567),intent(out) :: nupt
-                real(kind=4) dimension(25567),intent(out) :: pupt
-                real(kind=4) dimension(25567),intent(out) :: litter_l
-                real(kind=4) dimension(25567),intent(out) :: cwd
-                real(kind=4) dimension(25567),intent(out) :: litter_fr
-                real(kind=4) dimension(6,25567),intent(out) :: lnr
-                real(kind=4) dimension(3,25567),intent(out) :: storage_pool
+                real(kind=4) dimension(42369),intent(out) :: nitro_min
+                real(kind=4) dimension(42369),intent(out) :: phop_lab
+                real(kind=4) dimension(42369),intent(out) :: vcmax
+                real(kind=4) dimension(42369),intent(out) :: specific_la
+                real(kind=4) dimension(42369),intent(out) :: nupt
+                real(kind=4) dimension(42369),intent(out) :: pupt
+                real(kind=4) dimension(42369),intent(out) :: litter_l
+                real(kind=4) dimension(42369),intent(out) :: cwd
+                real(kind=4) dimension(42369),intent(out) :: litter_fr
+                real(kind=4) dimension(6,42369),intent(out) :: lnr
+                real(kind=4) dimension(3,42369),intent(out) :: storage_pool
             end subroutine caete_dyn
         end module caete
     end interface 
