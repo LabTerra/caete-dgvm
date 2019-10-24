@@ -15,7 +15,7 @@
 
 module types
    implicit none
-   save
+
 
    integer,parameter,public :: l_1 = 4  ! standart Logical type
    integer,parameter,public :: i_2 = 2  ! 16 bits integer
@@ -52,7 +52,7 @@ module global_par
    integer(i_4),parameter,public :: nt1 = 42369                  ! Number of days between 01/1901-12/1970(inclusive)
    integer(i_4),parameter,public :: ntraits = 15                 ! Number of traits for each PLS
    logical(l_1),parameter,public :: debug = .false.              ! Logical variables - For model debug and development
-   logical(l_1),parameter,public :: text_ts = .false.
+   logical(l_1),parameter,public :: text_ts = .true.
 
 end module global_par
 
@@ -60,7 +60,7 @@ end module global_par
 module photo_par
    use types, only : r_8
    implicit none
-   save
+
 
    real(r_8),public, parameter ::       &
         a   = 0.8300D0       ,&          !Photosynthesis co-limitation coefficient
@@ -113,7 +113,6 @@ module soil_dec
    use global_par
    implicit none
    private
-   save
    
    real(r_4),public,dimension(4) :: carbon_aux = 0.0
    real(r_4),public,dimension(2) :: litter_carbon = 0.0
@@ -142,9 +141,12 @@ module soil_dec
    public :: scarbon_decaiment
    public :: set_var
 
+
 contains
 
-   subroutine set_var(arg1,  arg2)
+
+   subroutine set_var(arg1, arg2)
+
       real(kind=r_8),intent(   in) :: arg1
       real(kind=r_8),intent(inout) :: arg2
 

@@ -29,8 +29,7 @@ contains
 !,mineral_n,labile_p
 
   subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-       &, mineral_n, labile_p&                                     ! inputs/outputs
-       &, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+       &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
        &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
        &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&
        &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&

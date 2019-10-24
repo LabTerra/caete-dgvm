@@ -22,7 +22,7 @@ module caete
    
 contains
    
-   subroutine caete_dyn(ndays,x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
+   subroutine caete_dyn(x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
         &,cleaf_ini,cawood_ini,cfroot_ini,emaxm,tsoil,photo_comm,aresp_comm&
         &,npp_comm,lai_comm,c_litter,c_soil,het_resp,rcm_comm,f51,runom_comm&
         &,evapm_comm,wsoil_comm,rm_comm,rg_comm,cleaf_comm,cawood_comm,cfroot_comm&
@@ -47,7 +47,7 @@ contains
 
       !boundary conditions - initial state
       integer(i_4), intent(in) :: x, y, run  ! gridcell ID
-      integer(i_4), intent(in) :: ndays      ! Number of simulated days
+      ! integer(i_4), intent(in) :: ndays      ! Number of simulated days
       real(r_4),dimension(ntraits, npls),intent(in) :: dt ! trait table
       real(r_4),dimension(npls),intent(in) :: w0 ! Initial soil water kg m-2
       real(r_4),dimension(npls),intent(in) :: g0 ! Initial soil ice  
@@ -192,8 +192,11 @@ contains
       ! CALL here to initialize nutrient pools in soil
 
       ! store initial soil nutrients contents
+
       aux_var0_0x29a = n_glob
       aux_var0_0x29b = p_glob
+
+      print*, n_glob, p_glob
 
 
       if(text_ts) then
@@ -280,7 +283,7 @@ contains
       !     ======================
       !     START TIME INTEGRATION
       !     ======================
-      do k = 1,ndays ! SUBSTITUTE nt1 for ndays
+      do k = 1,nt1 ! SUBSTITUTE nt1 for ndays
          if(debug) write(1234,*) '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-LOOP: ', k
 
          if (k .gt. 1) then 
@@ -341,18 +344,6 @@ contains
          wuemes = 0.0
          cuemes = 0.0
          c_defmes = 0.0
-
-         ! ! Definition
-         ! subroutine daily_budget( IN --> dt,w1,g1,s1,ts,temp,prec,p0,ipar,rh&
-         !            INOUT -->  &,sto_budg&
-         !                       &,cl1_pft,ca1_pft,cf1_pft,dleaf,dwood&
-         !                       &,droot,
-         ! OUT --> w2,g2,s2,smavg,ruavg,evavg,epavg&
-         !                       &,phavg,aravg,nppavg,laiavg,rcavg,f5avg&
-         !                       &,rmavg,rgavg,cleafavg_pft&
-         !                       &,cawoodavg_pft,cfrootavg_pft,ocpavg,wueavg&
-         !                       &,cueavg,c_defavg,vcmax,specific_la&
-         !                       &,nupt,pupt,litter_l,cwd,litter_fr,lnr)
 
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
@@ -523,53 +514,53 @@ contains
 
       if(text_ts) close(12345)
 
-       ! FINAL details
-       ! Fill no_data in the tail of thr array (nday+1 : nt1)
-      if(ndays < nt1) then
-         call fill_no_data_4b(tsoil, ndays)
-         call fill_no_data_4b(emaxm, ndays)
-         call fill_no_data_8b(photo_comm, ndays)
-         call fill_no_data_8b(aresp_comm, ndays)
-         call fill_no_data_8b(npp_comm, ndays)
-         call fill_no_data_8b(lai_comm, ndays)
+      !  ! FINAL details
+      !  ! Fill no_data in the tail of thr array (nday+1 : nt1)
+      ! if(ndays < nt1) then
+      !    call fill_no_data_4b(tsoil, ndays)
+      !    call fill_no_data_4b(emaxm, ndays)
+      !    call fill_no_data_8b(photo_comm, ndays)
+      !    call fill_no_data_8b(aresp_comm, ndays)
+      !    call fill_no_data_8b(npp_comm, ndays)
+      !    call fill_no_data_8b(lai_comm, ndays)
          
-         !# loop
-         ! c_litter has 2 pools
-         ! c_soil has 3 pools but the 3rd one is empty (full of zeroes) 
+      !    !# loop
+      !    ! c_litter has 2 pools
+      !    ! c_soil has 3 pools but the 3rd one is empty (full of zeroes) 
          
-         do nindex = 1, 3
-            if(nindex < 3) call fill_no_data_4b(c_litter(nindex, :), ndays)
-            call fill_no_data_4b(c_soil(nindex, :), ndays)
-         enddo
+      !    do nindex = 1, 3
+      !       if(nindex < 3) call fill_no_data_4b(c_litter(nindex, :), ndays)
+      !       call fill_no_data_4b(c_soil(nindex, :), ndays)
+      !    enddo
          
-         call fill_no_data_4b(het_resp, ndays)
-         call fill_no_data_8b(rcm_comm, ndays)
-         call fill_no_data_8b(f51, ndays)
-         call fill_no_data_8b(runom_comm, ndays)
-         call fill_no_data_8b(evapm_comm, ndays)
-         call fill_no_data_8b(wsoil_comm, ndays)
-         call fill_no_data_8b(wue, ndays)
-         call fill_no_data_8b(rm_comm, ndays)
-         call fill_no_data_8b(rg_comm, ndays)
-         call fill_no_data_8b(cleaf_comm, ndays)
-         call fill_no_data_8b(cawood_comm, ndays)
-         call fill_no_data_8b(cfroot_comm, ndays)
-         call fill_no_data_4b(nitro_min, ndays)
-         call fill_no_data_4b(phop_lab, ndays)
-         call fill_no_data_4b(vcmax, ndays)
-         call fill_no_data_4b(specific_la, ndays)
-         call fill_no_data_4b(nupt, ndays)
-         call fill_no_data_4b(pupt, ndays)
-         call fill_no_data_4b(litter_l, ndays)
-         call fill_no_data_4b(cwd, ndays)
-         call fill_no_data_4b(litter_fr, ndays)
+      !    call fill_no_data_4b(het_resp, ndays)
+      !    call fill_no_data_8b(rcm_comm, ndays)
+      !    call fill_no_data_8b(f51, ndays)
+      !    call fill_no_data_8b(runom_comm, ndays)
+      !    call fill_no_data_8b(evapm_comm, ndays)
+      !    call fill_no_data_8b(wsoil_comm, ndays)
+      !    call fill_no_data_8b(wue, ndays)
+      !    call fill_no_data_8b(rm_comm, ndays)
+      !    call fill_no_data_8b(rg_comm, ndays)
+      !    call fill_no_data_8b(cleaf_comm, ndays)
+      !    call fill_no_data_8b(cawood_comm, ndays)
+      !    call fill_no_data_8b(cfroot_comm, ndays)
+      !    call fill_no_data_4b(nitro_min, ndays)
+      !    call fill_no_data_4b(phop_lab, ndays)
+      !    call fill_no_data_4b(vcmax, ndays)
+      !    call fill_no_data_4b(specific_la, ndays)
+      !    call fill_no_data_4b(nupt, ndays)
+      !    call fill_no_data_4b(pupt, ndays)
+      !    call fill_no_data_4b(litter_l, ndays)
+      !    call fill_no_data_4b(cwd, ndays)
+      !    call fill_no_data_4b(litter_fr, ndays)
 
-         ! Loop over sdditional dimension (lnr 6,nt1) (storage_pool 3,nt1)
-         do nindex = 1,6
-            if(nindex < 4) call fill_no_data_4b(storage_pool(nindex,:), ndays)
-            call fill_no_data_4b(lnr(nindex,:), ndays)
-         enddo
-      endif
+      !    ! Loop over sdditional dimension (lnr 6,nt1) (storage_pool 3,nt1)
+      !    do nindex = 1,6
+      !       if(nindex < 4) call fill_no_data_4b(storage_pool(nindex,:), ndays)
+      !       call fill_no_data_4b(lnr(nindex,:), ndays)
+      !    enddo
+      ! endif
 
       ! IDENTIFYING PROCESS
       if (text_ts) then
