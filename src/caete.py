@@ -334,25 +334,25 @@ def run_dyn(grd, at=np.copy(d_at)):
 
 # # GAMBIARRA NERVOSA
 
-    # print('\n--run 1\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 1\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
-    # print('\n--run 2\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 2\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
-    # print('\n--run 3\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 3\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
-    # print('\n--run 4\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 4\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
-    # print('\n--run 5\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 5\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
 
     # print('run 6\n')
