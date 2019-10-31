@@ -1,13 +1,11 @@
 import pickle as pkl
-import caete as ct
-
-
+from create_input import data_in
 
 # Location of the input data downloaded from ISIMIP-PIK server via rsync
 files = "/d/c1/homes/amazonfaceme/jpdarela/dlds/dlds_daily" 
 
 # INstantiate our input data object
-data_in = ct.data_in(files)
+data_in = data_in(files)
 
 # TODO parrallelization of gridcell input creation/update
 
