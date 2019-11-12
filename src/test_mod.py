@@ -33,7 +33,7 @@ grd2 = caete.gridcell_dyn(572, 55)
 # grd3 = caete.gridcell_dyn(239, 183)
 
 # Open input data
-# The test_data.pkl file is a instance of caete.data_in saved as a pickle file
+# The data_in-instance.pkl file is a instance of caete_inputs.py data_in saved as a pickle file
 with open('../input/data_in-instance.pkl', 'rb') as fh:
     dt1 = pickle.load(fh)
 

@@ -221,16 +221,25 @@ contains
          write(1234,*) '--------------------------------'
       endif
 
+      ! This group of variables are State Variables
       ! Inicial mass in pools ()
+
+      ! Carbon pools initial values
       cleaf1_pft =  cleaf_ini    ! Carbon pools
       cawood1_pft = cawood_ini
       cfroot1_pft = cfroot_ini
+      
+      ! 'Growth' pools (to be used by growth respiration)
+
       dl = dcl                   ! Daily Delta in carbon pools 
       dr = dcf
       dw = dca
+      
+      ! Soil Waters pools
       wini  = w0  !Soil moisture_initial condition (mm)
       gini  = g0  !Soil ice_initial condition (mm)
       sini  = s0  !Overland snow_initial condition (mm)
+
 
       if(debug) then
          write(1234,*) 'cleaf1_pft - ', cleaf1_pft
@@ -246,7 +255,8 @@ contains
 
       !82 columns----------------------------------------------------------------------
 
-      ! Initialize variables
+      ! Initialize variables - Internal Variables
+      
       cleaf_comm  = 0.0    ! leaf biomass (KgC/m2)
       cawood_comm = 0.0    ! aboveground wood biomass (KgC/m2)
       cfroot_comm = 0.0    ! fine root biomass (KgC/m2)

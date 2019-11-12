@@ -9,24 +9,17 @@ class data_in:
     def __init__(self, inputs_folder):
 
         self.root_dir = os.getcwd()
-
         try:
             self.files = sorted(glob.glob1(inputs_folder, '*.nc4'))
             self.NotWork = False
-
         except:
             self.files = None
             self.NotWork = True
-
         self.inputs_folder = inputs_folder
         self.metadata = {}
         self.celldata = {}
-
-
         self.varnames = ['tas', 'ps', 'pr', 'rsds', 'hurs']
-
 #        self.varmask = [True, True, True, True, True, True, True, False, False]
-
         return None
 
 
@@ -36,17 +29,12 @@ class data_in:
 
         #TODO Implement this mechanism without changing directory
         #     e.g. use os.path module
-
         assert varname in self.varnames, 'Unknown Variable: %s' % varname
-
         # Insert this block in a try/except to catch IO errors and return to the correct dir
         os.chdir(self.inputs_folder)
-
         fpath = varname + '_' + '*' + '.nc4'
         dt = MFDataset(fpath, 'r')
-
         os.chdir(self.root_dir)
-
         return dt
 
 
