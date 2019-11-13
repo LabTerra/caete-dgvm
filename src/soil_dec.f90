@@ -33,12 +33,11 @@ module soil_dec
 
    ! These are global variables that are initialized in caete_init.
    public :: process_id, carbon3
-   public :: scarbon_decaiment
+   public :: scarbon_decayment
    public :: set_var
 
 
 contains
-
 
    subroutine set_var(arg1, arg2)
 
@@ -59,7 +58,7 @@ contains
 
 
    !Based on carbon decay implemented in JeDi and JSBACH - Pavlick et al. 2012
-   function scarbon_decaiment(q10,tsoil,c,residence_time) result(decay)
+   function scarbon_decayment(q10,tsoil,c,residence_time) result(decay)
 
       real(r_4),intent(in) :: q10              ! constant ~1.4
       real(r_4),intent(in) :: tsoil            ! Soil temperature °C
@@ -74,7 +73,7 @@ contains
 
       decay = (q10**((tsoil-20.0)/10.0)) * (c/residence_time)
 
-   end function scarbon_decaiment
+   end function scarbon_decayment
 
 
    subroutine carbon3(tsoil,leaf_l,cwd,root_l,lnr,cl,cs,cl_out,cs_out,hr)
@@ -93,13 +92,13 @@ contains
       real(r_4),intent(in) :: root_l
       real(r_4),dimension(6),intent(in) :: lnr      !g(Nutrient) g(C)⁻¹
 
-      real(r_4),dimension(pl),intent(inout) :: cl      !Litter carbon (gC/m2)
-      real(r_4),dimension(ps),intent(inout) :: cs      !Soil carbon (gC/m2)
+      real(r_4),dimension(pl),intent(in) :: cl      !Litter carbon (gC/m2)
+      real(r_4),dimension(ps),intent(in) :: cs      !Soil carbon (gC/m2)
 
       !     Outputs
       !     -------
-      ! creal(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
-      ! real(r_4),dimension(ps),intent(out) :: cs_out
+      real(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
+      real(r_4),dimension(ps),intent(out) :: cs_out
       real(r_4),intent(out) :: hr                   !Heterotrophic (microbial) respiration (gC/m2/day)
 !TODO ! Insert output: Total mineralized N and P
 
@@ -156,10 +155,10 @@ contains
       do index = 1,4
          if(index .lt. 3) then
             ! FOR THE 2 LITTER POOLS
-            cdec(index) = scarbon_decaiment(q10,tsoil,cl(index),tr_c(index))
+            cdec(index) = scarbon_decayment(q10,tsoil,cl(index),tr_c(index))
          else
             ! FOR THE 3 CARBON POOLS
-            cdec(index) = scarbon_decaiment(q10,tsoil,cs(index-2),tr_c(index))
+            cdec(index) = scarbon_decayment(q10,tsoil,cs(index-2),tr_c(index))
          endif
       enddo
       cdec(5) = 0.0 ! + 4B
