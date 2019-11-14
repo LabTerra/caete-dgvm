@@ -41,4 +41,7 @@ program test_carbon3
       print *, result(i)
    end do
 
+   deallocate(temp_range)
+   deallocate(result)
+
 end program test_carbon3

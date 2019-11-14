@@ -6,12 +6,14 @@ module soil_dec
    ! To be used only in caete_dyn  and daily_budget subroutines
    use types
    use global_par
+   
    implicit none
    private
    
-   real(r_4),public,dimension(4) :: carbon_aux = 0.0
-   real(r_4),public,dimension(2) :: litter_carbon = 0.0
-   real(r_4),public,dimension(3) :: soil_carbon = 0.0
+   ! ## STATE VARIABLES
+   real(r_4),public,dimension(4) :: carbon_aux = 0.0    ! Variável Auxiliar
+   real(r_4),public,dimension(2) :: litter_carbon = 0.0 ! Litter carbon pools
+   real(r_4),public,dimension(3) :: soil_carbon = 0.0   ! soil carbon pools
 
    real(r_4),public,dimension(4) :: soil_nr    ! Soil pools Nutrient Ratios (2N + 2P)
    real(r_4),public,dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
@@ -33,11 +35,12 @@ module soil_dec
 
    ! These are global variables that are initialized in caete_init.
    public :: process_id, carbon3
-   public :: scarbon_decayment
+   public :: scarbon_decayment, water_effect
    public :: set_var
 
 
 contains
+
 
    subroutine set_var(arg1, arg2)
 
@@ -47,6 +50,7 @@ contains
       arg2 = arg1
 
    end subroutine set_var
+
 
    ! Identify process number
    function process_id() result(ipid)
@@ -74,9 +78,17 @@ contains
       decay = (q10**((tsoil-20.0)/10.0)) * (c/residence_time)
 
    end function scarbon_decayment
+   
+
+   function water_effect(arg) result(retval)
+      ! Implement the Moyano function based on soil water contentn
+      real :: arg
+      real :: retval
+      retval=arg + 2
+   end function water_effect
 
 
-   subroutine carbon3(tsoil,leaf_l,cwd,root_l,lnr,cl,cs,cl_out,cs_out,hr)
+   subroutine carbon3(tsoil, leaf_l, cwd, root_l, lnr, cl, cs, cl_out, cs_out, soil_nr, hr)
       ! this one wastes 132 bits of primary memory per process
 
       integer(i_4),parameter :: pl=2,ps=3
@@ -86,21 +98,24 @@ contains
       !     =========
       !     Inputs
       !     ------
-      real(r_4),intent(in) :: tsoil                 ! soil temperature (oC)
-      real(r_4),intent(in) :: leaf_l                ! g(C)m⁻²
-      real(r_4),intent(in) :: cwd
-      real(r_4),intent(in) :: root_l
-      real(r_4),dimension(6),intent(in) :: lnr      !g(Nutrient) g(C)⁻¹
+      real(r_4),intent(in) :: tsoil                  ! soil temperature (oC)
+      real(r_4),intent(in) :: leaf_l                 ! Mass of C comming from living pools g(C)m⁻²
+      real(r_4),intent(in) :: cwd                    ! Mass of C comming from living pools g(C)m⁻²
+      real(r_4),intent(in) :: root_l                 ! Mass of C comming from living pools g(C)m⁻²
+      real(r_4),dimension(6),intent(in) :: lnr       !g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
 
-      real(r_4),dimension(pl),intent(in) :: cl      !Litter carbon (gC/m2)
-      real(r_4),dimension(ps),intent(in) :: cs      !Soil carbon (gC/m2)
+      real(r_4),dimension(pl),intent(in) :: cl       !Litter carbon (gC/m2) State Variable -> The size of the carbon pools
+      real(r_4),dimension(ps),intent(in) :: cs       !Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
 
       !     Outputs
       !     -------
-      real(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
-      real(r_4),dimension(ps),intent(out) :: cs_out
-      real(r_4),intent(out) :: hr                   !Heterotrophic (microbial) respiration (gC/m2/day)
-!TODO ! Insert output: Total mineralized N and P
+      real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
+      real(r_4),dimension(ps),intent(out) :: cs_out  !         State Variable -> The size of the carbon pools
+      real(r_4),dimension(4), intent(out) :: soil_nr ! Soil pools Nutrient to C ratios 
+      real(r_4),intent(out) :: hr                    !Heterotrophic (microbial) respiration (gC/m2/day)
+
+
+      !TODO ! Insert output: Total mineralized N and P
 
       !     Internal
       real(r_4),dimension(pl+ps) :: tr_c
@@ -133,6 +148,8 @@ contains
       frac1 = 0.7
       frac2 = 1.0 - frac1
 
+
+      soil_nr = 0.0
       ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
       ! Change it in future (Parametrize from literarure)
       tr_c(1) = 5    ! litter I   (1)
