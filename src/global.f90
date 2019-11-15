@@ -29,7 +29,7 @@ end module types
 module global_par
    use types
    implicit none
-
+   real(r_4),parameter,public :: q10 = 1.4
    real(r_4),parameter,public :: h = 1.0                         ! soil layer thickness (meters)
    real(r_4),parameter,public :: diffu = 1.036800e14             ! soil thermal diffusivity (m2/mes)
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)

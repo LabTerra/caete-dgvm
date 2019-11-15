@@ -62,9 +62,9 @@ contains
 
 
    !Based on carbon decay implemented in JeDi and JSBACH - Pavlick et al. 2012
-   function scarbon_decayment(q10,tsoil,c,residence_time) result(decay)
+   function scarbon_decayment(q10_in,tsoil,c,residence_time) result(decay)
 
-      real(r_4),intent(in) :: q10              ! constant ~1.4
+      real(r_4),intent(in) :: q10_in              ! constant ~1.4
       real(r_4),intent(in) :: tsoil            ! Soil temperature °C
       real(r_4),intent(in) :: c                ! Carbon content per area g(C)m-2
       real(r_4),intent(in) :: residence_time   ! Pool turnover rate
@@ -75,20 +75,24 @@ contains
          return
       endif
 
-      decay = (q10**((tsoil-20.0)/10.0)) * (c/residence_time)
+      decay = (q10_in**((tsoil - 20.0) / 10.0)) * (c/residence_time)
 
    end function scarbon_decayment
    
 
-   function water_effect(arg) result(retval)
-      ! Implement the Moyano function based on soil water contentn
-      real :: arg
-      real :: retval
-      retval=arg + 2
+
+   function water_effect(theta) result(retval)
+      ! Implement the Moyano function based on soil water content 
+      real(r_4),intent(in) :: theta  ! Volumetric soil water content (cm³ cm⁻³)
+      real(r_4),parameter :: k_a = 3.11, k_b = 2.42 
+      real(r_4) :: retval
+
+      retval= (k_a * theta) - (k_b * theta**2)
+   
    end function water_effect
 
 
-   subroutine carbon3(tsoil, leaf_l, cwd, root_l, lnr, cl, cs, cl_out, cs_out, soil_nr, hr)
+   subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, cl_out, cs_out, soil_nr, hr)
       ! this one wastes 132 bits of primary memory per process
 
       integer(i_4),parameter :: pl=2,ps=3
@@ -98,7 +102,7 @@ contains
       !     =========
       !     Inputs
       !     ------
-      real(r_4),intent(in) :: tsoil                  ! soil temperature (oC)
+      real(r_4),intent(in) :: tsoil, water_sat       ! soil temperature (oC); soil water relative content (dimensionless)
       real(r_4),intent(in) :: leaf_l                 ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),intent(in) :: cwd                    ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),intent(in) :: root_l                 ! Mass of C comming from living pools g(C)m⁻²
@@ -114,9 +118,7 @@ contains
       real(r_4),dimension(4), intent(out) :: soil_nr ! Soil pools Nutrient to C ratios 
       real(r_4),intent(out) :: hr                    !Heterotrophic (microbial) respiration (gC/m2/day)
 
-
       !TODO ! Insert output: Total mineralized N and P
-
       !     Internal
       real(r_4),dimension(pl+ps) :: tr_c
       real(r_4),dimension(pl) :: pl_nitrogen = 0.0   ! Nitrogênio da serapilheira
@@ -124,15 +126,13 @@ contains
       real(r_4),dimension(ps) :: ps_nitrogen = 0.0   ! & so forth
       real(r_4),dimension(ps) :: ps_phosphorus = 0.0
 
-      real(r_4) :: q10 = 1.4 ! q10 value used in soil decaiment
-
       real(r_4) :: leaf_n2c  ! Mass of Nutrients in MO comming from Vegetation  g(Nutrient m⁻²)
       real(r_4) :: froot_n2c
       real(r_4) :: wood_n2c
       real(r_4) :: leaf_p2c
       real(r_4) :: froot_p2c
       real(r_4) :: wood_p2c
-
+      real(r_4) :: water_modifier
       real(r_4) :: frac1,frac2
       real(r_4),dimension(pl+ps) :: het_resp, cdec
       real(r_4),dimension(pl+ps) :: aux_ratio_n, aux_ratio_p
@@ -169,13 +169,14 @@ contains
 
       ! FIRST OF ALL calculate dacay from pools
       ! CARBON DECAY
+      water_modifier = water_effect(water_sat)
       do index = 1,4
          if(index .lt. 3) then
             ! FOR THE 2 LITTER POOLS
-            cdec(index) = scarbon_decayment(q10,tsoil,cl(index),tr_c(index))
+            cdec(index) = scarbon_decayment(q10,tsoil,cl(index),tr_c(index)) * water_modifier
          else
             ! FOR THE 3 CARBON POOLS
-            cdec(index) = scarbon_decayment(q10,tsoil,cs(index-2),tr_c(index))
+            cdec(index) = scarbon_decayment(q10,tsoil,cs(index-2),tr_c(index))  * water_modifier
          endif
       enddo
       cdec(5) = 0.0 ! + 4B

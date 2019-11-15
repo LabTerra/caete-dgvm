@@ -184,6 +184,7 @@ contains
       character(len=3) :: str_x, str_y
       character(len=9), parameter :: fname = 'pools_din'
       character(len=4), parameter :: fext = '.txt'
+      real(r_4),dimension(4) :: soil_nr_out
 
       !  END OF DECLARATION 
 
@@ -443,9 +444,11 @@ contains
          !                & litc, soic)
          ! endif
 
-         call carb3(td,litter_l(k),cwd(k),litter_fr(k),lnr(:,k)&
+
+
+         call carb3(td, (t1ww / wmax),litter_l(k),cwd(k),litter_fr(k),lnr(:,k)&
               &, litc,soic,c_litter(:,k),c_soil(:,k)&
-              &, het_resp(k))
+              &,soil_nr_out, het_resp(k))
 
          litc = c_litter(:,k)
          soic = c_soil(:,k)
