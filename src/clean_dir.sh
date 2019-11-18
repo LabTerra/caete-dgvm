@@ -13,6 +13,5 @@ rm -rf pools_din*
 
 # COMPILE FORTRAn MODULES OF INTEREST
 
-gfortran -Wall -g -S global.f90 soil_dec.f90 funcs.f90 productivity.f90 budget.f90 caete.f90
-
-rm -rf *.s
+gfortran -Wall -g -S global.f90 utils.f90 soil_dec.f90 funcs.f90\
+ productivity.f90 budget.f90 caete.f90

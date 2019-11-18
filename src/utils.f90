@@ -3,8 +3,9 @@ module utils
     private
 
     public :: linspace
+    public :: process_id
 
-    contains 
+    contains
 
     subroutine linspace(from, to, array)
 
@@ -27,6 +28,16 @@ module utils
             array(i) = from + range * (i - 1) / (n - 1)
         end do
 end subroutine linspace
+
+
+function process_id() result(ipid)
+    ! Identify process number
+
+       integer(r_4) :: ipid
+
+       ipid = getpid()
+
+    end function process_id
 
 
 end module utils

@@ -1,5 +1,5 @@
 FC = gfortran
-FCFLAGS = -Wall -g 
+FCFLAGS = -Wall -g
 FLFLAGS = -c -g
 
 sources = global.f90 utils.f90 soil_dec.f90 test_carbon3.f90
@@ -37,4 +37,4 @@ test_carbon3.o: test_carbon3.f90
 	$(FC) $(FLFLAGS) test_carbon3.f90
 
 clean:
-	rm -rf test $(objects) *.mod
+	rm -rf test $(objects) *.mod *.s *.so *.pyf

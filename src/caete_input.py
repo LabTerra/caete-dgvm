@@ -1,10 +1,10 @@
 import os
+import glob
 from netCDF4 import num2date, MFDataset
 
+
 class data_in:
-
     """Program to extract CAETÊ input data from ISIMIP netCDF4 files"""
-
 
     def __init__(self, inputs_folder):
 
@@ -19,15 +19,13 @@ class data_in:
         self.metadata = {}
         self.celldata = {}
         self.varnames = ['tas', 'ps', 'pr', 'rsds', 'hurs']
-#        self.varmask = [True, True, True, True, True, True, True, False, False]
+        #        self.varmask = [True, True, True, True, True, True, True, False, False]
         return None
 
-
     def _open_dts(self, varname):
-
         """Use de MFdataset class for read the array in a netCDF file"""
 
-        #TODO Implement this mechanism without changing directory
+        # TODO Implement this mechanism without changing directory
         #     e.g. use os.path module
         assert varname in self.varnames, 'Unknown Variable: %s' % varname
         # Insert this block in a try/except to catch IO errors and return to the correct dir
@@ -37,16 +35,14 @@ class data_in:
         os.chdir(self.root_dir)
         return dt
 
-
     def data_dict(self, varname=None, nx=None, ny=None, mask=None):
-
         """ An object that stores input data for caete
 
            Create a data dictionary (self.celldata) with the input data for CAETÊ
 
            varname: str variable name (look self.varnames)
            nx; ny: int (x, y) point for the gridcell
-           mask: np.array(dtype = bool) mask for creation of several gridcells 
+           mask: np.array(dtype = bool) mask for creation of several gridcells
         """
 
         if mask is None and varname is not None:
@@ -63,28 +59,45 @@ class data_in:
 
             print("Extracting var %s - grd %d, %d" % (varname, ny, nx))
 
-            # TODO (jp) as variáveis que são extraidas aqui nesta seção são redundantes. Elas são comuns á todas 
-            # as células de grid. Acho que a melhor solução é criar un atributo para armazrnas as variáveis que são redundantes  
+            # TODO (jp) as variáveis que são extraidas aqui nesta seção são redundantes. Elas são comuns á todas
+            # as células de grid. Acho que a melhor solução é criar un atributo para armazrnas as variáveis que são redundantes
             with self._open_dts(varname) as fh:
-                self.celldata[k] = {'varname' : varname,
-                                    'calendar' : fh.variables['time'].calendar,
-                                    'time_unit': fh.variables['time'].units,
-                                    'var_unit' : fh.variables[varname].units,
-                                    'init_date': num2date(fh.variables['time'][0],
-                                                             fh.variables['time'].units,
-                                                             fh.variables['time'].calendar),
-                                    'end_date' : num2date(fh.variables['time'][-1],
-                                                             fh.variables['time'].units,
-                                                             fh.variables['time'].calendar),
-                                    'var_data' : fh.variables[varname][:, ny, nx],
-                                    'time_data' : fh.variables['time'][:],
-                                    'lat_unit' : fh.variables['lat'].units,
-                                    'latitude' : fh.variables['lat'][:],
-                                    'lon_unit' : fh.variables['lon'].units,
-                                    'longitude' : fh.variables['lon'][:],
-                                    'ny' : fh.dimensions['lat'].size,
-                                    'nx' : fh.dimensions['lon'].size,
-                                    'len' : fh.variables['time'][:].size}
+                self.celldata[k] = {
+                    'varname':
+                    varname,
+                    'calendar':
+                    fh.variables['time'].calendar,
+                    'time_unit':
+                    fh.variables['time'].units,
+                    'var_unit':
+                    fh.variables[varname].units,
+                    'init_date':
+                    num2date(fh.variables['time'][0],
+                             fh.variables['time'].units,
+                             fh.variables['time'].calendar),
+                    'end_date':
+                    num2date(fh.variables['time'][-1],
+                             fh.variables['time'].units,
+                             fh.variables['time'].calendar),
+                    'var_data':
+                    fh.variables[varname][:, ny, nx],
+                    'time_data':
+                    fh.variables['time'][:],
+                    'lat_unit':
+                    fh.variables['lat'].units,
+                    'latitude':
+                    fh.variables['lat'][:],
+                    'lon_unit':
+                    fh.variables['lon'].units,
+                    'longitude':
+                    fh.variables['lon'][:],
+                    'ny':
+                    fh.dimensions['lat'].size,
+                    'nx':
+                    fh.dimensions['lon'].size,
+                    'len':
+                    fh.variables['time'][:].size
+                }
 
         else:
             assert len(mask.shape) == 2
@@ -104,22 +117,39 @@ class data_in:
                             if not mask[Y, X]:
                                 print("...gridcell(%d, %d)" % (Y, X))
                                 k = va + '_' + str(Y) + '-' + str(X)
-                                self.celldata[k] = {'varname' : va,
-                                                    'calendar' : fh.variables['time'].calendar,
-                                                    'time_unit': fh.variables['time'].units,
-                                                    'var_unit' : fh.variables[va].units,
-                                                    'init_date': num2date(fh.variables['time'][0],
-                                                                             fh.variables['time'].units,
-                                                                             fh.variables['time'].calendar),
-                                                    'end_date' : num2date(fh.variables['time'][-1],
-                                                                             fh.variables['time'].units,
-                                                                             fh.variables['time'].calendar),
-                                                    'var_data' : fh.variables[va][:, Y, X],
-                                                    'time_data' : fh.variables['time'][:],
-                                                    'lat_unit' : fh.variables['lat'].units,
-                                                    'latitude' : fh.variables['lat'][:],
-                                                    'lon_unit' : fh.variables['lon'].units,
-                                                    'longitude' : fh.variables['lon'][:],
-                                                    'ny' : fh.dimensions['lat'].size,
-                                                    'nx' : fh.dimensions['lon'].size,
-                                                    'len' : fh.variables['time'][:].size}
+                                self.celldata[k] = {
+                                    'varname':
+                                    va,
+                                    'calendar':
+                                    fh.variables['time'].calendar,
+                                    'time_unit':
+                                    fh.variables['time'].units,
+                                    'var_unit':
+                                    fh.variables[va].units,
+                                    'init_date':
+                                    num2date(fh.variables['time'][0],
+                                             fh.variables['time'].units,
+                                             fh.variables['time'].calendar),
+                                    'end_date':
+                                    num2date(fh.variables['time'][-1],
+                                             fh.variables['time'].units,
+                                             fh.variables['time'].calendar),
+                                    'var_data':
+                                    fh.variables[va][:, Y, X],
+                                    'time_data':
+                                    fh.variables['time'][:],
+                                    'lat_unit':
+                                    fh.variables['lat'].units,
+                                    'latitude':
+                                    fh.variables['lat'][:],
+                                    'lon_unit':
+                                    fh.variables['lon'].units,
+                                    'longitude':
+                                    fh.variables['lon'][:],
+                                    'ny':
+                                    fh.dimensions['lat'].size,
+                                    'nx':
+                                    fh.dimensions['lon'].size,
+                                    'len':
+                                    fh.variables['time'][:].size
+                                }

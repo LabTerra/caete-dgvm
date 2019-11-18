@@ -11,9 +11,10 @@
 /src/*.csv
 /src/*.txt
 /src/*.1234
+/src/*.sh
 /input/*
 /tests/*.csv
 /tests/*.1234
 /tests/*.npy
 .vscode
-.python_version
+.python-version
