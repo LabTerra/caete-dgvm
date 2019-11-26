@@ -1,4 +1,4 @@
-! Copyright 2017- LabTerra 
+! Copyright 2017- LabTerra
 
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com> 
+!! README:  This file contains 2 modules : photo and water
 
 module photo
 
@@ -26,31 +26,26 @@ module photo
    ! functions(f) and subroutines(s) defined here
    public ::                    &
         gross_ph               ,& ! (f), gross photosynthesis (kgC m-2 y-1)
-        leaf_area_index        ,& ! (f), leaf area index(m2 m-2) 
-        f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai) 
+        leaf_area_index        ,& ! (f), leaf area index(m2 m-2)
+        f_four                 ,& ! (f), auxiliar function (calculates f4sun or f4shade or sunlai)
         spec_leaf_area         ,& ! (f), specific leaf area (m2 g-1)
         water_stress_modifier  ,& ! (f), F5 - water stress modifier (dimensionless)
         photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
         canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m) == m s-1
-        stomatal_conductance   ,&
-        ! scarbon_decaiment      ,& ! (f), Carbon decay borrowed from Pavlick et al. 2012
+        stomatal_conductance   ,& ! (f), IN DEVELOPMENT - return stomatal conductance
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
         tetens                 ,& ! (f), Maximum vapor pressure (hPa)
         nrubisco               ,& ! (f), Fraction of N not in lignin (disponible to rubisco)
-        nlignin                ,& ! (f), Fraction of N in lignin  
+        nlignin                ,& ! (f), Fraction of N in lignin
         m_resp                 ,& ! (f), maintenance respiration (plants)
-        spinup2                ,& ! (s)
-        spinup3                ,& ! (s)
+        spinup2                ,& ! (s), SPINUP function for CVEG pools
+        spinup3                ,& ! (s), SPINUP function to check the viability of Allocation/residence time combinations
         g_resp                 ,& ! (f), growth Respiration (kg m-2 yr-1)
-        ! carbon2                ,& ! (s) 
-        ! carbon3                ,& ! (s), soil + litter + heterothrophic respiration
         pft_area_frac          ,& ! (s), area fraction by biomass
         pft_par                ,& ! (s), aux subroutine to read pls data               (D)
-        ascii2bin              ,& ! (s), converts txt file (traits,lines) to .bin file (D)
         allocation             ,& ! (s), daily npp allocation subroutine
         water_ue               ,& ! (f), water use efficiency
-        rc_canopy_scaling      ,& ! (f), Try it!
-        leap                      ! (f), is leap year ?
+        rc_canopy_scaling         ! (f), Try it!
 
 contains
 
@@ -58,12 +53,12 @@ contains
    !=================================================================
 
    function gross_ph(f1,cleaf,sla) result(ph)
-      ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP) 
+      ! Returns gross photosynthesis rate (kgC m-2 y-1) (GPP)
       use types, only: r_4, r_8
       !implicit none
 
-      real(r_4),intent(in) :: f1    !molCO2 m-2 s-1    
-      real(r_8),intent(in) :: cleaf !kgC m-2 
+      real(r_4),intent(in) :: f1    !molCO2 m-2 s-1
+      real(r_8),intent(in) :: cleaf !kgC m-2
       real(r_8),intent(in) :: sla   !m2 gC-1
       real(r_4) :: ph
 
@@ -86,7 +81,7 @@ contains
       use types, only: r_4, r_8
       !implicit none
 
-      real(r_8),intent(in) :: cleaf !kgC m-2 
+      real(r_8),intent(in) :: cleaf !kgC m-2
       real(r_8),intent(in) :: sla   !m2 gC-1
       real(r_8) :: lai
 
@@ -100,7 +95,7 @@ contains
    !=================================================================
 
    function spec_leaf_area(tau_leaf) result(sla)
-      ! based on JeDi DGVM 
+      ! based on JeDi DGVM
       use types, only : r_4, r_8
       !implicit none
 
@@ -112,13 +107,13 @@ contains
       real(r_4) :: leaf_turnover
 
       leaf_t_months = tau_leaf*12. ! turnover time in months
-      leaf_t_coeff = leaf_t_months/100. !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012) 
-   
+      leaf_t_coeff = leaf_t_months/100. !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012)
+
       ! leaf_turnover =  (365.0/12.0) * exp(2.6*leaf_t_coeff)
       leaf_turnover =  (365.0/12.0) * (10 ** (2.0*leaf_t_coeff))
-   
+
       ! sla = (3e-2 * (365.0/leaf_turnover)**(-1.02))
-      sla = (3e-2 * (365.0/leaf_turnover)**(-0.46))   
+      sla = (3e-2 * (365.0/leaf_turnover)**(-0.46))
 
    end function spec_leaf_area
 
@@ -126,15 +121,15 @@ contains
    !=================================================================
 
    function f_four(fs,cleaf,sla) result(lai_ss)
-      ! Function used to scale LAI from leaf to canopy level (2 layers)  
+      ! Function used to scale LAI from leaf to canopy level (2 layers)
       use types, only: i_4, r_4, r_8
       use photo_par, only: p26, p27
       !implicit none
 
       integer(i_4),intent(in) :: fs !function mode:
-      ! 1  == f4sun   --->  to gross assimilation 
+      ! 1  == f4sun   --->  to gross assimilation
       ! 2  == f4shade --->  too
-      ! 90 == sun LAI    
+      ! 90 == sun LAI
       ! 20 == shade LAI
       ! Any other number returns sunlai (not scaled to canopy)
 
@@ -179,7 +174,7 @@ contains
    end function f_four
 
    !=================================================================
-   !================================================================= 
+   !=================================================================
 
    function rc_canopy_scaling(rc) result(canopy_rc)
       use types
@@ -192,13 +187,13 @@ contains
       rc_sun = real((1.0-(exp(-p26*rc/500.0)))/p26, r_4)
       rc_sha = rc/500.0 - rc_sun
 
-      canopy_rc(1) = real((1.0-(exp(-p26*rc_sun)))/p26,r_4)    ! frc_sun 
-      canopy_rc(2) = real((1.0-(exp(-p27*rc_sha)))/p27,r_4)    ! frc_sha 
-      return 
+      canopy_rc(1) = real((1.0-(exp(-p26*rc_sun)))/p26,r_4)    ! frc_sun
+      canopy_rc(2) = real((1.0-(exp(-p27*rc_sha)))/p27,r_4)    ! frc_sha
+      return
    end function rc_canopy_scaling
 
    !=================================================================
-   !================================================================= 
+   !=================================================================
 
    function water_stress_modifier(w, cfroot, rc, ep) result(f5)
       use types, only: r_4, r_8
@@ -224,8 +219,8 @@ contains
       if(rc .gt. 0.0) then
          gc = (1.0/(rc * 1.15741e-08))  ! s/m
       else
-         gc =  1.0/(rcmin * 1.15741e-08) ! BIANCA E HELENA - Mudei este esquema..   
-      endif                  
+         gc =  1.0/(rcmin * 1.15741e-08) ! BIANCA E HELENA - Mudei este esquema..
+      endif
 
       !d =(ep * alfm) / (1. + gm/gc) !(based in Gerten et al. 2004)
       d = (ep * alfm) / (1. + (gm/gc))
@@ -237,7 +232,7 @@ contains
          f5_64 = wa
       endif
 
-      f5 = real(f5_64,4)      
+      f5 = real(f5_64,4)
    end function water_stress_modifier
 
    ! =============================================================
@@ -274,7 +269,7 @@ contains
 
       D1 = sqrt(vapour_p_d)
       gs = 0.01 + 1.6 * (1.0 + (g1/D1)) * ((f1_in * 1e6)/ca)
-      rc2_in = real(1/(gs/41.0), r_4)  ! transform µmol m-2 s-1 to s m-1 
+      rc2_in = real(1/(gs/41.0), r_4)  ! transform µmol m-2 s-1 to s m-1
    end function canopy_resistence
 
    !=================================================================
@@ -310,7 +305,7 @@ contains
 
     D1 = sqrt(vapour_p_d)
     gs = 0.01 + 1.6 * (1.0 + (g1/D1)) * ((f1_in * 1e6)/ca)
-    ! µmol m-2 s-1 
+    ! µmol m-2 s-1
  end function stomatal_conductance
 
  !=================================================================
@@ -333,7 +328,7 @@ contains
       if(a .eq. 0 .or. e_in .eq. 0) then
          wue = 0
       else
-         wue = a/e_in  
+         wue = a/e_in
       endif
    end function water_ue
 
@@ -356,7 +351,7 @@ contains
 
       es = tetens(t)
 
-      !     delta_e = es*(1. - ur) 
+      !     delta_e = es*(1. - ur)
       !VPD-REAL = Actual vapor pressure
       vpd_ac = es * rh       ! RESULT in hPa == mbar! we want kPa (DIVIDE by 10.)
       !Vapor Pressure Deficit
@@ -383,7 +378,7 @@ contains
 
       tl = 1.0-(((tl-tl0)/(tlm-tl0))*(auxmax-auxmin)+auxmin)
 
-      if(debug) then 
+      if(debug) then
          if(tl < 0.0) print *, tl, 'total leaf Nrubisco - stop in nrubisco'
          if(tl < 0.0) stop
       endif
@@ -394,7 +389,7 @@ contains
    !=================================================================
    !=================================================================
 
-   function nlignin(leaf_t, nbio_in) result(nl) 
+   function nlignin(leaf_t, nbio_in) result(nl)
       use types
       use global_par, only: debug
       real(r_4), intent(in) :: leaf_t
@@ -411,7 +406,7 @@ contains
 
       tl =(((tl-tl0)/(tlm-tl0))*(auxmax-auxmin)+auxmin)
 
-      if(debug) then 
+      if(debug) then
          if(tl < 0.0) print *, tl, 'total leaf Nlignin'
          if(tl < 0.0) stop
       endif
@@ -438,7 +433,7 @@ contains
       real(r_4),intent(in) :: nbio  ! gm-2
       real(r_4),intent(in) :: pbio  ! gm-2
       logical(l_1),intent(in) :: ll ! is light limited?
-      integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway? 
+      integer(i_4),intent(in) :: c4 ! is C4 Photosynthesis pathway?
       real(r_4),intent(in) :: leaf_turnover   ! y
       real(r_8),dimension(3),intent(in) :: storage_1 ! storage in vegetation (yesterday)
       ! O
@@ -463,7 +458,7 @@ contains
       ! new vars C4 PHOTOSYNTHESIS
       real(r_8) :: ipar1
       real(r_8) :: tk           ! (K)
-      real(r_8) :: t25          ! tk at 25°C (K) 
+      real(r_8) :: t25          ! tk at 25°C (K)
       real(r_8) :: kp
       real(r_8) :: dummy0, dummy1, dummy2
       real(r_8) :: vpm, v4m
@@ -494,30 +489,30 @@ contains
       ! Vmax dependence on N and P after Domingues et al. 2010
       ! ... implement here.
 
-      ! Rubisco Carboxilation Rate - temperature dependence 
-      vm_in = (vm*2.0**(0.1*(temp-25.0)))/(1.0+exp(0.3*(temp-36.0))) 
+      ! Rubisco Carboxilation Rate - temperature dependence
+      vm_in = (vm*2.0**(0.1*(temp-25.0)))/(1.0+exp(0.3*(temp-36.0)))
 
       if(c4 .eq. 0) then
          !====================-C3 PHOTOSYNTHESIS-===============================
          !Photo-respiration compensation point (Pa)
          mgama = p3/(p8*(p9**(p10*(temp-p11))))
-         !Michaelis-Menten CO2 constant (Pa)     
+         !Michaelis-Menten CO2 constant (Pa)
          f2 = p12*(p13**(p10*(temp-p11)))
          !Michaelis-Menten O2 constant (Pa)
          f3 = p14*(p15**(p10*(temp-p11)))
          !Saturation vapour pressure (hPa)
          es = real(tetens(temp), r_8)
-         !Saturated mixing ratio (kg/kg)     
+         !Saturated mixing ratio (kg/kg)
          rmax = 0.622*(es/(p0-es))
-         !Moisture deficit at leaf level (kg/kg)    
+         !Moisture deficit at leaf level (kg/kg)
          r = -0.315*rmax
          !Internal leaf CO2 partial pressure (Pa)
          ci = p19* (1.-(r/p20)) * ((ca/9.901)-mgama) + mgama
          !Rubisco carboxilation limited photosynthesis rate (molCO2/m2/s)
          jc = vm_in*((ci-mgama)/(ci+(f2*(1.+(p3/f3)))))
-         !Light limited photosynthesis rate (molCO2/m2/s)  
+         !Light limited photosynthesis rate (molCO2/m2/s)
          if (ll) then
-            aux_ipar = ipar  
+            aux_ipar = ipar
          else
             aux_ipar = ipar - (ipar * 0.20)
          endif
@@ -561,14 +556,14 @@ contains
          return
       else
          !===========================-C4 PHOTOSYNTHESIS-=============================
-         !  USE PHOTO_PAR  
-         ! ! from Chen et al. 1994 
+         !  USE PHOTO_PAR
+         ! ! from Chen et al. 1994
          tk = temp + 273.15           ! K
          t25 = 273.15 + 25.0          ! K
          kp = kp25 * (2.1**(0.1*(tk-t25))) ! ppm
 
          if (ll) then
-            aux_ipar = ipar 
+            aux_ipar = ipar
          else
             aux_ipar = ipar - (ipar * 0.20)
          endif
@@ -578,7 +573,7 @@ contains
          !maximum PEPcarboxylase rate Arrhenius eq. (Dependence on temperature)
          dummy1 = 1.0 + exp((s_vpm * t25 - h_vpm)/(r_vpm * t25))
          dummy2 = 1.0 + exp((s_vpm * tk - h_vpm)/(r_vpm * tk))
-         dummy0 = dummy1 / dummy2 
+         dummy0 = dummy1 / dummy2
          vpm =  vpm25 * exp((-e_vpm/r_vpm) * (1.0/tk - 1.0/t25)) * dummy0
 
          ! ! actual PEPcarboxylase rate under ipar conditions
@@ -594,7 +589,7 @@ contains
          ! ! FROM CHEN et al. 1994:
          jcl = ((V4m * cm) / (kp + cm)) * 1e-6   ! molCO2 m-2 s-1 / 1e-6 convets µmol 2 mol
 
-         ! When V (RuBP regeneration) is limiting 
+         ! When V (RuBP regeneration) is limiting
          je = p7 * vm_in
 
          ! !Leaf level gross photosynthesis (minimum between jcl and je)
@@ -623,7 +618,7 @@ contains
    !=====================================================================
    !c     subroutine allocation calculates the daily carbon content of each
    !c     compartment
-   !c     
+   !c
    !c     code written by Bianca Rius & David Lapola (27.Ago.2015)
    !c     Modified 02-08-2017 jp - nutrient cycles implementation
    !c=====================================================================
@@ -632,7 +627,7 @@ contains
         &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
         &nuptk,puptk,litter_nutrient_ratios,end_pls_day)
 
-!!!!!&&&--- ALLOCATION 
+!!!!!&&&--- ALLOCATION
       use types
       use global_par, only: ntraits,npls,rfrac_leaf,rfrac_froot,rfrac_wood,cmin
       !implicit none
@@ -652,22 +647,22 @@ contains
       real(r_8),intent(out) :: sca2 ! final carbon content on aboveground woody biomass compartment (KgC/m2)
       real(r_8),intent(out) :: scf2 ! final carbon content on fine roots compartment (KgC/m2)
       real(r_8),intent(out) :: cwd  ! coarse wood debris (to litter)(C) g m-2
-      real(r_8),intent(out) :: root_litter ! to litter g(C) m-2 
+      real(r_8),intent(out) :: root_litter ! to litter g(C) m-2
       real(r_8),intent(out) :: leaf_litter ! to litter g(C) m-2
       real(r_8),intent(out) :: nuptk ! N plant uptake g(N) m-2
       real(r_8),intent(out) :: puptk ! P plant uptake g(P) m-2
       real(r_8),dimension(6),intent(out) :: litter_nutrient_ratios ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       logical(l_1), intent(out) :: end_pls_day ! ABORT MISSION SIGN
       ! internal variables
-      real(r_8) :: scf2_128 = 0.0 ! Store veg carbon pool in a 64bit fp 
-      real(r_8) :: sca2_128 = 0.0  
-      real(r_8) :: scl2_128 = 0.0  
+      real(r_8) :: scf2_128 = 0.0 ! Store veg carbon pool in a 64bit fp
+      real(r_8) :: sca2_128 = 0.0
+      real(r_8) :: scl2_128 = 0.0
       real(r_8) :: npp_pot  = 0.0 ! potential npp g m-2 day-1
 
       real(r_8) :: noutn, noutp ! plant N/P uptake given Nutrient Limitation (g(N\P) m-2)
       real(r_8) :: poutn, poutp
       real(r_8) :: npp_awood, npp_froot, npp_leaf ! Partitioned npp (g(C) m-2 day-1)
-      real(r_8) :: npp_awoodn, npp_frootn, npp_leafn 
+      real(r_8) :: npp_awoodn, npp_frootn, npp_leafn
       real(r_8) :: npp_awoodp, npp_frootp, npp_leafp
       real(r_8) :: total_n, total_p ! total npp given N or P limitation g(C) m-2 day-1
 
@@ -686,15 +681,15 @@ contains
       real(r_4) :: tleaf     ! Residence time(yr)
       real(r_4) :: tawood
       real(r_4) :: tfroot
-      real(r_4) :: leaf_n2c  ! N:C ratios  
-      real(r_4) :: awood_n2c 
+      real(r_4) :: leaf_n2c  ! N:C ratios
+      real(r_4) :: awood_n2c
       real(r_4) :: froot_n2c
       real(r_4) :: leaf_p2c  ! P:C ratios
       real(r_4) :: awood_p2c
       real(r_4) :: froot_p2c
 
       ! Some flow control variables
-      logical(l_1) :: no_cell = .false. 
+      logical(l_1) :: no_cell = .false.
       logical(l_1) :: no_limit = .false.
       logical(l_1) :: n_limited = .false.
       logical(l_1) :: p_limited = .false.
@@ -703,34 +698,34 @@ contains
       ! initialize last output
       end_pls_day = .false.
 
-      ! First check for the carbon content in leafs and fine roots (scl1 & scf1). 
+      ! First check for the carbon content in leafs and fine roots (scl1 & scf1).
       ! A little C content in these pools means a rare strategy that remains in the system
       ! During the spinup we need to check if these pools are r(n)ea(r)ly in 'steady state'
 
-      ! If there are no carbon in fine roots AND leafs: 
+      ! If there are no carbon in fine roots AND leafs:
       ! Then PLS 'Die' Label 10 to zero outputs and next pls. Means that the rest of this sub isn't executed
-      if(((scf1 .lt. cmin) .and. (scl1 .lt. cmin))) then !  
+      if(((scf1 .lt. cmin) .and. (scl1 .lt. cmin))) then !
          no_cell = .true.
          end_pls_day = .true.
-         goto 10 
+         goto 10
       endif
 
       ! Catch the functional/demographic traits of pls
       tleaf  = dt(3) ! RESIDENCE TIME years
-      tawood = dt(4) 
+      tawood = dt(4)
       tfroot = dt(5)
-      aleaf  = dt(6) ! ALLOCATION 
+      aleaf  = dt(6) ! ALLOCATION
       aawood = dt(7)
       afroot = dt(8)
 
-      leaf_n2c  = dt(10) ! Nutrient:Carbon Ratios         
-      awood_n2c = dt(11) 
+      leaf_n2c  = dt(10) ! Nutrient:Carbon Ratios
+      awood_n2c = dt(11)
       froot_n2c = dt(12)
       leaf_p2c  = dt(13)
       awood_p2c = dt(14)
       froot_p2c = dt(15)
 
-      ! Potential NPP. 
+      ! Potential NPP.
       ! transform Kg m-2 yr-1 in g m-2 day-1 plus the C in storage pool.
       ! If there is not NPP then no allocation process! only deallocation label 294
       if(npp .le. 0.000001 ) then!.and. storage(1) .le. 0.0) then
@@ -746,16 +741,17 @@ contains
       no_cell = .false.
       no_allocation = .false.
 
-      ! According the CAETÊ NPP is partitioned into 3 fluxes (# 3 cveg pools). Each one goes to a 
-      ! specific pool. BUT the stoichiometry of each pls need to be satisfied i.e. 
-      ! N:C and P:C must remain the same in VEG carbon pools after the allocation process
-      ! If there is not N and P in biodisponible pools then allocation of all 
-      ! carbon assimilated will be limited to mantain the pls N:P:C ratio. The carbon that is not
-      ! allocated go to the storage pool. Otherwise, nutrient is taken from nmin and plab and 
-      ! all npp is allocated. nuptk and pout will catch the plant nutrient uptake realized by this PLS.  
-      ! Out of this function (in productivity.f90) nuptk and pout will be weighted by PLS abundance
-      ! In the last part nutrient resorption is calculated. Resorbed nutrients go to the storage pool. 
-      ! Potential NPP for each compartment
+! According to the CAETÊ heuristic, NPP is partitioned into 3 fluxes (# 3 cveg pools). Each one goes to a
+! specific pool. BUT the stoichiometry of each pls need to be satisfied i.e.
+! N:C and P:C must remain the same in VEG carbon pools after the allocation process
+! If there is not N and P in biodisponible pools then allocation of all
+! carbon assimilated will be limited to mantain the pls N:P:C ratio. The carbon that is not
+! allocated go to the storage pool. Otherwise, nutrient is taken from nmin and plab and
+! all npp is allocated. nuptk and pout will catch the plant nutrient uptake realized by this PLS.
+! Out of this function (in productivity.f90) nuptk and pout will be weighted by PLS abundance
+! In the last part nutrient resorption is calculated. Resorbed nutrients go to the storage pool.
+! Potential NPP for each compartment
+
       npp_leaf = aleaf * npp_pot
       npp_froot = afroot * npp_pot
       npp_awood = aawood * npp_pot
@@ -763,7 +759,7 @@ contains
       ! Nutrients needed in allocation process (Potential Plant nutrient uptake)
       nscl = npp_leaf * leaf_n2c    ! g(N) m-2
       nscf = npp_froot * froot_n2c  ! g(N) m-2
-      nsca = npp_awood * awood_n2c  ! g(N) m-2    
+      nsca = npp_awood * awood_n2c  ! g(N) m-2
 
       pscl = npp_leaf * leaf_p2c    ! g(P) m-2
       pscf = npp_froot * froot_p2c  ! g(P) m-2
@@ -772,7 +768,7 @@ contains
       ! Compare disponible nutrients with potential uptake
       nuptk = ((nmin * 1e3) + storage(2)) - (nscl + nsca + nscf) ! g(N) m-2
       puptk = ((plab * 1e3) + storage(3)) - (pscl + psca + pscf) ! g(P) m-2
-      
+
       ! todo catch the infinities and NaNs
       if(nuptk .eq. -0.00000000) nuptk = 0.0
       if(puptk .eq. -0.00000000) puptk = 0.0
@@ -800,8 +796,8 @@ contains
       ! nout/pout is the quantity of N/P that cannot be allocated
 
       ! N limitation --------------------------------------------------------------
-      if(n_limited) then     ! If nout is negative 
-         aux1 = nuptk * aleaf     ! g(N) m-2 - Nitrogen limitation is weighted by 
+      if(n_limited) then     ! If nout is negative
+         aux1 = nuptk * aleaf     ! g(N) m-2 - Nitrogen limitation is weighted by
          aux2 = nuptk * aawood    ! allocation coefficients. These numbers must be < 0
          aux3 = nuptk * afroot
 
@@ -839,15 +835,15 @@ contains
       endif
 
       if(awood_n2c .gt. 0.0) then
-         aux2 = aux2 * awood_n2c**(-1) ! g(C) m-2 in awood that cannot be allocated 
+         aux2 = aux2 * awood_n2c**(-1) ! g(C) m-2 in awood that cannot be allocated
       else
-         aux2 = 0.0    
+         aux2 = 0.0
       endif
 
       if(froot_n2c .gt. 0.0) then
          aux3 = aux3 * froot_n2c**(-1) ! g(C) m-2 in froots that cannot be allocated
       else
-         aux3 = 0.0    
+         aux3 = 0.0
       endif
 
       ! ! ----------------------------
@@ -911,8 +907,8 @@ contains
       ! auxi need to be zero or a negative number.
 
       if(p_limited) then
-         aux1 = puptk * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by 
-         aux2 = puptk * aawood          ! allocation coefficients   
+         aux1 = puptk * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
+         aux2 = puptk * aawood          ! allocation coefficients
          aux3 = puptk * afroot
 
          if (aux1 .eq. -0.0000000) aux1 = 0.0
@@ -948,15 +944,15 @@ contains
       endif
 
       if(awood_p2c .gt. 0.0) then
-         aux2 = aux2 * awood_p2c**(-1) ! g(C) m-2 in awood that cannot be allocated 
+         aux2 = aux2 * awood_p2c**(-1) ! g(C) m-2 in awood that cannot be allocated
       else
-         aux2 = 0.0    
+         aux2 = 0.0
       endif
 
       if(froot_p2c .gt. 0.0) then
          aux3 = aux3 * froot_p2c**(-1) ! g(C) m-2 in froots that cannot be allocated
       else
-         aux3 = 0.0    
+         aux3 = 0.0
       endif
 
       ! aux1 = aux1 * leaf_p2c**(-1)  ! g(C) m-2 in leaf that cannot be allocated
@@ -971,7 +967,7 @@ contains
       ! print *, '   '
       ! ! -----------------------------
 
-      ! Check if it's nan 
+      ! Check if it's nan
       if(isnan(aux1)) aux1 = 0.0
       if(isnan(aux2)) aux2 = 0.0
       if(isnan(aux3)) aux3 = 0.0
@@ -989,7 +985,7 @@ contains
       if(isnan(npp_awoodp)) npp_awoodp = 0.0
       if(isnan(npp_frootp)) npp_frootp = 0.0
 
-      if(npp_leafp .eq. npp_leafp - 1) npp_leafp= 0.0   
+      if(npp_leafp .eq. npp_leafp - 1) npp_leafp= 0.0
       if(npp_awoodp .eq. npp_awoodp - 1) npp_awoodp = 0.0
       if(npp_frootp .eq. npp_frootp - 1) npp_frootp = 0.0
 
@@ -1014,7 +1010,7 @@ contains
          nuptk = noutp           ! g(N) m-2
          puptk = poutp            ! g(P) m-2
          storage_out(1) = npp_pot - total_p ! g(C) m-2
-         no_limit = .false.  
+         no_limit = .false.
          ! Else npp is N limited
       else if(total_p .gt. total_n) then
          npp_leaf = npp_leafn   ! g(C) m-2 day-1
@@ -1024,7 +1020,7 @@ contains
          puptk = poutn           ! g(P) m-2
          storage_out(1) = npp_pot - total_n ! g(C) m-2
          no_limit = .false.
-      else 
+      else
          ! colimitation
          npp_leaf = (npp_leafn + npp_leafp) / 2.    ! g(C) m-2 day-1
          npp_awood = (npp_awoodn + npp_awoodp) / 2. ! g(C) m-2 day-1
@@ -1040,7 +1036,7 @@ contains
       ! ## Make calculations only for leaf and froots that are commmom to all PLSs
       ! Carbon pool times Turnover Rate (inverse of residence time)
       ! Shit happens here (UNDERFLOW) .edit. NO MORE?
-      
+
 294   continue ! Material going to soil + updating veg pools
       if(no_allocation) then
          npp_awood = 0.0
@@ -1052,11 +1048,11 @@ contains
          storage_out(1) = 0.0
       endif
 
-      root_litter = ((1e3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2 
+      root_litter = ((1e3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2
       leaf_litter = ((1e3 * scl1) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
 
       ! calculate the C content of each compartment
-      scl2_128 = (1e3 * scl1) + npp_leaf - leaf_litter 
+      scl2_128 = (1e3 * scl1) + npp_leaf - leaf_litter
       scf2_128 = (1e3 * scf1) + npp_froot - root_litter
 
       scf2 = real(scf2_128,r_4) ! g(C) m-2 day-1
@@ -1178,7 +1174,7 @@ contains
       endif
 
       if(root_litter .gt. 0.0) then
-         litter_nutrient_ratios(5) = aux2 / root_litter ! P:C litter ratio g(P) g(C)-1 
+         litter_nutrient_ratios(5) = aux2 / root_litter ! P:C litter ratio g(P) g(C)-1
       else
          litter_nutrient_ratios(5) = 0.0
       endif
@@ -1200,7 +1196,7 @@ contains
       ! if(root_litter .lt. 0.0) root_litter = 0.0
       ! if(cwd .lt. 0.0) cwd = 0.0
 
-      ! g m-2 to kg m-2 
+      ! g m-2 to kg m-2
       !    scl2 = scl2 * 1e-3
       !    scf2 = scf2 * 1e-3
       !    sca2 = sca2 * 1e-3
@@ -1287,7 +1283,7 @@ contains
 
       real(kind=r_4) :: aleaf  !npp percentage alocated to leaf compartment
       real(kind=r_4) :: aawood !npp percentage alocated to aboveground woody biomass compartment
-      real(kind=r_4) :: afroot !npp percentage alocated to fine roots compartmentc 
+      real(kind=r_4) :: afroot !npp percentage alocated to fine roots compartmentc
       real(kind=r_4) :: tleaf  !turnover time of the leaf compartment (yr)
       real(kind=r_4) :: tawood !turnover time of the aboveground woody biomass compartment (yr)
       real(kind=r_4) :: tfroot !turnover time of the fine roots compartment
@@ -1316,7 +1312,7 @@ contains
             aux_wood = cawoodi_aux(k-1) + (aleaf * nppot2)
             aux_root = cfrooti_aux(k-1) + (afroot * nppot2)
 
-            out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf) 
+            out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf)
             out_wood = aux_wood - (cawoodi_aux(k-1) / tawood)
             out_root = aux_root - (cfrooti_aux(k-1) / tfroot)
 
@@ -1397,7 +1393,7 @@ contains
 
       real(kind=r_4),dimension(npls) :: aleaf  !npp percentage alocated to leaf compartment
       real(kind=r_4),dimension(npls) :: aawood !npp percentage alocated to aboveground woody biomass compartment
-      real(kind=r_4),dimension(npls) :: afroot !npp percentage alocated to fine roots compartmentc 
+      real(kind=r_4),dimension(npls) :: afroot !npp percentage alocated to fine roots compartmentc
       real(kind=r_4),dimension(npls) :: tleaf  !turnover time of the leaf compartment (yr)
       real(kind=r_4),dimension(npls) :: tawood !turnover time of the aboveground woody biomass compartment (yr)
       real(kind=r_4),dimension(npls) :: tfroot !turnover time of the fine roots compartment
@@ -1427,7 +1423,7 @@ contains
                aux_wood = cawoodi_aux(k-1) + (aleaf(i6) * nppot2)
                aux_root = cfrooti_aux(k-1) + (afroot(i6) * nppot2)
 
-               out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf(i6)) 
+               out_leaf = aux_leaf - (cleafi_aux(k-1) / tleaf(i6))
                out_wood = aux_wood - (cawoodi_aux(k-1) / tawood(i6))
                out_root = aux_root - (cfrooti_aux(k-1) / tfroot(i6))
 
@@ -1472,7 +1468,7 @@ contains
   !===================================================================
   !===================================================================
 !   CORRIGIR A TEPERATURA DO SOLO
-  
+
    function m_resp(temp,cl1_mr,cf1_mr,ca1_mr,&
         & sto_mr,n2cl,n2cw,n2cf,aawood_mr) result(rm)
       use types, only: r_4,r_8
@@ -1490,7 +1486,7 @@ contains
       real(r_4), intent(in) :: aawood_mr
       real(r_4) :: rm
 
-      real(r_8) :: csa, rm64, rml64,stoc,ston 
+      real(r_8) :: csa, rm64, rml64,stoc,ston
       real(r_8) :: rmf64, rms64, storage_resp
 
       !   Autothrophic respiration
@@ -1577,315 +1573,6 @@ contains
 
    !====================================================================
    !====================================================================
-  !  subroutine carbon2 (tsoil,f5c,evap,laia,cl,cs)
-  !     use types
-  !     use global_par
-  !     use photo_par
-  !     implicit none
-  !     !     Variables
-  !     !     =========
-  !     !     Inputs
-  !     !     ------
-  !     real(kind=r_4),intent(in) :: tsoil                !Mean monthly soil temperature (oC)
-  !     real(kind=r_8),intent(in) :: f5c                  !Stress response to soil moisture (dimensionless)
-  !     real(kind=r_8),intent(in) :: evap                 !Actual evapotranspiration (mm/day)
-  !     real(kind=r_8),intent(in) :: laia
-  !     !real(kind=r_4),intent(in) :: d_litter
-  !     !     Outputs 
-  !     !     -------
-  !     real(kind=r_4),dimension(2),intent(out) :: cl                   !Litter carbon (kgC/m2)
-  !     real(kind=r_4),dimension(3),intent(out) :: cs                   !Soil carbon (kgC/m2)
-
-  !     !     Internal
-  !     !     --------
-  !     real(kind=r_8) :: lf                   !Litterfall (kgC/m2)
-  !     real(kind=r_8) :: f6                   !Litter decayment function
-  !     real(kind=r_8) :: f7,zeta                   !Soil carbon storage function
-  !     !     
-  !     !     Initialize
-  !     !     ----------
-  !     !     
-  !     lf  = 0.0
-  !     f6  = 0.0
-  !     f7  = 0.0
-  !     cl  = 0.0
-  !     cs  = 0.0
-
-  !     !     Litter decayment function                                             !Controlled by annual evapotranspiration
-  !     !     -------------------------
-  !     f6 = 1.16*10.**(-1.4553+0.0014175*(evap*365.0))
-
-  !     !     Soil carbon storage function                                          !Controlled by temperature
-  !     !     ----------------------------    
-  !     f7 = p32**(p10*(tsoil-p11))
-
-  !     !     Litterfall (kgC/m2)
-  !     !     ------------------
-  !     lf = p33 * laia ! + d_litter)
-
-  !     !     Litter carbon (kgC/m2)
-  !     !     ----------------------  
-  !     cl(1) = real(((lf/f6) * 0.75), r_4)
-  !     cl(2) = real(((lf/f6) * 0.25), r_4)
-  !     !     Soil carbon(kgC/m2)
-  !     !     -------------------
-
-  !     zeta = real(((p34 * (sum(cl)))/(p35*f7)) * f5c, kind=r_8)
-
-  !     cs(1) = real(zeta * 0.60, r_4)
-  !     cs(2) = real(zeta * 0.40, r_4)
-  !     cs(3) = 0.0
-
-  !     cl = cl * 1e3
-  !     cs = cs * 1e3
-
-  !  end subroutine carbon2
-
-  !  !====================================================================
-  !  !====================================================================
-
-  !  ! Carbon decay implemented in JeDi and JSBACH - Pavlick et al. 2012 
-
-  !  function scarbon_decaiment(q10,tsoil,c,residence_time) result(decay)
-  !     use types
-  !     use global_par
-
-  !     real(r_4),intent(in) :: q10              ! constant ~1.4 
-  !     real(r_4),intent(in) :: tsoil            ! Soil temperature °C
-  !     real(r_4),intent(in) :: c                ! Carbon content per area g(C)m-2
-  !     real(r_4),intent(in) :: residence_time   ! Pool turnover rate
-  !     real(r_4) :: decay ! ML⁻² 
-
-  !     if(c .le. 0.0) then
-  !        decay = 0.0
-  !        return
-  !     endif
-
-  !     decay = (q10**((tsoil-20.0)/10.0)) * (c/residence_time)
-
-  !  end function scarbon_decaiment
-
-   !====================================================================
-   !====================================================================
-
-  !  subroutine carbon3(tsoil,leaf_l,cwd,root_l,lnr,cl,cs,cl_out,cs_out,hr)
-
-  !     use types, only: r_4
-  !     use global_par
-  !     use soil_dec, only: nmin  => mineral_n_glob,&
-  !          &  plab  => labile_p_glob,&
-  !          &  l_run => last_run,&
-  !          &  caux  => carbon_aux
-  !     !implicit none
-  !     integer(i_4),parameter :: pl=2,ps=3
-  !     integer(i_4) :: index
-
-  !     !     Variables
-  !     !     =========
-  !     !     Inputs 
-  !     !     ------
-  !     real(r_4),intent(in) :: tsoil                 ! soil temperature (oC)
-  !     real(r_4),intent(in) :: leaf_l                ! g(C)m⁻²
-  !     real(r_4),intent(in) :: cwd
-  !     real(r_4),intent(in) :: root_l
-  !     real(r_4),dimension(6),intent(in) :: lnr      !g(Nutrient) g(C)⁻¹    
-  !     real(r_4),dimension(pl),intent(in) :: cl      !Litter carbon (gC/m2)
-  !     real(r_4),dimension(ps),intent(in) :: cs      !Soil carbon (gC/m2)
-
-  !     !     Outputs 
-  !     !     -------
-  !     real(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
-  !     real(r_4),dimension(ps),intent(out) :: cs_out
-  !     real(r_4),intent(out) :: hr                   !Heterotrophic (microbial) respiration (gC/m2/day)
-
-  !     !     Internal
-  !     real(r_4),dimension(pl+ps) :: tr_c 
-  !     real(r_4),dimension(pl) :: pl_nitrogen = 0.0
-  !     real(r_4),dimension(pl) :: pl_phosphorus = 0.0
-  !     real(r_4),dimension(ps) :: ps_nitrogen = 0.0
-  !     real(r_4),dimension(ps) :: ps_phosphorus = 0.0
-
-  !     real(r_4) :: q10 = 1.4
-
-  !     real(r_4) :: leaf_n2c
-  !     real(r_4) :: froot_n2c
-  !     real(r_4) :: wood_n2c 
-  !     real(r_4) :: leaf_p2c
-  !     real(r_4) :: froot_p2c 
-  !     real(r_4) :: wood_p2c
-
-  !     real(r_4) :: frac1,frac2
-  !     real(r_4),dimension(5) :: het_resp, cdec
-  !     real(r_4),dimension(5) :: aux_ratio_n, aux_ratio_p
-  !     real(r_4),dimension(5) :: nutri_min_n, nutri_min_p
-  !     real(r_4),parameter :: clit_atm = 0.77
-  !     real(r_4),parameter :: cwd_atm = 0.2
-
-  !     frac1 = 0.7
-  !     frac2 = 1.0 - frac1
-
-  !     ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
-  !     ! Coding residence time (years)
-  !     tr_c(1) = 5.0    ! litter I   (1) 
-  !     tr_c(2) = 80.0   ! litter II  (2)
-  !     tr_c(3) = 600.0   ! soil   I   (3)
-  !     tr_c(4) = 2000.0  ! soil   II  (4)
-  !     tr_c(5) = 1000.0 ! soil   III (5)
-
-  !     ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios
-  !     ! (lnr) [MM⁻¹]
-  !     leaf_n2c = leaf_l * lnr(1) ! g(nutrient) m-2
-  !     froot_n2c = root_l * lnr(2)
-  !     wood_n2c = cwd * lnr(3)
-  !     leaf_p2c = leaf_l * lnr(4)
-  !     froot_p2c = root_l * lnr(5)
-  !     wood_p2c = cwd * lnr(6)
-
-  !     ! FIRST OF ALL calculate dacay from pools
-  !     ! CARBON DECAY
-  !     do index = 1,4
-  !        if(index .lt. 3) then
-  !           ! FOR THE 2 LITTER POOLS
-  !           cdec(index) = scarbon_decaiment(q10,tsoil,cl(index),tr_c(index))
-  !        else
-  !           ! FOR THE 3 CARBON POOLS
-  !           cdec(index) = scarbon_decaiment(q10,tsoil,cs(index-2),tr_c(index))       
-  !        endif
-  !     enddo
-  !     cdec(5) = 0.0
-
-  !     ! partitioning material coming from vegetation
-  !     ! filling C (litter I-II; soil I) pools with incoming material
-  !     !LITTER I & II
-  !     cl_out(1) = (cl(1) - cdec(1)) + (frac1 * leaf_l) + (frac1 * root_l)
-  !     cl_out(2) = (cl(2) - cdec(2)) + (frac2 * leaf_l) + (frac2 * root_l)
-  !     cl_out(2) = cl_out(2) + (cwd * frac2)
-  !     !SOIL Ie
-  !     cs_out(1) = (cs(1) - cdec(3)) + (frac1 * cwd)
-  !     cs_out(2) = ((1 - clit_atm) * (cdec(1) + cdec(2))) + &
-  !          & ((1 - cwd_atm) * cdec(3)) - cdec(4)
-  !     cs_out(3) = 0.0 ! cs_out(3) is empty
-  !     ! print *, 'cl after partitioning->', cl
-  !     ! print *, 'cs after partitioning->', cs
-
-  !     ! Calculate the nutrint contents in each litterI-II/soilI pool
-  !     pl_nitrogen(1)   = (leaf_n2c * frac1)+(froot_n2c * frac1)  ! g(N)m-2 
-  !     pl_nitrogen(2)   = (leaf_n2c * frac2)+(froot_n2c * frac2)+(wood_n2c *frac2)
-  !     ps_nitrogen(1)   = wood_n2c * frac1
-  !     pl_phosphorus(1) = (leaf_p2c * frac1)+(froot_p2c * frac1)
-  !     pl_phosphorus(2) = (leaf_p2c * frac2)+(froot_p2c * frac2)+(wood_p2c*frac2)
-  !     ps_phosphorus(1) = wood_p2c * frac1
-  !     ! System Memory !WARNING! carbon aux is a global variable
-  !     ! I do not know why the hell i did it
-  !     ps_nitrogen(2) = caux(1)
-  !     ps_nitrogen(3) = 0.0
-  !     ps_phosphorus(2) = caux(3)
-  !     ps_phosphorus(3) = 0.0
-  !     ! print *, 'n in litter', pl_nitrogen
-  !     ! print *, 'p in litter', pl_phosphorus
-  !     ! print *, 'n in soil', ps_nitrogen
-  !     ! print *, 'p in soil', ps_phosphorus
-
-  !     !HRESP
-  !     het_resp(1) = clit_atm * cdec(1) 
-  !     het_resp(2) = clit_atm * cdec(2) 
-  !     het_resp(3) = cwd_atm * cdec(3)
-  !     het_resp(4) = cdec(4)
-  !     het_resp(5) = 0.0
-
-  !     ! Mineralized nutrients
-  !     do index=1,2
-  !        if(cl_out(index) .gt. 0.0) then
-  !           aux_ratio_n(index) = pl_nitrogen(index)/cl_out(index)   ! g(N)g(C)-1
-  !           aux_ratio_p(index) = pl_phosphorus(index)/cl_out(index) ! g(P)g(C)-1
-  !        else
-  !           aux_ratio_n(index) = 0.0
-  !           aux_ratio_p(index) = 0.0
-  !        endif
-  !     enddo
-
-  !     do index=3,4
-  !        if(cs_out(index-2) .gt. 0.0) then
-  !           aux_ratio_n(index) = ps_nitrogen(index-2)/cs_out(index-2)   ! g(N)g(C)-1
-  !           aux_ratio_p(index) = ps_phosphorus(index-2)/cs_out(index-2) ! g(P)g(C)-1
-  !        else
-  !           aux_ratio_n(index) = 0.0
-  !           aux_ratio_p(index) = 0.0
-  !        endif
-  !     enddo
-  !     aux_ratio_p(5) = 0.0
-
-  !     ! print *, 'ratiop',aux_ratio_p
-  !     ! print *, 'ration',aux_ratio_n
-
-  !     do index=1,4
-  !        nutri_min_n(index) = het_resp(index)*aux_ratio_n(index)   
-  !        nutri_min_p(index) = het_resp(index)*aux_ratio_p(index)
-  !     enddo
-  !     nutri_min_n(5) = 0.0
-  !     nutri_min_p(5) = 0.0
-
-  !     do index=1,2
-  !        pl_nitrogen(index) = pl_nitrogen(index) - nutri_min_n(index)
-  !        pl_phosphorus(index) = pl_phosphorus(index) - nutri_min_p(index)
-  !     enddo
-
-  !     do index=1,3
-  !        ps_nitrogen(index) = ps_nitrogen(index) - nutri_min_n(index + 2)   
-  !        ps_phosphorus(index) = ps_phosphorus(index) - nutri_min_p(index + 2)
-  !     enddo
-
-
-  !     ! calculate final state
-
-  !     ! SOIL II and III nutrient pools 
-  !     caux(1) =  ps_nitrogen(2) 
-  !     caux(2) =  0.0 
-  !     caux(3) =  ps_phosphorus(2) 
-  !     caux(4) =  0.0
-
-  !     if(l_run) then
-  !        continue
-  !        ! fill soil_dec_variables
-  !     endif
-
-  !     ! FEATURES TO BE IMPLEMENTED
-
-  !     ! P weathering +
-  !     ! P biochemical mineralization +
-  !     ! P release "de-sorption" +
-  !     ! P immobilization
-  !     ! P leaching -
-  !     ! P sorption I & II - 
-  !     ! P occlusion - 
-
-  !     ! N deposition +
-  !     ! N fixation +
-  !     ! N immobilization -
-  !     ! N leaching -
-  !     ! N degassing-volatilization -
-
-  !     nmin = nmin + (sum(nutri_min_n,&
-  !          &mask=.not. isnan(nutri_min_n)) * 1e-3) ! - kg m⁻²
-  !     plab = plab + (sum(nutri_min_p,&
-  !          &mask=.not. isnan(nutri_min_p)) * 1e-3) ! - kg m⁻²
-
-  !     hr = sum(het_resp)
-
-  !     ! print *, 'c AUX', carbon_aux
-  !     ! print *, 'n mineral', nutri_min_n
-  !     ! print *, 'p labila', nutri_min_p
-
-  !     ! print *, 'carbon3 _pools'
-  !     ! print *, 'plab ---.>',plab
-  !     ! print *, 'nmin ---.>',nmin
-  !     ! print *, 'hr ---.>',hr
-
-
-  !  end subroutine carbon3
-
-   !====================================================================
-   !====================================================================
 
    function tetens(t) result(es)
       ! returns Saturation Vapor Pressure (hPa), using Buck equation
@@ -1955,7 +1642,7 @@ contains
       DO P = 1,NPFT
          IF(ISNAN(CLEAF(P))) CLEAF(P) = 0.0
          IF(ISNAN(CFROOT(P))) CFROOT(P) = 0.0
-         IF(ISNAN(CAWOOD(P))) CAWOOD(P) = 0.0 
+         IF(ISNAN(CAWOOD(P))) CAWOOD(P) = 0.0
       ENDDO
 
 
@@ -1968,7 +1655,7 @@ contains
 
       !     GRID CELL OCCUPATION COEFFICIENTS
       IF(TOTAL_BIOMASS .GT. 0.0) THEN
-         DO P = 1,NPFT   
+         DO P = 1,NPFT
             OCP_COEFFS(P) = TOTAL_BIOMASS_PFT(P) / TOTAL_BIOMASS
             IF(OCP_COEFFS(P) .LT. 0.0) OCP_COEFFS(P) = 0.0
             !IF(ISNAN(OCP_COEFFS(P))) OCP_COEFFS(P) = 0.0
@@ -2062,7 +1749,7 @@ contains
    !       !     total_w_pft(p) = 0.0
    !       !  !    goto 795
    !       !  ! endif
-   !        ! Then Calculates 
+   !        ! Then Calculates
    !        total_biomass_pft(p) = cleaf(p) + cfroot(p) + cawood(p) ! only sapwood
    !        total_w_pft(p) = cawood(p)
 
@@ -2075,7 +1762,7 @@ contains
 
    !     !     grid cell occupation coefficients
    !     if(total_biomass .gt. 0.0) then
-   !        do p = 1,npft   
+   !        do p = 1,npft
    !           ocp_coeffs(p) = total_biomass_pft(p) / total_biomass
    !           if(ocp_coeffs(p) .lt. 0.0) ocp_coeffs(p) = 0.0
    !           if(isnan(ocp_coeffs(p))) ocp_coeffs(p) = 0.0
@@ -2106,12 +1793,12 @@ contains
    !        enddo
    !     endif
 
-   !   return 
+   !   return
    !   end subroutine pft_area_frac
 
 
    !====================================================================
-   ! ALGUMAS FUNÇÕES QUE SÃO UTEIS AS VEZES (QUASE NUNCA) 
+   ! ALGUMAS FUNÇÕES QUE SÃO UTEIS AS VEZES (QUASE NUNCA)
    !====================================================================
 
    subroutine pft_par(dt)
@@ -2125,14 +1812,14 @@ contains
 
       !     dt1 = g1       kPa ** (1/2)
       !     dt2 = vcmax    mol m-2 s-1
-      !     dt3 = tleaf    years 
+      !     dt3 = tleaf    years
       !     dt4 = twood    years
       !     dt5 = tfroot   years
       !     dt6 = aleaf    unitless
       !     dt7 = awood    unitless
       !     dt8 = aroot    unitless
       !     dt9 = is C4 [1 = yes, 0 = no]
-      !     dt10 = leaf N:C  
+      !     dt10 = leaf N:C
       !     dt11 = wood N:C
       !     dt12 = froot N:C
       !     dt13 = leaf P:C
@@ -2148,61 +1835,6 @@ contains
 
    !=================================================================
    !=================================================================
-
-   subroutine ascii2bin(file_in, file_out, nx1, ny1)
-      ! DEPRECATED
-      use types
-      !implicit none
-
-      character*100, intent(in) :: file_in, file_out
-      integer(i_4),intent(in) :: nx1, ny1
-
-      integer(i_4) :: i, j
-
-      real(r_4),allocatable,dimension(:,:) :: arr_in
-
-      allocate(arr_in(nx1,ny1))
-
-      open (unit=11,file=file_in,status='old',form='formatted',access='sequential',&
-           action='read')
-
-
-      open (unit=21,file=file_out,status='unknown',&
-           form='unformatted',access='direct',recl=nx1*ny1*r_4)
-
-
-      do j = 1, ny1 ! for each line do
-         read(11,*) (arr_in(i,j), i=1,nx1) ! read all elements in line j (implicitly looping)
-         !write(*,*) arr_in(:,j) 
-      end do
-
-      write(21,rec=1) arr_in   
-      close(11)
-      close(21)
-
-   end subroutine ascii2bin
-
-   !=================================================================
-   !=================================================================
-
-   function leap(year) result(is_leap)
-      ! Why this is here?
-      use types
-      !implicit none
-
-      integer(i_4),intent(in) :: year
-      logical(l_1) :: is_leap
-
-      logical(l_1) :: by4, by100, by400
-
-      by4 = (mod(year,4) .eq. 0)
-      by100 = (mod(year,100) .eq. 0)
-      by400 = (mod(year,400) .eq. 0)
-
-      is_leap = by4 .and. (by400 .or. (.not. by100))
-
-   end function leap
-
    !=================================================================
    !=================================================================
 
@@ -2210,24 +1842,24 @@ end module photo
 
 
 module water
-  
+
   ! this module defines functions related to surface water balance
   implicit none
   private
 
   ! functions defined here:
-  
+
   public ::              &
        soil_temp        ,&
        soil_temp_sub    ,&
        penman           ,&
        evpot2           ,&
        available_energy ,&
-       runoff          
+       runoff
 
-  
+
 contains
-  
+
   !=================================================================
   !=================================================================
 
@@ -2240,12 +1872,12 @@ contains
   use global_par
   !implicit none
   integer(i_4),parameter :: m = 1095
-  
+
   real(r_4),dimension(m), intent( in) :: temp ! future __ make temps an allocatable array
   real(r_4), intent(out) :: tsoil
-   
+
   ! internal vars
-  
+
   integer(i_4) :: n, k
   real(r_4) :: t0 = 0.0
   real(r_4) :: t1 = 0.0
@@ -2260,91 +1892,91 @@ contains
      t0 = t1
   enddo
   end subroutine soil_temp_sub
-  
+
   !=================================================================
   !=================================================================
-  
+
   function soil_temp(t0,temp) result(tsoil)
     use types
     use global_par, only: h, tau, diffu
     !implicit none
-    
+
     real(r_4),intent( in) :: temp
-    real(r_4),intent( in) :: t0 
+    real(r_4),intent( in) :: t0
     real(r_4) :: tsoil
- 
+
     real(r_4) :: t1 = 0.0
-    
+
     t1 = (t0*exp(-1.0/tau) + (1.0 - exp(-1.0/tau)))*temp
     tsoil = (t0 + t1)/2.0
   end function soil_temp
 
   !=================================================================
   !=================================================================
-  
+
   function penman (spre,temp,ur,rn,rc2) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
     use photo, only: tetens
     !implicit none
-    
-    
+
+
     real(r_4),intent(in) :: spre                 !Surface pressure (mbar)
     real(r_4),intent(in) :: temp                 !Temperature (°C)
     real(r_4),intent(in) :: ur                   !Relative humidity (0-1)
     real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
     real(r_4),intent(in) :: rc2                  !Canopy resistence (s/m)
-    
+
     real(r_4) :: evap                            !Evapotranspiration (mm/day)
     !     Parameters
     !     ----------
     real(r_4) :: ra, h5, t1, t2, es, es1, es2, delta_e, delta
     real(r_4) :: gama, gama2
-    
-    
+
+
     ra = rcmin
     h5 = 0.0275               !mb-1
-    
+
     !     Delta
     !     -----
     t1 = temp + 1.
     t2 = temp - 1.
     es1 = tetens(t1)       !Saturation partial pressure of water vapour at temperature T
     es2 = tetens(t2)
-    
+
     delta = (es1-es2)/(t1-t2) !mbar/oC
-    !     
+    !
     !     Delta_e
     !     -------
     es = tetens (temp)
     delta_e = es*(1. - ur)    !mbar
-    
+
     if ((delta_e.ge.(1./h5)-0.5).or.(rc2.ge.rcmax)) evap = 0.
     if ((delta_e.lt.(1./h5)-0.5).or.(rc2.lt.rcmax)) then
        !     Gama and gama2
        !     --------------
        gama  = spre*(1004.)/(2.45e6*0.622)
        gama2 = gama*(ra + rc2)/ra
-       
+
        !     Real evapotranspiration
-       !     -----------------------     
+       !     -----------------------
        evap = (delta* rn + (1.20*1004./ra)*delta_e)/(delta+gama2) !W/m2
        evap = evap*(86400./2.45e6) !mm/day
        evap = amax1(evap,0.)  !Eliminates condensation
     endif
   end function penman
-  
+
   !=================================================================
   !=================================================================
 
   function available_energy(temp) result(ae)
     use types, only: r_4
     !implicit none
-    
+
     real(r_4),intent(in) :: temp
     real(r_4) :: ae
-    
-    ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data  
+
+    ae = 2.895 * temp + 52.326 !from NCEP-NCAR Reanalysis data
   end function  available_energy
 
   !=================================================================
@@ -2353,18 +1985,18 @@ contains
   function runoff(wa) result(roff)
     use types, only: r_4
     !implicit none
-    
+
     real(r_4),intent(in) :: wa
     real(r_4):: roff
-    
+
     !  roff = 38.*((w/wmax)**11.) ! [Eq. 10]
-    roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data  
+    roff = 11.5*((wa)**6.6) !from NCEP-NCAR Reanalysis data
   end function  runoff
-  
+
   !=================================================================
   !=================================================================
-  
-  function evpot2 (spre,temp,ur,rn) result(evap) 
+
+  function evpot2 (spre,temp,ur,rn) result(evap)
     use types, only: r_4
     use global_par, only: rcmin, rcmax
     use photo, only: tetens
@@ -2383,24 +2015,24 @@ contains
 !c evap  = evapotranspiracao potencial sem estresse (mm/dia)
 
     !     Inputs
-    
+
     real(r_4),intent(in) :: spre                 !Surface pressure (mb)
     real(r_4),intent(in) :: temp                 !Temperature (oC)
     real(r_4),intent(in) :: ur                   !Relative humidity (0-1,dimensionless)
     real(r_4),intent(in) :: rn                   !Radiation balance (W/m2)
     !     Output
     !     ------
-    !     
+    !
     real(r_4) :: evap                 !Evapotranspiration (mm/day)
     !     Parameters
     !     ----------
     real(r_4) :: ra, t1, t2, es, es1, es2, delta_e, delta
     real(r_4) :: gama, gama2, rc
-    
+
     ra = rcmin            !s/m
-    
+
     !     Delta
-   
+
     t1 = temp + 1.
     t2 = temp - 1.
     es1 = tetens(t1)
@@ -2417,10 +2049,10 @@ contains
     !     --------------------
 
     rc = rcmin
-   
+
     !     Gama and gama2
     !     --------------
-     
+
     gama  = spre*(1004.)/(2.45e6*0.622)
     gama2 = gama*(ra + rc)/ra
 
@@ -2431,8 +2063,8 @@ contains
     evap = evap*(86400./2.45e6) !mm/day
     evap = amax1(evap,0.)     !Eliminates condensation
   end function evpot2
-  
+
   !=================================================================
   !=================================================================
-  
+
 end module water

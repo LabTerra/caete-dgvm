@@ -22,9 +22,10 @@ module soil_dec
    real(r_8),public :: available_p = 2.4299955d-4  ! kg m-2 Yang et al., 2013
 
 
-   ! Internal Variables storing POOLS INorganic Nutrients
-   real(r_4),private :: inorg_p
-   real(r_4),private :: inorg_n
+   ! Internal Variables storing POOLS (IN)organic Nutrients
+   real(r_4),public :: inorg_p = 0.0
+   real(r_4),public :: inorg_n = 0.0
+
 
    real(r_4),private,dimension(4) :: nmass_org = 0.0
    real(r_4),private,dimension(4) :: pmass_org = 0.0
@@ -32,17 +33,15 @@ module soil_dec
    real(r_4),private,dimension(4) :: soil_nr    ! Soil pools Nutrient Ratios (2N + 2P)
    real(r_4),private,dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
 
-   !Auxiliary variables
-   real(r_4),private :: aux1, aux2, aux3, aux4
-
-
-! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
+   ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
    public :: carbon3
-   public :: scarbon_decayment
+   public :: carbon_decay
    public :: water_effect
 
+   ! GETTERS AND SETTERS SECTION
    public :: get_inorgp, set_inorgp
    public :: get_inorgn, set_inorgn
+   public :: get_orgn, get_orgp
 
 
 contains
@@ -78,10 +77,28 @@ contains
       inorg_n = arg
 
    end subroutine set_inorgn
- ! GETTERS AND SETTERS FOR P AND N INORGANIC POOLS
+   ! GETTERS AND SETTERS FOR P AND N INORGANIC POOLS
+
+   ! Getters for organic Nutrients
+   function get_orgn () result(organic_nitrogen)
+
+      real(r_4) :: organic_nitrogen
+
+      organic_nitrogen = sum(nmass_org)
+
+   end function get_orgn
+
+   function get_orgp () result(organic_phosphorus)
+
+      real(r_4) :: organic_phosphorus
+
+      organic_phosphorus = sum(pmass_org)
+
+   end function get_orgp
+
 ! -------------------------------------------------------------
 
-   function scarbon_decayment(q10_in,tsoil,c,residence_time) result(decay)
+   function carbon_decay(q10_in,tsoil,c,residence_time) result(decay)
    !Based on carbon decay implemented in JeDi and JSBACH - Pavlick et al. 2012
       real(r_4),intent(in) :: q10_in           ! constant ~1.4
       real(r_4),intent(in) :: tsoil            ! Soil temperature °C
@@ -94,8 +111,8 @@ contains
          return
       endif
 
-      decay = (q10_in**((tsoil - 20.0) / 10.0)) * (c/residence_time)
-   end function scarbon_decayment
+      decay = (q10_in ** ((tsoil - 20.0) / 10.0)) * (c / residence_time)
+   end function carbon_decay
 
    function water_effect(theta) result(retval)
    ! Implement the Moyano function based on soil water content. Moyano et al. 2013
@@ -110,13 +127,13 @@ contains
 
    subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
                     &  cl_out, cs_out, snr, hr)
-      ! From Pavlick et al. 2012 - JeDi/ Raddatz et al. 2007 - JSBACH
 
        ! Fraction of C that is broken by soil microbial activity and goes
       ! to Atmosphere (A.K.A. Heterothrophic respiration )
-      real(r_4),parameter :: clit_atm = 0.80
-      real(r_4),parameter :: cwd_atm = 0.40
+      real(r_4),parameter :: clit_atm = 0.7
+      real(r_4),parameter :: cwd_atm = 0.22
 
+      ! POOLS OF LITTER AND SOIL
       integer(i_4),parameter :: pl=2,ps=2
       integer(i_4) :: index
 
@@ -164,6 +181,13 @@ contains
       real(r_4),dimension(pl+ps) :: aux_ratio_n, aux_ratio_p
       real(r_4),dimension(pl+ps) :: nutri_min_n, nutri_min_p
 
+      !Auxiliary variables
+      real(r_4) :: aux1, aux2, aux3, aux4
+
+      nutri_min_n = 0.0
+      nutri_min_p = 0.0
+      aux_ratio_n = 0.0
+      aux_ratio_p = 0.0
 
       ! Need to define partition of C, N & P among Soil Pools (A function based on Lignin content c(w)ould be great)
       frac1 = 0.8
@@ -173,10 +197,10 @@ contains
 
       ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
       ! Change it in future (Parametrize from literarure)
-      tr_c(1) = 10           ! litter I   (1)
-      tr_c(2) = 30.0        ! litter II  (2)
-      tr_c(3) = 300.0       ! soil   I   (3)
-      tr_c(4) = 700.0      ! soil   II  (4)
+      tr_c(1) = 2.0         ! litter I   (1)
+      tr_c(2) = 15.0        ! litter II  (2)
+      tr_c(3) = 150.0       ! soil   I   (3)
+      tr_c(4) = 3000.0      ! soil   II  (4)
 
       ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios
       ! (lnr) [MM⁻¹]
@@ -193,10 +217,10 @@ contains
       do index = 1,4
          if(index .lt. 3) then
             ! FOR THE 2 LITTER POOLS
-            cdec(index) = scarbon_decayment(q10,tsoil,cl(index),tr_c(index)) * water_modifier
+            cdec(index) = carbon_decay(q10,tsoil,cl(index),tr_c(index)) * water_modifier
          else
             ! FOR THE 3 CARBON POOLS
-            cdec(index) = scarbon_decayment(q10,tsoil,cs(index-2),tr_c(index)) * water_modifier
+            cdec(index) = carbon_decay(q10,tsoil,cs(index-2),tr_c(index)) * water_modifier
          endif
       enddo
 
@@ -261,12 +285,20 @@ contains
       ! NUTRIENT RATIOS in SOIL
       do index = 1,4
          if(index .lt. 3) then
-            aux_ratio_n(index) = nmass_org(index)/cl_out(index) ! g(N)g(C)-1
-            aux_ratio_p(index) = pmass_org(index)/cl_out(index) ! g(P)g(C)-1
+            aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1
+            aux_ratio_p(index) = pmass_org(index) / cl_out(index) ! g(P)g(C)-1
          else
-            aux_ratio_n(index) = nmass_org(index)/cs_out(index-2) ! g(N)g(C)-1
-            aux_ratio_p(index) = pmass_org(index)/cs_out(index-2) ! g(P)g(C)-1
-         end if
+            if (cs_out(index-2) .le. 0.0) then
+               aux_ratio_n(index) = 0.0
+            else
+               aux_ratio_n(index) = nmass_org(index) / cs_out(index-2) ! g(N)g(C)-1
+            endif
+            if (cs_out(index-2) .le. 0.0) then
+               aux_ratio_p(index) = 0.0
+            else
+                aux_ratio_p(index) = pmass_org(index) / cs_out(index-2) ! g(P)g(C)-1
+            endif
+         endif
       enddo
 
       ! **** To GLOBAL VARS
@@ -279,6 +311,11 @@ contains
       soil_nr(3) = aux_ratio_p(3)
       soil_nr(4) = aux_ratio_p(4)
 
+      ! OUTPUT SOIL NUTRIENT RATIOS
+      do index = 1,8
+         if (index .lt. 5) snr(index) = aux_ratio_n(index)
+         if (index .gt. 4) snr(index) = aux_ratio_p(index-4)
+      end do
 
       ! USE NUTRIENT RATIOS AND HET_RESP TO CALCULATE MINERALIZED NUTRIENTS
       do index=1,4
@@ -286,44 +323,36 @@ contains
          nutri_min_p(index) = het_resp(index)*aux_ratio_p(index)
       enddo
 
+      ! UPDATE INORGANIC POOLS
+      inorg_n = inorg_n + sum(nutri_min_n)
+      inorg_p = inorg_p + sum(nutri_min_p)
+
+
       ! UPDATE N and P in SOIL POOLS
       do index=1,4
          nmass_org(index) = nmass_org(index) - nutri_min_n(index)
          pmass_org(index) = pmass_org(index) - nutri_min_p(index)
       enddo
 
+      !OUTPUT  Heterotrophic respiration
       hr = sum(het_resp)
+
 
 
       ! FEATURES TO BE IMPLEMENTED
 
-      ! P weathering +
+
       ! P biochemical mineralization +
       ! P release "de-sorption" +
       ! P immobilization
-      ! P leaching -
-      ! P sorption I & II -
-      ! P occlusion -
 
-      ! N deposition +
-      ! N fixation +
+      ! N Bfixation +
       ! N immobilization -
-      ! N leaching -
-      ! N degassing-volatilization -
 
 !       mineral_n_glob = mineral_n_glob + (sum(nutri_min_n,&
 !            &mask=.not. isnan(nutri_min_n)) * 1e-3) ! - kg m⁻²
 !       labile_p_glob = labile_p_glob + (sum(nutri_min_p,&
 !            &mask=.not. isnan(nutri_min_p)) * 1e-3) ! - kg m⁻²
-
-      ! print *, 'c AUX', carbon_aux
-      ! print *, 'n mineral', nutri_min_n
-      ! print *, 'p labila', nutri_min_p
-
-      ! print *, 'carbon3 _pools'
-      ! print *, 'labile_p_glob ---.>',labile_p_glob
-      ! print *, 'mineral_n_glob ---.>',mineral_n_glob
-      ! print *, 'hr ---.>',hr
 
    end subroutine carbon3
 

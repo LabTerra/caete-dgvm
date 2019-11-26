@@ -1,6 +1,6 @@
 FC = gfortran
-FCFLAGS = -Wall -g
-FLFLAGS = -c -g
+FCFLAGS = -Wall -Wextra -g -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic -O3
+FLFLAGS = -c -g -Wall -Wextra -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic -O3
 
 sources = global.f90 utils.f90 soil_dec.f90 test_carbon3.f90
 

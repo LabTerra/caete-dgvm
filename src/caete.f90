@@ -38,6 +38,7 @@ contains
                         & p_glob => available_p    ,&
                         & n_glob => available_n    ,&
                         & carb3  => carbon3
+      use soil_dec
 
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
@@ -174,7 +175,7 @@ contains
 
       real(r_8) :: aux_var0_0x29a = nodata
       real(r_8) :: aux_var0_0x29b = nodata
-
+      real(r_4) :: aux1, aux2
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -366,7 +367,7 @@ contains
               &,litter_fr_com,lnr_com)
 
          ! SAVE DAILY VALUES
-         !82 columns---------------------------------------------------------------
+         !82 columns-------------------------------------------------------------
          grd = gridocpmes
          emaxm(k) = epmes
          ! SOIL WATER
@@ -574,7 +575,8 @@ contains
       !       call fill_no_data_4b(lnr(nindex,:), ndays)
       !    enddo
       ! endif
-
+      aux1 = get_inorgp()
+      aux2 = get_inorgn()
       ! IDENTIFYING PROCESS
       if (text_ts) then
          print *, ''
@@ -586,6 +588,9 @@ contains
          print *, soic, ' => soil_carbon'
          print *, p_glob, ' => labile_p_glob'
          print *, n_glob, ' => mineral_n_glob'
+         print *, aux1, '=> INorganic P'
+         print *, aux2, '=> INorganic N'
+         print *, soil_nr_out, '=> SNR'
       endif
 
 1972  format (i12, 18(f15.6),i12)
