@@ -33,13 +33,13 @@ module global_par
    real(r_4),parameter,public :: h = 1.0                         ! soil layer thickness (meters)
    real(r_4),parameter,public :: diffu = 1.036800e14             ! soil thermal diffusivity (m2/mes)
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
-   real(r_4),parameter,public :: rcmax = 2500.0                  ! ResistÊncia estomática máxima s/m 
+   real(r_4),parameter,public :: rcmax = 2500.0                  ! ResistÊncia estomática máxima s/m
    real(r_4),parameter,public :: rcmin = 100                     ! ResistÊncia estomática mínima s/m
    real(r_4),parameter,public :: cmin = 1e-4                     ! Minimum to survive kg m-2
    real(r_4),parameter,public :: ca = 363.0                      ! ppmv - atm[CO2]
    real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
-   real(r_4),parameter,public :: tsnow = -1.0          
-   real(r_4),parameter,public :: tice  = -2.5       
+   real(r_4),parameter,public :: tsnow = -1.0
+   real(r_4),parameter,public :: tice  = -2.5
    real(r_8),parameter,public :: csru = 0.5D0                    ! Root attribute
    real(r_8),parameter,public :: alfm = 1.391D0                  ! Root attribute
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
@@ -47,6 +47,7 @@ module global_par
    real(r_8),parameter,public :: rfrac_leaf = 0.55D0             ! Fraction of NUtriens resorbed at tissue death
    real(r_8),parameter,public :: rfrac_froot = 0.50D0
    real(r_8),parameter,public :: rfrac_wood = 0.45D0
+   real(r_4),parameter,public :: ks = 0.25                       !  P Sorption
    real(r_4),parameter,public :: nodata = -9999.0
    integer(i_4),parameter,public :: npls = 500                   ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: nt1 = 42369                  ! Number of days between 01/1901-12/1970(inclusive)

@@ -1,3 +1,6 @@
+
+import sys
+sys.path.insert(0, '../src/')
 from caete_module import global_par as gp
 from caete_module import soil_dec as funcs
 import csv
@@ -5,10 +8,6 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
-import sys
-
-sys.path.insert(0, '../src/')
 
 
 def zeroes(*args):
@@ -28,7 +27,7 @@ header = ['hr', 'cl1', 'cl2', 'cs1', 'cs2', 'cs3', 'snr1',
 with open('carbon3_test.csv', 'w') as fh:
     CSV_WRITER = csv.writer(fh, delimiter=',')
     CSV_WRITER.writerow(header)
-    for x in range(100000):
+    for x in range(250000):
         df = funcs.carbon3(22, 0.1, 2, 2, 2, lnr, cl, cs)
         line = [df[-1],
                 df[0][0],

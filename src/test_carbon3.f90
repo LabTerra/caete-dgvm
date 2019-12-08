@@ -95,13 +95,13 @@ program test_carbon3
    subroutine test_c3()
 
       integer(i_4) :: index, j
-      real(r_4) :: soilt=23.0, water_s=0.8, ll=0.4, lf=0.4, lw=0.4
-      real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.001/)
+      real(r_4) :: soilt=23.0, water_s=0.8, ll=0.0000001, lf=0.0000001, lw=0.0000001
+      real(r_4), dimension(6) :: lnr = (/0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.00001/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0
       real(r_4) :: hr
 
-      do index = 1,10000000
+      do index = 1,1000000
          call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, cl_out, cs_out, snr, hr)
          do j = 1,2
             cs(j) = cs_out(j)

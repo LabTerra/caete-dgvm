@@ -1,4 +1,4 @@
-! Copyright 2017- LabTerra 
+! Copyright 2017- LabTerra
 
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com> 
+! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
 
 
 module productivity
@@ -35,8 +35,8 @@ contains
     use water
 
 !Input
-!-----     
-    real(r_4),dimension(ntraits),intent(in) :: dt ! PLS data 
+!-----
+    real(r_4),dimension(ntraits),intent(in) :: dt ! PLS data
     real(r_4), intent(in) :: temp                 !Mean monthly temperature (oC)
     real(r_4), intent(in) :: p0                   !Mean surface pressure (hPa)
     real(r_4), intent(in) :: w                    !Soil moisture kg m-2
@@ -55,13 +55,13 @@ contains
     real(r_4), intent(out) :: rc                   !Stomatal resistence (not scaled to canopy!) (s/m)
     real(r_4), intent(out) :: laia                 !Autotrophic respiration (kgC/m2/yr)
     real(r_4), intent(out) :: ar                   !Leaf area index (m2 leaf/m2 area)
-    real(r_4), intent(out) :: nppa                 !Net primary productivity (kgC/m2/yr) 
-    real(r_4), intent(out) :: vpd            
-    real(r_4), intent(out) :: f5                   !Water stress response modifier (unitless) 
+    real(r_4), intent(out) :: nppa                 !Net primary productivity (kgC/m2/yr)
+    real(r_4), intent(out) :: vpd
+    real(r_4), intent(out) :: f5                   !Water stress response modifier (unitless)
     real(r_4), intent(out) :: rm                   !autothrophic respiration (kgC/m2/day)
-    real(r_4), intent(out) :: rg 
+    real(r_4), intent(out) :: rg
     real(r_4), intent(out) :: wue
-    real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1) 
+    real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1)
     real(r_8), intent(out) :: sla          !specific leaf area (m2/kg)
     real(r_8), intent(out) :: vm_out
     real(r_8), dimension(3), intent(out) :: sto2
@@ -85,7 +85,7 @@ contains
 
 !getting pls parameters
 
-    if(((cl1_prod .lt. cmin) .and. (cf1_prod .lt. cmin))) then !  
+    if(((cl1_prod .lt. cmin) .and. (cf1_prod .lt. cmin))) then !
 ! Then PLS 'Die'
        no_cell = .true.
        goto 999
@@ -96,7 +96,7 @@ contains
     awood = dt(7)
     c4  = dt(9)
     n2cl = dt(10)
-    n2cl_resp = n2cl    
+    n2cl_resp = n2cl
     n2cw_resp = dt(11)
     n2cf_resp = dt(12)
     p2cl = dt(13)
@@ -110,15 +110,15 @@ contains
 
     n2cl = real(n2cl * (cl1_prod * 1e3), r_4) ! N in leaf g m-2
     p2cl = real(p2cl * (cl1_prod * 1e3), r_4) ! P in leaf g m-2
-    c4_int = nint(c4) 
+    c4_int = nint(c4)
 
-    if(debug) then    
+    if(debug) then
        write(1234,*) '-----Message from productivity-----------------'
        write(1234,*) '-----------------------------------------------'
     endif
 
 !     ==============
-!     Photosynthesis 
+!     Photosynthesis
 !     ==============
 ! rate (molCO2/m2/s)
 ! subroutine photosynthesis_rate(temp,p0,ipar,ll,c3,nbio,pbio,&
@@ -130,11 +130,11 @@ contains
          & p2cl,tleaf,sto1,f1a,vm_out,sto2)
 
 
-    if(debug) then 
+    if(debug) then
        write(1234,*) 'f1a -->',f1a
        if(f1a < 0.0) then
           print *, 'f1a less than 0 aborting'
-          call abort
+          call abort()
        endif
     endif
 
@@ -142,6 +142,7 @@ contains
        write(1234,*)
     endif
 
+! TODO - insert variables units in coments
 ! VPD
 !========
     vpd = vapor_p_defcit(temp,rh)
@@ -211,8 +212,8 @@ contains
          &,n2cl_resp,n2cw_resp,n2cf_resp,awood)
 
 ! c     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
-! c     2003; Levis et al. 2004)         
-    rg = g_resp(beta_leaf,beta_awood, beta_froot,awood) 
+! c     2003; Levis et al. 2004)
+    rg = g_resp(beta_leaf,beta_awood, beta_froot,awood)
 
     if (rg.lt.0) then
        rg = 0.0
@@ -220,7 +221,7 @@ contains
 
 !     c Autotrophic (plant) respiration -ar- (kgC/m2/yr)
 !     Respiration minimum and maximum temperature
-!     -------------------------------------------     
+!     -------------------------------------------
     if ((temp.ge.-10.0).and.(temp.le.50.0)) then
        ar = rm + rg
     else
@@ -234,7 +235,7 @@ contains
 ! If ar is bigger than ph, what is the source or respired C?
 
     if(ar .gt. ph) then
-       c_defcit = ((ar - ph) * 2.73791) ! tranform kg m-2 year-1 in  g m-2
+       c_defcit = ((ar - ph) * 2.73791) ! tranform kg m-2 year-1 in  g m-2 day-1
        nppa = 0.0
        if(c_defcit .gt. real(sto2(1),r_4))then
           c_defcit =  c_defcit - real(sto2(1),r_4)
@@ -244,7 +245,7 @@ contains
           sto2(1) = sto2(1) - c_defcit
        endif
     else
-       c_defcit = 0.0 
+       c_defcit = 0.0
     endif
 
     no_cell = .false.
@@ -265,18 +266,18 @@ contains
 
 999 continue
     if(no_cell) then
-       ph = 0.0                   
-       rc = 0.0                   
-       laia = 0.0                 
-       ar = 0.0                   
-       nppa = 0.0                  
-       vpd = 0.0            
-       f5 = 0.0                   
-       rm = 0.0             
+       ph = 0.0
+       rc = 0.0
+       laia = 0.0
+       ar = 0.0
+       nppa = 0.0
+       vpd = 0.0
+       f5 = 0.0
+       rm = 0.0
        rg = 0.0
        wue = 0.0
        c_defcit = 0.0
-       sla = 0.0          
+       sla = 0.0
        vm_out = 0.0
        sto2 = 0.0
     endif
@@ -284,4 +285,3 @@ contains
   end subroutine prod
 
 end module productivity
-

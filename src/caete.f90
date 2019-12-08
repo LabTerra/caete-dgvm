@@ -308,7 +308,7 @@ contains
          endif
 
          ! if(k .eq. 1) then
-         !    c_litter(:,k)  =litc
+         !    c_litter(:,k)  = litc
          !    c_soil(:,k)    = soic
          ! ! else
          ! !    c_litter(:,k) = c_litter(:,k-1)
@@ -497,7 +497,7 @@ contains
                  & ,c_litter(2,k)&
                  & ,c_soil(1,k)&
                  & ,c_soil(2,k)&
-                 & ,c_soil(3,k)&
+                 & ,c_soil(2,k)&
                  & ,wsoil_comm(k)&
                  & ,photo_comm(k)&
                  & ,aresp_comm(k)&

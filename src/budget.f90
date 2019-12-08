@@ -1,4 +1,4 @@
-! Copyright 2017- LabTerra 
+! Copyright 2017- LabTerra
 
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -13,7 +13,7 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com> 
+! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
 !             João Paulo Darela Filho <darelafilho ( at ) gmail.com>
 
 
@@ -57,7 +57,7 @@ contains
     real(r_4),intent(in) :: rh                   ! Relative humidity
     real(r_8),intent(in) :: mineral_n
     real(r_8),intent(in) :: labile_p
-! State variables INPUTS & OUTPUTS 
+! State variables INPUTS & OUTPUTS
 !NEW inout only for test pourposes. these are inputs
 ! real(r_8),intent(in) :: mineral_n   ! Mineral pools (SOIL) kg(Nutrient) m-2
 ! real(r_8),intent(in) :: labile_p
@@ -68,7 +68,7 @@ contains
     real(r_8),dimension(npls),intent(inout) :: ca1_pft  !                 cawood
     real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
     real(r_8),dimension(npls),intent(inout) :: droot
-    real(r_8),dimension(npls),intent(inout) :: dwood 
+    real(r_8),dimension(npls),intent(inout) :: dwood
 
 
 !     ----------------------------OUTPUTS------------------------------
@@ -87,10 +87,10 @@ contains
     real(r_8),intent(out),dimension(npls) :: f5avg          !Daily canopy resistence s/m
     real(r_8),intent(out),dimension(npls) :: rmavg,rgavg    !maintenance/growth respiration (Kg m-2 day-1)
     real(r_8),intent(out),dimension(npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
-    real(r_8),intent(out),dimension(npls) :: cawoodavg_pft  ! 
+    real(r_8),intent(out),dimension(npls) :: cawoodavg_pft  !
     real(r_8),intent(out),dimension(npls) :: cfrootavg_pft  !
     real(r_8),intent(out),dimension(npls) :: ocpavg         ! [0-1]
-    real(r_8),intent(out),dimension(npls) :: wueavg         ! 
+    real(r_8),intent(out),dimension(npls) :: wueavg         !
     real(r_8),intent(out),dimension(npls) :: cueavg         ! [0-1]
     real(r_8),intent(out),dimension(npls) :: c_defavg       ! kg(C) m-2
     real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
@@ -124,8 +124,8 @@ contains
     real(r_4),dimension(npls) :: w                    !Daily soil moisture storage (mm)
     real(r_4),dimension(npls) :: g                    !Daily soil ice storage (mm)
     real(r_4),dimension(npls) :: s                    !Daily overland snow storage (mm)
-    real(r_4),dimension(npls) :: ds  
-    real(r_4),dimension(npls) :: dw  
+    real(r_4),dimension(npls) :: ds
+    real(r_4),dimension(npls) :: dw
     real(r_4),dimension(npls) :: roff                 !Total runoff
     real(r_4),dimension(npls) :: evap                !Actual evapotranspiration (mm/day)
 
@@ -142,7 +142,7 @@ contains
     real(r_4),dimension(npls) ::  rm             ! maintenance & growth a.resp
     real(r_4),dimension(npls) ::  rg
     real(r_4),dimension(npls) ::  wue, cue, c_def
-    real(r_8),dimension(npls) ::  cl1,cf1,ca1 ! carbon pre-allocation 
+    real(r_8),dimension(npls) ::  cl1,cf1,ca1 ! carbon pre-allocation
     real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
     real(r_8),dimension(3,npls) :: day_storage   ! g m-2
 
@@ -150,7 +150,7 @@ contains
 
 
 !     Precipitation
-!     =============     
+!     =============
     psnow = 0.0
     prain = 0.0
     if (temp.lt.tsnow) then
@@ -162,7 +162,7 @@ contains
 !     Initialization
 !     --------------
     epavg   = 0.0
-    w       = w1     ! hidrological pools state vars  
+    w       = w1     ! hidrological pools state vars
     g       = g1
     s       = s1
     smavg   = 0.0    !  plss vectors (outputs)
@@ -177,11 +177,11 @@ contains
     rgavg   = 0.0
     ocpavg  = 0.0
     wueavg  = 0.0
-    cueavg  = 0.0 
+    cueavg  = 0.0
     ocp_mm  = 0.0
     emax  = 0.0
 
-    cl1 = cl1_pft ! daily initial carbonVEG pools 
+    cl1 = cl1_pft ! daily initial carbonVEG pools
     ca1 = ca1_pft
     cf1 = cf1_pft
 
@@ -194,7 +194,7 @@ contains
     vpd   = 0.0
     rc2   = 0.0
     rm    = 0.0
-    rg    = 0.0 
+    rg    = 0.0
     wue   = 0.0
     cue   = 0.0
     rc2   = 0.0
@@ -202,7 +202,7 @@ contains
     f5    = 0.0
 
 !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
-!     =================================================================     
+!     =================================================================
     call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, ocp_wood) ! def in funcs.f90
 
 
@@ -210,7 +210,7 @@ contains
        write(1234,*) '-----Message from budget-----------------------'
        write(1234,*) '-----------------------------------------------'
        write(1234,*) 'cl1        cf1         ca1'
-       write(1234,*) cl1, cf1, ca1 
+       write(1234,*) cl1, cf1, ca1
        write(1234,*) '-------ocp_coeffs------------------------------'
        write(1234,*) ocp_coeffs
        write(1234,*) ocp_wood
@@ -230,7 +230,7 @@ contains
 
        dt1 = dt(:,p) ! Pick up the pls functional attributes list
 
-       end_pls = .false. 
+       end_pls = .false.
 
 ! subroutine prod(dt,light_limit,temp,p0,w,ipar,rh,emax,cl1_prod,&
 !      & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,sto1,ph,ar,&
@@ -250,9 +250,9 @@ contains
        endif
 !!
 
-       ! TODO 
+       ! TODO
 
-       ! the root potential to extract nutrients from soil is 
+       ! the root potential to extract nutrients from soil is
        ! calculated here
 
        ! f(fine_root_mass, fine_root_residence_time)
@@ -272,7 +272,7 @@ contains
           write(1234,*) 'dt1', dt1
           write(1234,*) 'nppa(p)', nppa(p)
           write(1234,*) 'mineral_n', mineral_n
-          write(1234,*) 'labile_p', labile_p 
+          write(1234,*) 'labile_p', labile_p
           write(1234,*) 'cl1(p)', cl1(p)
           write(1234,*) 'cf1(p)', cf1(p)
           write(1234,*) 'ca1(p)', ca1(p)
@@ -307,7 +307,7 @@ contains
 
        !!!!====================================================
 !     Snow budget
-!     ===========     
+!     ===========
        smelt(p) = 2.63 + 2.55*temp + 0.0912*temp*prain !Snowmelt (mm/day)
        smelt(p) = amax1(smelt(p),0.)
        smelt(p) = amin1(smelt(p),s(p)+psnow)
@@ -370,7 +370,7 @@ contains
        rgavg(p) = rg(p) !* ocp_coeffs(p)
 
 ! Vcmax and SLA ! These are CWM: Dependent on (respectively) Foliar N and P; tau_leaf (resid. time)
-!  vcmax(p) = vcmax(p) !* ocp_coeffs(p) 
+!  vcmax(p) = vcmax(p) !* ocp_coeffs(p)
 !  specific_la(p) = specific_la(p) !* ocp_coeffs(p)
 
 !  !Rapid Storage Pool
@@ -407,9 +407,9 @@ contains
           endif
        else
           if(dt1(7) .gt. 0.0) then
-             cl1_pft(p) = cl2(p) 
-             ca1_pft(p) = ca2(p) 
-             cf1_pft(p) = cf2(p) 
+             cl1_pft(p) = cl2(p)
+             ca1_pft(p) = ca2(p)
+             cf1_pft(p) = cf2(p)
           else
              cl1_pft(p) = cl2(p)
              ca1_pft(p) = 0.0
@@ -427,7 +427,7 @@ contains
 !     continue
 !  endif
 ! :,p
-! 
+!
 666    continue
        if(no_cell) then
 ! All*** outputs are set to zero except epavg
@@ -450,7 +450,7 @@ contains
           specific_la(p) = 0.0
           sto_budg(:,p) =  0.0
           nupt(p) = 0.0
-          pupt(p) = 0.0 
+          pupt(p) = 0.0
           litter_l(p) = 0.0
           cwd(p) = 0.0
           litter_fr(p) = 0.0
@@ -471,7 +471,7 @@ contains
 
 ! call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)
 ! ocpavg = (ocp_coeffs + ocp_coeffs2) / 2.0
-    if(debug) then      
+    if(debug) then
        write(1234,*) '-----END Message from budget-------------------'
        write(1234,*) '------------------------------------------------'
     endif

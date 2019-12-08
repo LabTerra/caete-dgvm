@@ -10,21 +10,29 @@ module soil_dec
    implicit none
    private
 
-   ! ## STATE VARIABLES TODO
+
+   ! CONSTANTS FOR CARBON DECAY
+   ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
+   real(r_4), dimension(4) :: tr_c = (/2.0, 15.0, 150.0, 3000.0/) !litter I (1) litter II (2) soilI (3) soil II (4)
+!=========================================================================
+
+   ! ## STATE VARIABLES
    ! TODO create getter and setter functions for these variables
    real(r_4),public,dimension(2) :: litter_carbon = 0.0 ! Litter carbon pools
    real(r_4),public,dimension(2) :: soil_carbon = 0.0   ! soil carbon pools
-
+!=========================================================================
 !
    ! These are global variables that are initialized in caete_init.
    ! New inputs -- Estimated from literature for Manaus Region
-   real(r_8),public :: available_n = 3.775999d-4 ! kg m-2 Xu et al. 2013 ?
-   real(r_8),public :: available_p = 2.4299955d-4  ! kg m-2 Yang et al., 2013
+   ! For SPINUP only
+   real(r_8),public :: available_n = 3.775999e-4 ! kg m-2 Xu et al. 2013 ?
+   real(r_8),public :: available_p = 2.4299955e-4  ! kg m-2 Yang et al., 2013
 
 
    ! Internal Variables storing POOLS (IN)organic Nutrients
-   real(r_4),public :: inorg_p = 0.0
-   real(r_4),public :: inorg_n = 0.0
+   real(r_4),private :: inorg_p = 0.0            ! Pool of N biomineralized (gm⁻²)
+   real(r_4),private :: inorg_n = 0.0            ! Pool of P biomineralized
+   real(r_4),private :: sorbed_p = 0.0           ! Sorbed P - Secondary Mineral P
 
 
    real(r_4),private,dimension(4) :: nmass_org = 0.0
@@ -34,9 +42,11 @@ module soil_dec
    real(r_4),private,dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
 
    ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
-   public :: carbon3
-   public :: carbon_decay
-   public :: water_effect
+   public :: carbon3         ! Subroutine that calculates the C:N:P decay dynamics
+   public :: carbon_decay    ! Carbon decay function in response to Temperarute
+   public :: water_effect    ! Soil water content effect on C decay
+   public :: sorbed_p_equil  ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
+   public :: bnf             ! Biological Nitrogen Fixation
 
    ! GETTERS AND SETTERS SECTION
    public :: get_inorgp, set_inorgp
@@ -80,7 +90,7 @@ contains
    ! GETTERS AND SETTERS FOR P AND N INORGANIC POOLS
 
    ! Getters for organic Nutrients
-   function get_orgn () result(organic_nitrogen)
+   function get_orgn() result(organic_nitrogen)
 
       real(r_4) :: organic_nitrogen
 
@@ -88,7 +98,7 @@ contains
 
    end function get_orgn
 
-   function get_orgp () result(organic_phosphorus)
+   function get_orgp() result(organic_phosphorus)
 
       real(r_4) :: organic_phosphorus
 
@@ -114,22 +124,44 @@ contains
       decay = (q10_in ** ((tsoil - 20.0) / 10.0)) * (c / residence_time)
    end function carbon_decay
 
+
    function water_effect(theta) result(retval)
-   ! Implement the Moyano function based on soil water content. Moyano et al. 2013
-   ! Based on the implementation of Sierra et al. 2012 (SoilR)
+      ! Implement the Moyano function based on soil water content. Moyano et al. 2012;2013
+      ! Based on the implementation of Sierra et al. 2012 (SoilR)
+      ! This fucntion is ideal and was parametrized for low carbon soils
+
       real(r_4),intent(in) :: theta  ! Volumetric soil water content (cm³ cm⁻³)
       real(r_4),parameter :: k_a = 3.11, k_b = 2.42
       real(r_4) :: retval
 
       retval= (k_a * theta) - (k_b * theta**2)
+
    end function water_effect
+
+
+   function sorbed_p_equil(arg) result(retval)
+
+      real(r_4), intent(in) :: arg
+      real(r_4) :: retval
+
+      retval = arg * ks
+   end function sorbed_p_equil
+
+
+   function bnf(c_amount) result(n_amount)
+
+      real(r_4), intent(in) :: c_amount
+      real(r_4) :: n_amount
+
+      n_amount = c_amount * (1.0/29.0)
+
+   end function bnf
 
 
    subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
                     &  cl_out, cs_out, snr, hr)
+      ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
-       ! Fraction of C that is broken by soil microbial activity and goes
-      ! to Atmosphere (A.K.A. Heterothrophic respiration )
       real(r_4),parameter :: clit_atm = 0.7
       real(r_4),parameter :: cwd_atm = 0.22
 
@@ -145,23 +177,22 @@ contains
       real(r_4),intent(in) :: leaf_l                 ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),intent(in) :: cwd                    ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),intent(in) :: root_l                 ! Mass of C comming from living pools g(C)m⁻²
-      real(r_4),dimension(6),intent(in) :: lnr       !g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
+      real(r_4),dimension(6),intent(in) :: lnr       ! g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
 
-      real(r_4),dimension(pl),intent(in) :: cl       !Litter carbon (gC/m2) State Variable -> The size of the carbon pools
-      real(r_4),dimension(ps),intent(in) :: cs       !Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+      real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
+      real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
 
       !     Outputs
       !     -------
       real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
-      real(r_4),dimension(ps),intent(out) :: cs_out  !         State Variable -> The size of the carbon pools
-      real(r_4),dimension(8), intent(out) :: snr ! Soil pools Nutrient to C ratios
-      real(r_4),intent(out) :: hr                    !Heterotrophic (microbial) respiration (gC/m2/day)
+      real(r_4),dimension(ps),intent(out) :: cs_out  ! State Variable -> The size of the carbon pools
+      real(r_4),dimension(8), intent(out) :: snr     ! Soil pools Nutrient to C ratios
+      real(r_4),intent(out) :: hr                    ! Heterotrophic (microbial) respiration (gC/m2/day)
 
 
       !TODO ! Insert output: Total mineralized N and P
       !INTERNAL VARIABLES
-      real(r_4),dimension(pl+ps) :: tr_c
-      real(r_4),dimension(pl) :: pl_nitrogen = 0.0   ! Nitrogênio da serapilheira
+      real(r_4),dimension(pl) :: pl_nitrogen = 0.0   ! Nitrogênio da serapilheira -
       real(r_4),dimension(pl) :: pl_phosphorus = 0.0 ! FORFI do serapilheira
       real(r_4),dimension(ps) :: ps_nitrogen = 0.0   ! & so forth
       real(r_4),dimension(ps) :: ps_phosphorus = 0.0
@@ -189,18 +220,11 @@ contains
       aux_ratio_n = 0.0
       aux_ratio_p = 0.0
 
-      ! Need to define partition of C, N & P among Soil Pools (A function based on Lignin content c(w)ould be great)
       frac1 = 0.8
       frac2 = 1.0 - frac1
 
+      ! Soil Nutrient Ratios: Set to 0.0
       snr = 0.0
-
-      ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
-      ! Change it in future (Parametrize from literarure)
-      tr_c(1) = 2.0         ! litter I   (1)
-      tr_c(2) = 15.0        ! litter II  (2)
-      tr_c(3) = 150.0       ! soil   I   (3)
-      tr_c(4) = 3000.0      ! soil   II  (4)
 
       ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios
       ! (lnr) [MM⁻¹]
@@ -224,8 +248,8 @@ contains
          endif
       enddo
 
-      ! partitioning material coming from vegetation
-      ! filling C (litter I-II; soil I) pools with incoming material
+      ! C:N:P CYCLING
+
       !LITTER I
       aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon
       aux2 = cdec(1) * clit_atm                                              ! Carbon lost to ATM
@@ -327,6 +351,10 @@ contains
       inorg_n = inorg_n + sum(nutri_min_n)
       inorg_p = inorg_p + sum(nutri_min_p)
 
+      ! INLCUDE SORPTION DYNAMICS
+      sorbed_p = sorbed_p_equil(inorg_p)
+      available_p = real((inorg_p - sorbed_p) * 0.001, kind=r_8)
+      ! INCLUDE BIOLOGICAL NITROGEN FIXATION
 
       ! UPDATE N and P in SOIL POOLS
       do index=1,4
@@ -338,21 +366,10 @@ contains
       hr = sum(het_resp)
 
 
-
       ! FEATURES TO BE IMPLEMENTED
-
 
       ! P biochemical mineralization +
       ! P release "de-sorption" +
-      ! P immobilization
-
-      ! N Bfixation +
-      ! N immobilization -
-
-!       mineral_n_glob = mineral_n_glob + (sum(nutri_min_n,&
-!            &mask=.not. isnan(nutri_min_n)) * 1e-3) ! - kg m⁻²
-!       labile_p_glob = labile_p_glob + (sum(nutri_min_p,&
-!            &mask=.not. isnan(nutri_min_p)) * 1e-3) ! - kg m⁻²
 
    end subroutine carbon3
 
