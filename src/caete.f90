@@ -457,6 +457,8 @@ contains
          nitro_min(k) = real(n_glob,r_4) ! - (nupt(k) * 1e-3)
          phop_lab(k) = real(p_glob,r_4) ! - (pupt(k) * 1e-3)
 
+         ! UPDATE UPTAKE VARIABLES
+
 
         ! UPDATE MINERAL POOLS
         !  n_glob = real(nitro_min(k),r_8)
