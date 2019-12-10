@@ -2,24 +2,32 @@ program test_carbon3
    use types
    use utils
    use global_par
+   use photo
    use soil_dec
 
    implicit none
 
-   print *, "Testing carbon decayment funtion"
-   call test_scarbon_t()
+   ! print *, "Testing carbon decayment funtion"
+   ! call test_scarbon_t()
+
+   ! print *,
+   ! print *,
+   ! print *, "Testing water influence funtion"
+   ! call test_water_function()
+
+
+   ! print *,
+   ! print *,
+   ! print *, "Testing/debugging CARBON3"
+
+   ! call test_c3()
 
    print *,
    print *,
-   print *, "Testing water influence funtion"
-   call test_water_function()
+   print *, "Testing/debugging Allocation"
 
+   call test_alloc()
 
-   print *,
-   print *,
-   print *, "Testing/debugging CARBON3"
-
-   call test_c3()
 
    contains
 
@@ -99,10 +107,13 @@ program test_carbon3
       real(r_4), dimension(6) :: lnr = (/0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.00001/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0
-      real(r_4) :: hr
+      real(r_4) :: hr, nupt, pupt
+
+      pupt = 0.05
+      nupt = 0.02
 
       do index = 1,1000000
-         call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, cl_out, cs_out, snr, hr)
+         call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
          do j = 1,2
             cs(j) = cs_out(j)
             cl(j) = cl_out(j)
@@ -116,6 +127,50 @@ program test_carbon3
 
    end subroutine test_c3
 
+   subroutine test_alloc()
 
+      ! INPUTS
+      real(r_4),dimension(ntraits) :: dt = (/12.799142793925565, 0.0,4.532783508300781,44.61568069458008,&
+                                           &  6.493612289428711, 0.5559999999999985,0.21599999999999978,&
+                                           &  0.22799999999999973, 0.0, 0.05658099806223465,0.0749577527005275,&
+                                           &  0.02557946262317787, 0.007156888889925779,0.007339313026394539,&
+                                           &  0.00636147002287577/)  ! PLS attributes
+      real(r_4) :: npp = 0.5  ! npp (KgC/m2/yr) from assimilation process
+      real(r_8) :: scl1 = 0.5d0 ! previous day carbon content on leaf compartment (KgC/m2)
+      real(r_8) :: sca1 = 7.0d0 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
+      real(r_8) :: scf1 = 0.5d0! previous day carbon content on fine roots compartment (KgC/m2)
+      real(r_8) :: nmin = 0.00002d0 ! N in mineral N pool(kg m-2)
+      real(r_8) :: plab  = 0.00001d0 ! P in labile pool (kg m-2)
+      real(r_8),dimension(3) :: storage = (/0.0d0, 0.0d0, 0.0d0/)! Three element array- storage pool([C,N,P]) g m-2
+
+      ! OUTPUTS
+      real(r_8),dimension(3) :: storage_out
+      real(r_8) :: scl2 ! final carbon content on leaf compartment (KgC/m2)
+      real(r_8) :: sca2 ! final carbon content on aboveground woody biomass compartment (KgC/m2)
+      real(r_8) :: scf2 ! final carbon content on fine roots compartment (KgC/m2)
+      real(r_8) :: cwd  ! coarse wood debris (to litter)(C) g m-2
+      real(r_8) :: root_litter ! to litter g(C) m-2
+      real(r_8) :: leaf_litter ! to litter g(C) m-2
+      real(r_8) :: nuptk ! N plant uptake g(N) m-2
+      real(r_8) :: puptk ! P plant uptake g(P) m-2
+      real(r_8),dimension(6) :: litter_nutrient_ratios ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
+      logical(l_1) :: end_pls_day ! ABORT MISSION SIGN
+
+      integer(l_1) :: index
+
+
+      do index = 1,10
+
+         call allocation(dt, npp, nmin,plab,scl1,sca1,scf1,storage,&
+         &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
+         &nuptk,puptk,litter_nutrient_ratios,end_pls_day)
+
+         scl1 = scl2
+         sca1 = sca2
+         scf1 = scf2
+         storage = storage_out
+      end do
+
+   end subroutine test_alloc
 
 end program test_carbon3

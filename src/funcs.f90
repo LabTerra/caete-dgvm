@@ -751,6 +751,7 @@ contains
 ! In the last part nutrient resorption is calculated. Resorbed nutrients go to the storage pool.
 ! Potential NPP for each compartment
 
+      ! Partitioning NPP for CVEG pools
       npp_leaf = aleaf * npp_pot
       npp_froot = afroot * npp_pot
       npp_awood = aawood * npp_pot
@@ -781,12 +782,6 @@ contains
          nuptk = nscl + nsca + nscf ! g(N) m-2
          puptk = pscl + psca + pscf ! g(P) m-2
          no_limit = .true.
-         ! ! ----------------------------
-         !  print *, '   '
-         !  print *, nout, ' nout  '
-         !  print *, pout, ' pout  '
-         !  print *, ' goint to 100   '
-         ! !-----------------------------
          goto 294 ! GOTO deallocation process or ...
       endif
 
@@ -795,20 +790,15 @@ contains
       ! nout/pout is the quantity of N/P that cannot be allocated
 
       ! N limitation --------------------------------------------------------------
+      !
       if(n_limited) then     ! If nout is negative
-         aux1 = nuptk * aleaf     ! g(N) m-2 - Nitrogen limitation is weighted by
-         aux2 = nuptk * aawood    ! allocation coefficients. These numbers must be < 0
-         aux3 = nuptk * afroot
-
+         ! Calculate the amount of N that is not available to Alllocation
+         aux1 = abs(nuptk) * aleaf     ! g(N) m-2 - Nitrogen amount
+         aux2 = abs(nuptk) * aawood
+         aux3 = abs(nuptk) * afroot
          if (aux1 .eq. -0.0000000) aux1 = 0.0
          if (aux2 .eq. -0.0000000) aux2 = 0.0
          if (aux3 .eq. -0.0000000) aux3 = 0.0
-         ! ----------------------------
-         !  print *, '   '
-         !  print *, aux1, ' nout leaf  '
-         !  print *, aux2, ' nout awood '
-         !  print *, aux3, ' nout froot '
-         ! ! -----------------------------
       else
          aux1 = 0.0
          aux2 = 0.0
@@ -816,42 +806,10 @@ contains
          goto 66
       endif
 
-      ! need to know the carbon amount that cannot be allocated given my N limitation
-      ! auxi need to be zero or a negative number.
-      ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
-      ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
-
-      if(leaf_n2c .gt. 0.0) then
-         aux1 = aux1 * leaf_n2c**(-1)  ! g(C) m-2 in leaves that cannot be allocated
-      else
-         aux1 = 0.0
-      endif
-
-      if(awood_n2c .gt. 0.0) then
-         aux2 = aux2 * awood_n2c**(-1) ! g(C) m-2 in awood that cannot be allocated
-      else
-         aux2 = 0.0
-      endif
-
-      if(froot_n2c .gt. 0.0) then
-         aux3 = aux3 * froot_n2c**(-1) ! g(C) m-2 in froots that cannot be allocated
-      else
-         aux3 = 0.0
-      endif
-
-      ! ! ----------------------------
-      ! print *, '   '
-      ! print *, aux1, ' nalloc leaf  '
-      ! print *, aux2, ' nalloc awood '
-      ! print *, aux3, ' nalloc froot '
-      ! print *, '   '
-      ! ! -----------------------------
+      ! CALCULATE THE AMOUNT OF C THAT GOES TO STORAGE (Assimilated but not allocated)
+      aux1 = aux1 * leaf_n2c**(-1)  ! g(C) m-2 in leaves that cannot be allocated
+      aux2 = aux2 * awood_n2c**(-1) ! g(C) m-2 in awood that cannot be allocated
+      aux3 = aux3 * froot_n2c**(-1) ! g(C) m-2 in froots that cannot be allocated
 
       ! Check if it's nan
       if(isnan(aux1)) aux1 = 0.0
@@ -864,9 +822,9 @@ contains
 
 66    continue
       ! Calculating real npp
-      npp_leafn = npp_leaf + aux1
-      npp_awoodn = npp_awood + aux2
-      npp_frootn = npp_froot + aux3
+      npp_leafn = npp_leaf - aux1
+      npp_awoodn = npp_awood - aux2
+      npp_frootn = npp_froot - aux3
 
       if(isnan(npp_leafn)) npp_leafn = 0.0
       if(isnan(npp_awoodn)) npp_awoodn = 0.0
@@ -875,14 +833,6 @@ contains
       if(npp_leafn .eq. npp_leafn - 1) npp_leafn = 0.0
       if(npp_awoodn .eq. npp_awoodn - 1) npp_awoodn = 0.0
       if(npp_frootn .eq. npp_frootn - 1) npp_frootn = 0.0
-
-      ! ! ----------------------------
-      ! print *, '   '
-      ! print *, npp_leafn, ' npp_leaf  '
-      ! print *, npp_awoodn, ' npp_awood '
-      ! print *, npp_frootn, ' npp_froot '
-      ! print *, '   '
-      ! ! -----------------------------
 
       total_n = npp_leafn + npp_awoodn + npp_frootn
 
@@ -895,9 +845,6 @@ contains
 
       noutn = nmin * 1e-3
 
-      ! print *, poutn, 'poutn'
-      ! print *, noutn, 'noutn'
-
       ! END N limitation ------------------------------------------------------------
 
       ! P limitation ----------------------------------------------------------------
@@ -906,19 +853,12 @@ contains
       ! auxi need to be zero or a negative number.
 
       if(p_limited) then
-         aux1 = puptk * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
-         aux2 = puptk * aawood          ! allocation coefficients
-         aux3 = puptk * afroot
-
+         aux1 = abs(puptk) * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
+         aux2 = abs(puptk) * aawood          ! allocation coefficients
+         aux3 = abs(puptk) * afroot
          if (aux1 .eq. -0.0000000) aux1 = 0.0
          if (aux2 .eq. -0.0000000) aux2 = 0.0
          if (aux3 .eq. -0.0000000) aux3 = 0.0
-         ! ! ----------------------------
-         ! !  print *, '   '
-         !  print *, aux1, ' pout leaf  '
-         !  print *, aux2, ' pout awood '
-         !  print *, aux3, ' pout froot '
-         ! ! -----------------------------
       else
          aux1 = 0.0
          aux2 = 0.0
@@ -936,35 +876,9 @@ contains
       if(aux3 .eq. aux3 - 1) aux3 = 0.0
 
       ! I need to know the carbon amount that cannot be allocated given my P limitation
-      if(leaf_p2c .gt. 0.0) then
-         aux1 = aux1 * leaf_p2c**(-1)  ! g(C) m-2 in leaves that cannot be allocated
-      else
-         aux1 = 0.0
-      endif
-
-      if(awood_p2c .gt. 0.0) then
-         aux2 = aux2 * awood_p2c**(-1) ! g(C) m-2 in awood that cannot be allocated
-      else
-         aux2 = 0.0
-      endif
-
-      if(froot_p2c .gt. 0.0) then
-         aux3 = aux3 * froot_p2c**(-1) ! g(C) m-2 in froots that cannot be allocated
-      else
-         aux3 = 0.0
-      endif
-
-      ! aux1 = aux1 * leaf_p2c**(-1)  ! g(C) m-2 in leaf that cannot be allocated
-      ! aux2 = aux2 * awood_p2c**(-1) ! g(C) m-2 in awood
-      ! aux3 = aux3 * froot_p2c**(-1) ! g(C) m-2 in froots
-
-      ! ! ----------------------------
-      ! print *, '   '
-      ! print *, aux1, ' palloc leaf  '
-      ! print *, aux2, ' palloc awood '
-      ! print *, aux3, ' palloc froot '
-      ! print *, '   '
-      ! ! -----------------------------
+      aux1 = aux1 * leaf_p2c**(-1)  ! g(C) m-2 in leaves that cannot be allocated
+      aux2 = aux2 * awood_p2c**(-1) ! g(C) m-2 in awood that cannot be allocated
+      aux3 = aux3 * froot_p2c**(-1) ! g(C) m-2 in froots that cannot be allocated
 
       ! Check if it's nan
       if(isnan(aux1)) aux1 = 0.0
@@ -976,9 +890,9 @@ contains
       if(aux3 .eq. aux3 - 1) aux3 = 0.0
 99    continue
       ! real NPP
-      npp_leafp = npp_leaf + aux1
-      npp_awoodp = npp_awood + aux2
-      npp_frootp = npp_froot + aux3
+      npp_leafp = npp_leaf - aux1
+      npp_awoodp = npp_awood - aux2
+      npp_frootp = npp_froot - aux3
 
       if(isnan(npp_leafp)) npp_leafp = 0.0
       if(isnan(npp_awoodp)) npp_awoodp = 0.0

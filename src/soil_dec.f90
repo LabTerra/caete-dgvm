@@ -30,15 +30,15 @@ module soil_dec
 
 
    ! Internal Variables storing POOLS (IN)organic Nutrients
-   real(r_4),private :: inorg_p = 0.0            ! Pool of N biomineralized (gm⁻²)
-   real(r_4),private :: inorg_n = 0.0            ! Pool of P biomineralized
-   real(r_4),private :: sorbed_p = 0.0           ! Sorbed P - Secondary Mineral P
+   real(r_4),public :: inorg_p = 0.0            ! Pool of N biomineralized (gm⁻²)
+   real(r_4),public :: inorg_n = 0.0            ! Pool of P biomineralized
+   real(r_4),public :: sorbed_p = 0.0           ! Sorbed P - Secondary Mineral P
    ! Available pools
    real(r_4),private :: avail_p = 0.0            ! Avilable P
    real(r_4),private :: avail_n = 0.0            ! Avilable N
    ! Nutrients  Uptake
-   real(r_4),private :: p_uptk = 0.0             ! P uptake in Day N
-   real(r_4),private :: n_uptk = 0.0             ! N utake in Day N
+   real(r_4),public :: p_uptk = 0.0             ! P uptake in Day N
+   real(r_4),public :: n_uptk = 0.0             ! N utake in Day N
 
    real(r_4),private,dimension(4) :: nmass_org = 0.0
    real(r_4),private,dimension(4) :: pmass_org = 0.0
@@ -69,13 +69,12 @@ contains
 
       if(nut .eq. 1) then
          retval = p_uptk
-         return
       else if (nut .eq. 2) then
          retval = n_uptk
-         return
       else
          call abort()
       endif
+      return
    end function get_uptake
 
    subroutine set_uptake(nut, val)
@@ -198,7 +197,7 @@ contains
 
 
    subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
-                    &  cl_out, cs_out, snr, hr)
+                    &  nupt, pupt, cl_out, cs_out, snr, hr)
       ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
       real(r_4),parameter :: clit_atm = 0.7
@@ -220,7 +219,7 @@ contains
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
-
+      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake
       !     Outputs
       !     -------
       real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
@@ -391,13 +390,13 @@ contains
       inorg_p = inorg_p + sum(nutri_min_p)
 
       ! Update available N pool
-      available_n = real((inorg_n - n_uptk) * 0.001, kind=r_8) ! Global Variable
-      avail_n = inorg_n - n_uptk
+      available_n = real((inorg_n - nupt) * 0.001, kind=r_8) ! Global Variable
+      avail_n = inorg_n - nupt
 
       ! INLCUDE SORPTION DYNAMICS
       sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = real((inorg_p - sorbed_p - p_uptk) * 0.001, kind=r_8) ! Transform in 8 bytes real
-      avail_p = inorg_p - sorbed_p - p_uptk
+      available_p = real((inorg_p - sorbed_p - pupt) * 0.001, kind=r_8) ! Transform in 8 bytes real
+      avail_p = inorg_p - sorbed_p - pupt
       ! INCLUDE BIOLOGICAL NITROGEN FIXATION
 
       ! UPDATE N and P in SOIL POOLS

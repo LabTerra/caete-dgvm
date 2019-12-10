@@ -284,6 +284,8 @@ contains
             &,cf2(p),litter_l(p),cwd(p)&
             &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
 
+       !print *, nupt, "NUPT"
+       !print *, Pupt, "PUPT"
        sto_budg(:,p) = day_storage(:,p)
 
 ! Se o PFT nao tem carbono goto 666-> TUDO ZERO

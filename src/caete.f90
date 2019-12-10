@@ -33,13 +33,14 @@ contains
       use types
       use utils, only: gpid   => process_id
       use global_par
+      use soil_dec, only: get_uptake, set_uptake
+      use soil_dec, only: get_inorgn, get_inorgp
       use soil_dec, only: litc   => litter_carbon  ,&
                         & soic   => soil_carbon    ,&
                         & p_glob => available_p    ,&
                         & n_glob => available_n    ,&
                         & carb3  => carbon3
-      use soil_dec
-
+      ! TODO correct soil_dec imports
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
 
@@ -440,15 +441,10 @@ contains
 
          ! UPDATE Soil Pools
 
-         ! if(run == 0) then
-         !    call carbon2(td,f51(k),evapm_comm(k),lai_comm(k),&
-         !                & litc, soic)
-         ! endif
-
-
+         if(mod(k, 25000) .eq. 0) print *, "NUTRIENTS: ", nupt, pupt
 
          call carb3(td, (t1ww / wmax),litter_l(k),cwd(k),litter_fr(k),lnr(:,k)&
-              &, litc,soic,c_litter(:,k),c_soil(:,k)&
+              &, litc,soic,nupt(k), pupt(k),c_litter(:,k),c_soil(:,k)&
               &,soil_nr_out, het_resp(k))
 
          litc = c_litter(:,k)
@@ -457,8 +453,10 @@ contains
          nitro_min(k) = real(n_glob,r_4) ! - (nupt(k) * 1e-3)
          phop_lab(k) = real(p_glob,r_4) ! - (pupt(k) * 1e-3)
 
-         ! UPDATE UPTAKE VARIABLES
-
+         if(k .gt.300) then
+            call set_uptake(1,pupt(k))
+            call set_uptake(2,nupt(k))
+         endif
 
         ! UPDATE MINERAL POOLS
         !  n_glob = real(nitro_min(k),r_8)
@@ -593,6 +591,8 @@ contains
          print *, aux1, '=> INorganic P'
          print *, aux2, '=> INorganic N'
          print *, soil_nr_out, '=> SNR'
+         print *, get_uptake(1), '=>P uptake'
+         print *, get_uptake(2), '=>N uptake'
       endif
 
 1972  format (i12, 18(f15.6),i12)
