@@ -135,7 +135,7 @@ program test_carbon3
                                            &  0.22799999999999973, 0.0, 0.05658099806223465,0.0749577527005275,&
                                            &  0.02557946262317787, 0.007156888889925779,0.007339313026394539,&
                                            &  0.00636147002287577/)  ! PLS attributes
-      real(r_4) :: npp = 0.5  ! npp (KgC/m2/yr) from assimilation process
+      real(r_4) :: npp = 0.1  ! npp (KgC/m2/yr) from assimilation process
       real(r_8) :: scl1 = 0.5d0 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8) :: sca1 = 7.0d0 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8) :: scf1 = 0.5d0! previous day carbon content on fine roots compartment (KgC/m2)
@@ -159,7 +159,7 @@ program test_carbon3
       integer(l_1) :: index
 
 
-      do index = 1,10
+      do index = 1,100
 
          call allocation(dt, npp, nmin,plab,scl1,sca1,scf1,storage,&
          &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
@@ -169,6 +169,11 @@ program test_carbon3
          sca1 = sca2
          scf1 = scf2
          storage = storage_out
+
+         print *, scl1, sca1, scf1, "-> C pools"
+         print *, storage, "      -> Storage"
+         print *, puptk, "        -> PUPTK"
+         print *, nuptk, "        -> NUPTK"
       end do
 
    end subroutine test_alloc

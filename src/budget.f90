@@ -249,9 +249,9 @@ contains
           write(1234,*) 'dt1 --------->',dt1
        endif
 !!
-
-       ! TODO
-
+       ! TODO INTRODUCE PTase activity here
+       ! TODO INTRODUCE ROOT UPTAKE HERE
+       ! SPM - Symbiotic P Mineralization
        ! the root potential to extract nutrients from soil is
        ! calculated here
 
