@@ -4,6 +4,8 @@ program test_carbon3
    use global_par
    use photo
    use soil_dec
+   use productivity
+   use budget
 
    implicit none
 
@@ -20,15 +22,19 @@ program test_carbon3
    ! print *,
    ! print *, "Testing/debugging CARBON3"
 
-   ! call test_c3()
+   !  call test_c3()
+
+   ! print *,
+   ! print *,
+   ! print *, "Testing/debugging Allocation"
+
+   ! call test_alloc()
+
 
    print *,
    print *,
-   print *, "Testing/debugging Allocation"
-
-   call test_alloc()
-
-
+   print *, "Testing/debugging /Budget/Prod/Allocation"
+   call test_dbudget
    contains
 
    ! subroutine template(arg1,  arg2)
@@ -127,6 +133,7 @@ program test_carbon3
 
    end subroutine test_c3
 
+
    subroutine test_alloc()
 
       ! INPUTS
@@ -159,7 +166,7 @@ program test_carbon3
       integer(l_1) :: index
 
 
-      do index = 1,100
+      do index = 1,10
 
          call allocation(dt, npp, nmin,plab,scl1,sca1,scf1,storage,&
          &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
@@ -177,5 +184,87 @@ program test_carbon3
       end do
 
    end subroutine test_alloc
+
+
+   subroutine test_dbudget()
+      ! ins
+      real(r_4),dimension(ntraits,npls) :: dt
+      real(r_4),dimension(npls):: w1   !Initial (previous month last day) soil moisture storage (mm)
+      real(r_4),dimension(npls) :: g1   !Initial soil ice storage (mm)
+      real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
+      real(r_4) :: ts = 23.0                  ! Soil temperature (oC)
+      real(r_4) :: temp = 23.0                 ! Surface air temperature (oC)
+      real(r_4) :: prec = 2.0                 ! Precipitation (mm/day)
+      real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
+      real(r_4) :: ipar = 200.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_4) :: rh = 0.7                   ! Relative humidity
+      real(r_8) :: mineral_n =  0.000010D0
+      real(r_8) :: labile_p = 0.0000010D0
+      ! inouts
+      real(r_8),dimension(3,npls) :: sto_budg ! Rapid Storage Pool (C,N,P)
+      real(r_8),dimension(npls) :: cl1_pft  ! initial BIOMASS cleaf compartment
+      real(r_8),dimension(npls) :: cf1_pft  !                 froot
+      real(r_8),dimension(npls) :: ca1_pft  !                 cawood
+      real(r_8),dimension(npls) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      real(r_8),dimension(npls) :: droot
+      real(r_8),dimension(npls) :: dwood
+
+      !outs
+      real(r_4)  :: epavg                          !Maximum evapotranspiration (mm/day)
+      real(r_4), dimension(npls) :: w2             !Final (last day) soil moisture storage (mm)
+      real(r_4), dimension(npls) :: g2             !Final soil ice storage (mm)
+      real(r_4), dimension(npls) :: s2             !Final overland snow storage (mm)
+      real(r_8), dimension(npls) :: smavg          !Snowmelt Daily average (mm/day)
+      real(r_8), dimension(npls) :: ruavg          !Runoff Daily average (mm/day)
+      real(r_8), dimension(npls) :: evavg          !Actual evapotranspiration Daily average (mm/day)
+      real(r_8), dimension(npls) :: phavg          !Daily photosynthesis (Kg m-2 day-1)
+      real(r_8), dimension(npls) :: aravg          !Daily autotrophic respiration (Kg m-2 day-1)
+      real(r_8), dimension(npls) :: nppavg         !Daily NPP (average between PFTs)(Kg m-2 day-1)
+      real(r_8), dimension(npls) :: laiavg         !Daily leaf area Index m2m-2
+      real(r_8), dimension(npls) :: rcavg          !Daily canopy resistence s/m
+      real(r_8), dimension(npls) :: f5avg          !Daily canopy resistence s/m
+      real(r_8), dimension(npls) :: rmavg,rgavg    !maintenance/growth respiration (Kg m-2 day-1)
+      real(r_8), dimension(npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
+      real(r_8), dimension(npls) :: cawoodavg_pft  !
+      real(r_8), dimension(npls) :: cfrootavg_pft  !
+      real(r_8), dimension(npls) :: ocpavg         ! [0-1]
+      real(r_8), dimension(npls) :: wueavg         !
+      real(r_8), dimension(npls) :: cueavg         ! [0-1]
+      real(r_8), dimension(npls) :: c_defavg       ! kg(C) m-2
+      real(r_8), dimension(npls) :: vcmax          ! µmol m-2 s-1
+      real(r_8), dimension(npls) :: specific_la    ! m2 g(C)-1
+      real(r_8), dimension(npls) :: nupt           ! g m-2
+      real(r_8), dimension(npls) :: pupt           ! g m-2
+      real(r_8), dimension(npls) :: litter_l       ! g m-2
+      real(r_8), dimension(npls) :: cwd            ! g m-2
+      real(r_8), dimension(npls) :: litter_fr      ! g m-2
+  ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
+      real(r_8), dimension(6,npls) :: lnr         ! g(N) g(C)-1
+
+      integer(i_4) :: index
+      open(45,file='pls_ex.txt',status='old',&
+         &form='formatted',access='sequential')
+
+12 format(15(f15.6))
+      read(45,12) dt
+      print *, dt(:,1)
+
+      w1 = 0.01
+      g1 = 0.0
+      s1 = 0.0
+
+      do index = 1,2
+         call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
+         &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+         &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
+         &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&
+         &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
+         &, cfrootavg_pft, ocpavg, wueavg&
+         &, cueavg, c_defavg, vcmax, specific_la&
+         &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
+      enddo
+
+
+   end subroutine test_dbudget
 
 end program test_carbon3

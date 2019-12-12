@@ -16,7 +16,7 @@ Copyright 2017-2018 LabTerra
 
 """
 
-## This module contains the procedures to create the set of PLant life strategies for CAETÊ runs 
+# This module contains the procedures to create the set of PLant life strategies for CAETÊ runs
 
 import os
 from math import ceil
@@ -33,12 +33,13 @@ def vec_ranging(values, new_min, new_max):
     """ Ranges the vector (1D) values(np.array) to min max
         - Normalize values
     """
-    
+
     output = []
     old_min, old_max = min(values), max(values)
 
     for v in values:
-        new_v = (new_max - new_min) / (old_max - old_min) * (v - old_min) + new_min
+        new_v = (new_max - new_min) / (old_max -
+                                       old_min) * (v - old_min) + new_min
         output.append(new_v)
 
     return np.array(output, dtype=np.float32)
@@ -46,8 +47,8 @@ def vec_ranging(values, new_min, new_max):
 
 def check_viability(trait_values, wood):
     """ Check the viability of allocation(a) & residence time(ŧ) combinations.
-        Some PLS combinations of allocation coefficients and residence times 
-        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹) 
+        Some PLS combinations of allocation coefficients and residence times
+        are not 'biomass acumulators' at low npp (< 0.01 kg m⁻² year⁻¹)
         do not have enough mass of carbon (< 0.01 kg m⁻²) in all CVEG compartments
 
         trait_values: np.array(shape=(6,), dtype=f32) allocation and residence time combination (possible PLS)
@@ -82,17 +83,17 @@ def turnover_combinations(verbose=False):
     # constrained distributions (must sum up to 1.)
 
     if os.path.exists(grassy_allocations_file):
-    
+
         plsa_grass = np.load(grassy_allocations_file)
-    
+
     else:
-    
+
         aleafg = np.arange(15., 86.0, 0.2000)
         arootg = np.arange(15., 86.0, 0.2000)
-        
-        plsa_grass = [[a / 100.0, 0.0, c / 100.0] for a in aleafg \
+
+        plsa_grass = [[a / 100.0, 0.0, c / 100.0] for a in aleafg
                       for c in arootg if abs((a + c) - 100.0) < 0.00001]
-        
+
         np.save(grassy_allocations_file, plsa_grass)
 
     if os.path.exists(woody_allocations_file):
@@ -105,12 +106,13 @@ def turnover_combinations(verbose=False):
         arootw = np.arange(15., 86.0, 0.2000)
         awood = np.arange(15., 86.0, 0.2000)
 
-        plsa_wood = [[a / 100.0, b / 100.0, c / 100.0] for a in aleafw for b in awood \
+        plsa_wood = [[a / 100.0, b / 100.0, c / 100.0] for a in aleafw for b in awood
                      for c in arootw if abs((a + b + c) - 100.) < 0.00001]
         np.save(woody_allocations_file, plsa_wood)
 
     if verbose:
-        print('Number of combinations = %d'%(len(plsa_grass) + len(plsa_wood)))
+        print('Number of combinations = %d' %
+              (len(plsa_grass) + len(plsa_wood)))
 
     return np.array(plsa_wood), np.array(plsa_grass)
 
@@ -120,7 +122,7 @@ def table_gen(NPLS):
 
     diffg, diffw = assertion_data_size(NPLS)
     plsa_wood, plsa_grass = turnover_combinations(True)
-    
+
     alloc_w = []
     alloc_g = []
     r_ceil = 30000
@@ -135,7 +137,7 @@ def table_gen(NPLS):
         restime[0] = rtime[np.random.randint(0, r_ceil)]
         restime[1] = 0.0
         restime[2] = rtime[np.random.randint(0, r_ceil)]
-        
+
         data_to_test0 = np.concatenate((restime, allocatio), axis=0,)
         if check_viability(data_to_test0, False):
             alloc_g.append(data_to_test0)
@@ -163,14 +165,14 @@ def table_gen(NPLS):
     # # # Random samples from  distributions (g1, tleaf ...)
     # # # Random variables
     g1 = np.random.uniform(1.0, 15.0, NPLS)
-    #g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
+    # g1 = vec_ranging(np.random.beta(1.2, 2, NPLS), 1.0, 15.0) # dimensionles
     # # vcmax = np.random.uniform(3e-5, 100e-5,N) # molCO2 m-2 s-1
     vcmax = np.zeros(NPLS,)
 
     # # C4 STYLE
     c4 = np.zeros((NPLS,), dtype=np.float32)
     n123 = ceil(alloc_g.shape[0] * 0.70)
-    c4[0:n123-1] = 1.0
+    c4[0:n123 - 1] = 1.0
 
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
@@ -207,6 +209,6 @@ def table_gen(NPLS):
         # writer.writerows(pls_table)
 
     out_arr = np.asfortranarray(pls_table, dtype=np.float32)
-    # np.savetxt('pls.txt', out_arr, fmt='%.12f')
+    np.savetxt('pls_ex.txt', out_arr.T, fmt='%.12f')
 
     return out_arr

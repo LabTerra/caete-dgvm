@@ -34,11 +34,11 @@ module soil_dec
    real(r_4),public :: inorg_n = 0.0            ! Pool of P biomineralized
    real(r_4),public :: sorbed_p = 0.0           ! Sorbed P - Secondary Mineral P
    ! Available pools
-   real(r_4),private :: avail_p = 0.0            ! Avilable P
-   real(r_4),private :: avail_n = 0.0            ! Avilable N
+!   real(r_4),private :: avail_p = 0.0            ! Avilable P
+!   real(r_4),private :: avail_n = 0.0            ! Avilable N
    ! Nutrients  Uptake
-   real(r_4),public :: p_uptk = 0.0             ! P uptake in Day N
-   real(r_4),public :: n_uptk = 0.0             ! N utake in Day N
+   real(r_4),private :: p_uptk = 0.0             ! P uptake in Day N
+   real(r_4),private :: n_uptk = 0.0             ! N utake in Day N
 
    real(r_4),private,dimension(4) :: nmass_org = 0.0
    real(r_4),private,dimension(4) :: pmass_org = 0.0
@@ -72,7 +72,8 @@ contains
       else if (nut .eq. 2) then
          retval = n_uptk
       else
-         call abort()
+         retval = 0.0
+         call abort
       endif
       return
    end function get_uptake
@@ -84,12 +85,10 @@ contains
 
       if(nut .eq. 1) then
          p_uptk = val
-         return
       else if (nut .eq. 2) then
          n_uptk = val
-         return
       else
-         call abort()
+         call abort
       endif
    end subroutine set_uptake
 
@@ -390,13 +389,13 @@ contains
       inorg_p = inorg_p + sum(nutri_min_p)
 
       ! Update available N pool
-      available_n = real((inorg_n - nupt) * 0.001, kind=r_8) ! Global Variable
-      avail_n = inorg_n - nupt
+      available_n = real(inorg_n * 0.001, kind=r_8) ! Global Variable
+      !avail_n = inorg_n - nupt
 
       ! INLCUDE SORPTION DYNAMICS
       sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = real((inorg_p - sorbed_p - pupt) * 0.001, kind=r_8) ! Transform in 8 bytes real
-      avail_p = inorg_p - sorbed_p - pupt
+      available_p = real((inorg_p - sorbed_p) * 0.001, kind=r_8) ! Transform in 8 bytes real
+      !avail_p = inorg_p - sorbed_p - pupt
       ! INCLUDE BIOLOGICAL NITROGEN FIXATION
 
       ! UPDATE N and P in SOIL POOLS

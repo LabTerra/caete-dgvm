@@ -441,7 +441,12 @@ contains
 
          ! UPDATE Soil Pools
 
-         if(mod(k, 25000) .eq. 0) print *, "NUTRIENTS: ", nupt, pupt
+
+      !1if(mod(k, 25000) .eq. 0) print *, "NUTRIENTS: ", nupt, pupt
+
+!          subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
+!             &  nupt, pupt, cl_out, cs_out, snr, hr)
+! ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
          call carb3(td, (t1ww / wmax),litter_l(k),cwd(k),litter_fr(k),lnr(:,k)&
               &, litc,soic,nupt(k), pupt(k),c_litter(:,k),c_soil(:,k)&
@@ -450,17 +455,17 @@ contains
          litc = c_litter(:,k)
          soic = c_soil(:,k)
 
-         nitro_min(k) = real(n_glob,r_4) ! - (nupt(k) * 1e-3)
-         phop_lab(k) = real(p_glob,r_4) ! - (pupt(k) * 1e-3)
+         nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
+         phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
 
-         if(k .gt.300) then
-            call set_uptake(1,pupt(k))
-            call set_uptake(2,nupt(k))
-         endif
+         ! if(k .gt.30000) then
+         !    call set_uptake(1,pupt(k))
+         !    call set_uptake(2,nupt(k))
+         ! endif
 
         ! UPDATE MINERAL POOLS
-        !  n_glob = real(nitro_min(k),r_8)
-        !  p_glob = real(phop_lab(k), r_8)
+         n_glob = real(nitro_min(k),r_8)
+         p_glob = real(phop_lab(k), r_8)
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
@@ -497,7 +502,6 @@ contains
                  & ,c_litter(2,k)&
                  & ,c_soil(1,k)&
                  & ,c_soil(2,k)&
-                 & ,c_soil(2,k)&
                  & ,wsoil_comm(k)&
                  & ,photo_comm(k)&
                  & ,aresp_comm(k)&
@@ -510,6 +514,8 @@ contains
                  & ,rcm_comm(k)&
                  & ,ls
          endif
+
+1972  format (i12, 17(f15.6),i12)
 
          if (debug) then
             if(k .eq. 200) then
@@ -594,8 +600,6 @@ contains
          print *, get_uptake(1), '=>P uptake'
          print *, get_uptake(2), '=>N uptake'
       endif
-
-1972  format (i12, 18(f15.6),i12)
 
    contains
          subroutine fill_no_data_4b(arr, nd)

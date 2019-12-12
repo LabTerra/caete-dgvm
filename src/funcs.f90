@@ -949,9 +949,9 @@ contains
       ! END P limitation-------------------------------------------------------------
 
       ! NPP = min(NPP_N, NPP_P) i.e min(p_npp_pot, n_npp_pot)
-      ! If npp is P limited
+      ! If ALLOCATION is P limited
       if(p_npp_pot .lt. n_npp_pot) then
-         print*, "P LIMTED"
+         !print*, "P LIMTED"
          npp_leaf = npp_leafp   ! g(C) m-2 day-1
          npp_awood = npp_awoodp ! g(C) m-2 day-1
          npp_froot = npp_frootp ! g(C) m-2 day-1
@@ -964,9 +964,9 @@ contains
          endif
          storage_out(1) = carbon_to_storage_p ! g(C) m-2
          no_limit = .false.
-         ! Else npp is N limited
+         ! Else ALLOCATION is N limited
       else if(n_npp_pot .lt. p_npp_pot) then
-         print*, "N LIMTED"
+         !print*, "N LIMTED"
          npp_leaf = npp_leafn   ! g(C) m-2 day-1
          npp_awood = npp_awoodn ! g(C) m-2 day-1
          npp_froot = npp_frootn ! g(C) m-2 day-1
@@ -981,7 +981,7 @@ contains
          no_limit = .false.
       else
          ! check for colimitation
-         print*, "COLIMTED"
+         !print*, "COLIMTED"
          !if(abs(p_npp_pot - n_npp_pot) .lt. 0.00000001) then
             npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
             npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
@@ -1058,6 +1058,7 @@ contains
       ! if(aux2 .eq. aux2 - 1) aux2 = 0.0
       ! if(aux3 .eq. aux3 - 1) aux3 = 0.0
 
+      ! N resorbed goes to storage pool
       storage_out(2) = aux1 + aux2 + aux3         ! g(N) m-2
 
       aux1 =  (leaf_litter * leaf_n2c) - aux1    !nitrogen in litter

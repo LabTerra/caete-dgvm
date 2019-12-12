@@ -9,7 +9,6 @@
 /src/*.npy
 /src/*.png
 /src/*.csv
-/src/*.txt
 /src/*.1234
 /src/*.sh
 /input/*

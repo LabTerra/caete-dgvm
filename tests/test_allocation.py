@@ -23,18 +23,18 @@ def print_alloc(trait):
     # real(kind=r_8),intent(out) :: pout ! P plant uptake g(P) m-2
     # real(kind=r_8),dimension(6),intent(out) :: litter_nutrient_ratios
 
-    nmin = 5.65e-3  # Kg m-2
-    plab = 1.45e-3  # kg m-2
-    l_init = 1  # Kg m-2
-    r_init = 1  # Kg m-2
-    w_init = 6  # Kg m-2
+    nmin = 5.65e-5  # Kg m-2
+    plab = 1.45e-5  # kg m-2
+    l_init = 0.01  # Kg m-2
+    r_init = 0.01  # Kg m-2
+    w_init = 0.02  # Kg m-2
 
     if not dt[6][trait] > 0.0:
         w_init = 0.0
 
     sto = np.array([0.0, 0.0, 0.0])  # g m-2
 
-    d = m.photo.allocation(dt[:, trait], 2.0, nmin,
+    d = m.photo.allocation(dt[:, trait], 0.01, nmin,
                            plab, l_init, w_init, r_init, sto)
 
     variables = ['storage_pool', 'cleaf', 'cawood', 'cfroot', 'leaf_litter',
@@ -45,7 +45,8 @@ def print_alloc(trait):
 
     for i, v in enumerate(variables):
         print(v, '--->', d[i], '-unit-->', units[i])
-    print(' ![(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]')
+        if v is variables[-1]:
+            print(' ![(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]')
 
 
 def test12():

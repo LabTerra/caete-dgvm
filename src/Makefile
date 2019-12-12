@@ -2,9 +2,9 @@ FC = gfortran
 FCFLAGS = -Wall -Wextra -g -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -Wextra -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
-sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 test_carbon3.f90
+sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 productivity.f90 budget.f90 test_caete.f90
 
-objects = global.o utils.o funcs.o soil_dec.o test_carbon3.o
+objects = global.o utils.o funcs.o soil_dec.o productivity.o budget.o test_caete.o
 
 
 test: $(objects)
@@ -43,8 +43,20 @@ soil_dec.o: soil_dec.f90
 soil_dec.mod: soil_dec.o soil_dec.f90
 	$(FC) $(FLFLAGS) soil_dec.f90
 
-test_carbon3.o: test_carbon3.f90
-	$(FC) $(FLFLAGS) test_carbon3.f90
+productivity.o: productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+productivity.mod: productivity.o productivity.f90
+	$(FC) $(FLFLAGS) productivity.f90
+
+budget.o: budget.f90
+	$(FC) $(FLFLAGS) budget.f90
+
+budget.mod: budget.o budget.f90
+	$(FC) $(FLFLAGS) budget.f90
+
+test_caete.o: test_caete.f90
+	$(FC) $(FLFLAGS) test_caete.f90
 
 clean:
 	rm -rf test $(objects) *.mod *.s *.so *.pyf

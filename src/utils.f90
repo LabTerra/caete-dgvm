@@ -1,5 +1,6 @@
 module utils
     use types
+    implicit none
     private
 
     public :: linspace
@@ -8,6 +9,7 @@ module utils
     public :: abort_on_inf
     public :: ascii2bin
     public :: leap
+    public :: read_bin
 
     contains
 
@@ -139,5 +141,29 @@ function process_id() result(ipid)
      !=================================================================
      !=================================================================
 
+    function read_bin(ny, nx) result(dt)
+        ! pft_par agora retorna um array-shape(par,npls)
+        use types, only: r_4
+        use global_par, only: ntraits, npls
+        integer(i_4), intent(in) :: nx, ny
+
+        real(kind=r_4), dimension(ny,nx) :: dt
+
+        ! ['g1','vcmax','tleaf','twood','troot','aleaf','awood','aroot']
+        !     dt1 = g1
+        !     dt2 = vcmax
+        !     dt3 = tleaf
+        !     dt4 = twood
+        !     dt5 = tfroot
+        !     dt6 = aleaf
+        !     dt7 = awood
+        !     dt8 = aroot
+
+        open(45,file='pls_ex.bin',status='old',&
+             &form='unformatted',access='direct',recl=4*ny*nx)
+        read(45,rec=1) dt
+        close(45)
+        return
+      end function read_bin
 
 end module utils
