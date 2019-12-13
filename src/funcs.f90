@@ -1089,11 +1089,16 @@ contains
       else
          litter_nutrient_ratios(2) = 0.0
       endif
-
-      if(aawood .gt. 0.0 .and. cwd .gt. 0.0) then
-         litter_nutrient_ratios(3) = aux3 / cwd      ! N:C litter ratio g(N) g(C)-1
+! NOT EVERY PLS HAVE A WOOD POOL
+      ! If it is a woody strategy
+      if(aawood .gt. 0.0) then
+         if(cwd .gt. 0.0) then
+            litter_nutrient_ratios(3) = aux3 / cwd      ! N:C litter ratio g(N) g(C)-1
+         else
+             litter_nutrient_ratios(3) = 0.0D0
+         endif
       else
-         litter_nutrient_ratios(3) = 0.0
+         litter_nutrient_ratios(3) = 0.0D0
       endif
 
 
@@ -1144,11 +1149,16 @@ contains
       else
          litter_nutrient_ratios(5) = 0.0
       endif
-
-      if(aawood .gt. 0.0 .and. cwd .gt. 0.0) then
-         litter_nutrient_ratios(6) = aux3 / cwd         ! P:C litter ratio g(N) g(C)-1
+! NOT EVERY PLS HAVE A WOOD POOL
+      ! If it is a woody strategy
+      if(aawood .gt. 0.0) then
+         if(cwd .gt. 0.0) then
+            litter_nutrient_ratios(6) = aux3 / cwd      ! N:C litter ratio g(N) g(C)-1
+         else
+             litter_nutrient_ratios(6) = 0.0D0
+         endif
       else
-         litter_nutrient_ratios(6) = 0.0
+         litter_nutrient_ratios(6) = 0.0D0
       endif
 
 

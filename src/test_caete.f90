@@ -194,18 +194,18 @@ program test_carbon3
       real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
       real(r_4) :: ts = 23.0                  ! Soil temperature (oC)
       real(r_4) :: temp = 23.0                 ! Surface air temperature (oC)
-      real(r_4) :: prec = 2.0                 ! Precipitation (mm/day)
+      real(r_4) :: prec = 3.0                 ! Precipitation (mm/day)
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
-      real(r_4) :: ipar = 200.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
-      real(r_4) :: rh = 0.7                   ! Relative humidity
-      real(r_8) :: mineral_n =  0.000010D0
-      real(r_8) :: labile_p = 0.0000010D0
+      real(r_4) :: ipar = 250.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_4) :: rh = 0.8                   ! Relative humidity
+      real(r_8) :: mineral_n =  0.00010D0
+      real(r_8) :: labile_p = 0.000010D0
       ! inouts
       real(r_8),dimension(3,npls) :: sto_budg ! Rapid Storage Pool (C,N,P)
-      real(r_8),dimension(npls) :: cl1_pft  ! initial BIOMASS cleaf compartment
-      real(r_8),dimension(npls) :: cf1_pft  !                 froot
-      real(r_8),dimension(npls) :: ca1_pft  !                 cawood
-      real(r_8),dimension(npls) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      real(r_8),dimension(npls) :: cl1_pft ! initial BIOMASS cleaf compartment
+      real(r_8),dimension(npls) :: cf1_pft!                 froot
+      real(r_8),dimension(npls) :: ca1_pft!                 cawood
+      real(r_8),dimension(npls) :: dleaf! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls) :: droot
       real(r_8),dimension(npls) :: dwood
 
@@ -241,19 +241,42 @@ program test_carbon3
   ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8), dimension(6,npls) :: lnr         ! g(N) g(C)-1
 
+      real(r_4),dimension(npls) :: cl ! initial BIOMASS cleaf compartment
+      real(r_4),dimension(npls) :: cf!                 froot
+      real(r_4),dimension(npls) :: ca!                 cawood
+
+      ! HELPER VARIABLES
+      real(r_4) :: npp_pot
       integer(i_4) :: index
-      open(45,file='pls_ex.txt',status='old',&
-         &form='formatted',access='sequential')
+
+
+      open(45,file='/home/jdarela/Desktop/caete/caete-dgvm/src/pls_ex.txt',&
+        &   status='old',form='formatted',access='sequential')
 
 12 format(15(f15.6))
       read(45,12) dt
-      print *, dt(:,1)
+      !print *, dt(:,1)
 
-      w1 = 0.01
-      g1 = 0.0
-      s1 = 0.0
+      w1 = 0.1
+      g1 = 0.01
+      s1 = 0.01
 
-      do index = 1,2
+      sto_budg = 0.0d0
+
+      dleaf = 0.0001d0
+      droot = 0.0001d0
+      dwood = 0.0001d0
+
+      npp_pot = 0.01
+
+      call spinup2(npp_pot, dt, cl, cf, ca)
+
+      cl1_pft = real(cl, kind=r_8)
+      cf1_pft = real(cf, kind=r_8)
+      ca1_pft = real(ca, kind=r_8)
+
+      do index = 1,20
+
          call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
          &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
          &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
@@ -262,8 +285,9 @@ program test_carbon3
          &, cfrootavg_pft, ocpavg, wueavg&
          &, cueavg, c_defavg, vcmax, specific_la&
          &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
-      enddo
 
+      enddo
+      print *, w2
 
    end subroutine test_dbudget
 
