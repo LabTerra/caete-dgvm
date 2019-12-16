@@ -74,7 +74,7 @@ contains
    !=================================================================
    !=================================================================
 
-   function leaf_area_index(cleaf,sla) result(lai)
+   function leaf_area_index(cleaf, sla) result(lai)
       ! Returns Leaf Area Index m2 m-2
 
       use types, only: r_4, r_8
@@ -142,7 +142,7 @@ contains
 
       lai = leaf_area_index(cleaf,sla)
 
-      sunlai = (1.0-(exp(-p26*lai)))/p26
+      sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
 
       lai_ss = real(sunlai,r_4)
@@ -161,13 +161,13 @@ contains
       !------------------------------------------------------------------------
       if(fs .eq. 1) then
          ! f4sun
-         lai_ss = real((1.0-(exp(-p26*sunlai)))/p26,r_4) !sun decl 90 degrees
+         lai_ss = real((1.0-(dexp(-p26*sunlai)))/p26,r_4) !sun decl 90 degrees
          return
       endif
 
       if(fs .eq. 2) then
          !f4shade
-         lai_ss = real((1.0-(exp(-p27*shadelai)))/p27,r_4) !sun decl ~20 degrees
+         lai_ss = real((1.0-(dexp(-p27*shadelai)))/p27,r_4) !sun decl ~20 degrees
          return
       endif
    end function f_four
@@ -373,6 +373,8 @@ contains
       tlm = spec_leaf_area(8.3)
       ! tlm --- 0.8
       ! tl0 --- 0.2
+      if(leaf_t .lt. (1.0/12.0)) call abort
+      if(leaf_t .gt. 8.3) call abort
       tl = spec_leaf_area(leaf_t)
 
       tl = 1.0-(((tl-tl0)/(tlm-tl0))*(auxmax-auxmin)+auxmin)
@@ -422,6 +424,7 @@ contains
       ! f1ab SCALAR returns instantaneous photosynthesis rate at leaf level (molCO2/m2/s)
       ! vm SCALAR Returns maximum carboxilation Rate (Vcmax) (molCO2/m2/s)
       use types
+      use utils
       use global_par
       use photo_par
       ! implicit none
@@ -468,22 +471,41 @@ contains
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
       xbio = nrubisco(leaf_turnover,nbio)
+      !print *, xbio, "XBIO"
       ! n_lignin = nbio - xbio ! g m-2
-      nbio2 = xbio + (storage_1(2) * 0.5) ! Leaf nitrogen that is 'rubisco'
-      pbio2 = pbio + (storage_1(3) * 0.5)
+      if(storage_1(2) .lt. 0.0 ) then
+         storage_2(2) = 0.0D0
+         nbio2 = xbio
+      else
+         nbio2 = xbio + (storage_1(2) * 0.2)
+         storage_2(2) = storage_1(2) - (storage_1(2) * 0.2)
+      endif
 
-      ! print *, nbio2, 'nbio'
+      if(storage_1(3) .lt. 0.0 ) then
+         storage_2(3) = 0.0D0
+         pbio2 = pbio
+      else
+         pbio2 = pbio + (storage_1(3) * 0.2)
+         storage_2(3) = storage_1(3) - (storage_1(3) * 0.2)
+      endif
+         ! print *, nbio2, 'nbio'
       ! print *, pbio2, 'pbio'
       ! Saving storage values after a day of assimilation
       storage_2(1) = storage_1(1)
-      storage_2(2) = storage_1(2) - (storage_1(2) * 0.5)
-      storage_2(3) = storage_1(3) - (storage_1(3) * 0.5)
+
+      !print*, "STORAGE"
+      !print*, storage_1
 
       ! INCLUDING vcmax N and P Dependence
       ! Vmax dependence on N and P after Walker et al. 2014
-      vm_nutri = 3.946 + 0.921 * log(nbio2) - 0.121 * log(pbio2)
-      vm_nutri = vm_nutri + 0.282 * log(nbio2) * log(pbio2)
-      vm = exp(vm_nutri) * 1e-6 ! Vcmax
+      ! Prevent ilegal dlog application
+
+      !print*, '--==--==--'
+      !print*, nbio2, pbio2
+
+      vm_nutri = 3.946D0 + 0.921D0 * dlog(nbio2) - 0.121D0 * dlog(pbio2)
+      vm_nutri = vm_nutri + 0.28D0 * dlog(nbio2) * dlog(pbio2)
+      vm = dexp(vm_nutri) * 0.000001D0 ! Vcmax
 
       ! Vmax dependence on N and P after Domingues et al. 2010
       ! ... implement here.
@@ -1365,7 +1387,7 @@ contains
       do i6=1,npls
          iswoody = ((aawood(i6) .gt. 0.0) .and. (tawood(i6) .gt. 0.0))
          do k=1,ntl
-            if (k.eq.1) then
+            if (k .eq. 1) then
                cleafi_aux (k) =  aleaf(i6) * nppot2
                cawoodi_aux(k) = aawood(i6) * nppot2
                cfrooti_aux(k) = afroot(i6) * nppot2

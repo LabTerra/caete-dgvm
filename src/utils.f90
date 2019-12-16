@@ -1,3 +1,4 @@
+! Some functions for test/debug CAETÊ
 module utils
     use types
     implicit none
@@ -9,7 +10,6 @@ module utils
     public :: abort_on_inf
     public :: ascii2bin
     public :: leap
-    public :: read_bin
 
     contains
 
@@ -17,7 +17,7 @@ module utils
      !=================================================================
 
     subroutine ascii2bin(file_in, file_out, nx1, ny1)
-        ! DEPRECATED
+        ! DEPRECATED! Trasnform a matrix (text file) to a binary file
         use types
         !implicit none
 
@@ -73,32 +73,26 @@ module utils
      !=================================================================
      !=================================================================
 
-    subroutine abort_on_nan(arg1, abrt)
-        logical(l_1), intent(in) :: abrt
-        real(r_4), intent(inout) :: arg1
-        if(isnan(arg1) .and. .not. abrt ) then
-            arg1 = 0.0
-        endif
-        if(abrt) then
-            if (isnan(arg1))then
-                call abort()
+    subroutine abort_on_nan(arg1)
+
+        real(r_4), intent(in) :: arg1
+
+        if (isnan(arg1))then
+            print *, "Aborting in nan"
+            call abort
             endif
-        endif
     end subroutine abort_on_nan
 
      !=================================================================
      !=================================================================
 
-    subroutine abort_on_inf(arg1, abrt)
-        logical(l_1), intent(in) :: abrt
+    subroutine abort_on_inf(arg1)
+
         real(r_4), intent(inout) :: arg1
-        if(arg1 .ge.arg1 - 1 .and. .not. abrt ) then
-             arg1 = 0.0
-        endif
-        if(abrt) then
-            if (arg1 .ge.arg1 - 1)then
-                call abort()
-            endif
+
+        if (arg1 .ge. arg1 - 1)then
+            print *, "Aborting on inf"
+            call abort()
         endif
     end subroutine abort_on_inf
 
@@ -106,6 +100,8 @@ module utils
      !=================================================================
 
     subroutine linspace(from, to, array)
+    ! DO NOT USE IN PYTHON ENVIRONMENT
+    ! THIS function is used only for testing and debugging
 
         real(r_4), intent(in) :: from, to
         real(r_4), intent(out) :: array(:)
@@ -140,30 +136,5 @@ function process_id() result(ipid)
 
      !=================================================================
      !=================================================================
-
-    function read_bin(ny, nx) result(dt)
-        ! pft_par agora retorna um array-shape(par,npls)
-        use types, only: r_4
-        use global_par, only: ntraits, npls
-        integer(i_4), intent(in) :: nx, ny
-
-        real(kind=r_4), dimension(ny,nx) :: dt
-
-        ! ['g1','vcmax','tleaf','twood','troot','aleaf','awood','aroot']
-        !     dt1 = g1
-        !     dt2 = vcmax
-        !     dt3 = tleaf
-        !     dt4 = twood
-        !     dt5 = tfroot
-        !     dt6 = aleaf
-        !     dt7 = awood
-        !     dt8 = aroot
-
-        open(45,file='pls_ex.bin',status='old',&
-             &form='unformatted',access='direct',recl=4*ny*nx)
-        read(45,rec=1) dt
-        close(45)
-        return
-      end function read_bin
 
 end module utils

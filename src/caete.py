@@ -341,13 +341,13 @@ def run_dyn(grd, at=np.copy(d_at)):
     RUN += int(gp.nt1)
     spin(grd, RUN)
 
-    # print('\n--run 3\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 3\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
-    # print('\n--run 4\n')
-    # RUN += int(gp.nt1)
-    # spin(grd, RUN)
+    print('\n--run 4\n')
+    RUN += int(gp.nt1)
+    spin(grd, RUN)
 
     # print('\n--run 5\n')
     # RUN += int(gp.nt1)

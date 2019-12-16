@@ -194,7 +194,7 @@ program test_carbon3
       real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
       real(r_4) :: ts = 23.0                  ! Soil temperature (oC)
       real(r_4) :: temp = 23.0                 ! Surface air temperature (oC)
-      real(r_4) :: prec = 3.0                 ! Precipitation (mm/day)
+      real(r_4) :: prec = 2.0                 ! Precipitation (mm/day)
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
       real(r_4) :: ipar = 250.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4) :: rh = 0.8                   ! Relative humidity
@@ -241,9 +241,9 @@ program test_carbon3
   ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8), dimension(6,npls) :: lnr         ! g(N) g(C)-1
 
-      real(r_4),dimension(npls) :: cl ! initial BIOMASS cleaf compartment
-      real(r_4),dimension(npls) :: cf!                 froot
-      real(r_4),dimension(npls) :: ca!                 cawood
+      real(r_4),dimension(npls) :: cl_ ! initial BIOMASS cleaf compartment
+      real(r_4),dimension(npls) :: cf_!                 froot
+      real(r_4),dimension(npls) :: ca_!                 cawood
 
       ! HELPER VARIABLES
       real(r_4) :: npp_pot
@@ -267,15 +267,22 @@ program test_carbon3
       droot = 0.0001d0
       dwood = 0.0001d0
 
-      npp_pot = 0.01
+      !npp_pot = 0.01
 
-      call spinup2(npp_pot, dt, cl, cf, ca)
+      !call spinup2(npp_pot, dt, cl, cf, ca)
 
-      cl1_pft = real(cl, kind=r_8)
-      cf1_pft = real(cf, kind=r_8)
-      ca1_pft = real(ca, kind=r_8)
+      cl_ = 0.5
+      cf_ = 0.5
+      ca_ = 2.0
+      cl1_pft = real(cl_, kind=r_8)
+      cf1_pft = real(cf_, kind=r_8)
+      ca1_pft = real(ca_, kind=r_8)
 
-      do index = 1,20
+      do index = 1,5000
+         print *,
+         print *,
+         print *, 'rodada: ', index
+         print *,
 
          call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
          &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
@@ -286,8 +293,23 @@ program test_carbon3
          &, cueavg, c_defavg, vcmax, specific_la&
          &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
 
+         print *, ""
+
+         print *, ""
+         print *, "Water ->",w2
+         print *,""
+         print *, "LAIA",laiavg
+         print *,""
+         print *,"CA ->",ca1_pft
+         print *,"CL ->",cl1_pft
+         print *,"CF ->",cf1_pft
+         print *,"ocp->", ocpavg
+         print *,
       enddo
-      print *, w2
+
+      w1 = w2
+      s1 = s2
+      g1 = g2
 
    end subroutine test_dbudget
 

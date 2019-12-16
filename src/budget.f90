@@ -203,6 +203,8 @@ contains
 
 !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
 !     =================================================================
+    ocp_coeffs = 0.0D0
+    ocp_wood = .false.
     call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, ocp_wood) ! def in funcs.f90
 
 

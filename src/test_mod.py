@@ -61,11 +61,12 @@ def f0(grd):
 # grd = f0(grda)
 
 # Parallel processing
+if __name__ == "__main__":
 
-import multiprocessing as mp
+    import multiprocessing as mp
 
-with mp.Pool(processes=5) as p:
-    result = p.map(f0, works)
+    with mp.Pool(processes=5) as p:
+        result = p.map(f0, works)
 
 # # # def plots(): simple plot with matplotlib
 # colors = ['g', 'r', 'b', 'm', 'y', 'k']

@@ -33,6 +33,7 @@ contains
     use global_par
     use photo
     use water
+    use utils
 
 !Input
 !-----
@@ -112,6 +113,9 @@ contains
     p2cl = real(p2cl * (cl1_prod * 1e3), r_4) ! P in leaf g m-2
     c4_int = nint(c4)
 
+    if(n2cl .lt. 0.0) n2cl = 0.0
+    if(p2cl .lt. 0.0) p2cl = 0.0
+
     if(debug) then
        write(1234,*) '-----Message from productivity-----------------'
        write(1234,*) '-----------------------------------------------'
@@ -183,9 +187,11 @@ contains
 
 !     Leaf area index (m2/m2)
     sla = spec_leaf_area(tleaf)
-    laia = real(leaf_area_index(cl1_prod, sla), r_4)
-! laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
-! laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
+    !laia = real(leaf_area_index(cl1_prod, sla), r_4)
+    laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
+    laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
+    !call abort_on_nan(real(sla,kind=r_4), "SLA")
+   !  call abort_on_nan(laia, "LAI")
 
 
     if(debug) then

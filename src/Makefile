@@ -1,6 +1,6 @@
 FC = gfortran
-FCFLAGS = -Wall -Wextra -g -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
-FLFLAGS = -c -g -Wall -Wextra -ffpe-trap=zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
+FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
+FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
 sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 productivity.f90 budget.f90 test_caete.f90
 
