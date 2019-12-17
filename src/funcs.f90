@@ -13,8 +13,6 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-!! README:  This file contains 2 modules : photo and water
-
 module photo
 
    ! Module defining functions related with CO2 assimilation and other processes in CAETE
@@ -471,9 +469,9 @@ contains
 
       ! Calculating Fraction of leaf Nitrogen that is lignin
       xbio = nrubisco(leaf_turnover,nbio)
-      !print *, xbio, "XBIO"
+      print *, xbio, "XBIO"
       ! n_lignin = nbio - xbio ! g m-2
-      if(storage_1(2) .lt. 0.0 ) then
+      if(storage_1(2) .le. 0.0 ) then
          storage_2(2) = 0.0D0
          nbio2 = xbio
       else
@@ -481,20 +479,22 @@ contains
          storage_2(2) = storage_1(2) - (storage_1(2) * 0.2)
       endif
 
-      if(storage_1(3) .lt. 0.0 ) then
+      if(storage_1(3) .le. 0.0 ) then
          storage_2(3) = 0.0D0
          pbio2 = pbio
       else
          pbio2 = pbio + (storage_1(3) * 0.2)
          storage_2(3) = storage_1(3) - (storage_1(3) * 0.2)
       endif
-         ! print *, nbio2, 'nbio'
-      ! print *, pbio2, 'pbio'
+      print *, nbio2, 'nbio'
+      print *, pbio2, 'pbio'
       ! Saving storage values after a day of assimilation
       storage_2(1) = storage_1(1)
 
-      !print*, "STORAGE"
-      !print*, storage_1
+      print*, "STORAGE1 "
+      print*, storage_1
+      print*, "Storage2"
+      print *, storage_2
 
       ! INCLUDING vcmax N and P Dependence
       ! Vmax dependence on N and P after Walker et al. 2014
@@ -503,8 +503,8 @@ contains
       !print*, '--==--==--'
       !print*, nbio2, pbio2
 
-      vm_nutri = 3.946D0 + 0.921D0 * dlog(nbio2) - 0.121D0 * dlog(pbio2)
-      vm_nutri = vm_nutri + 0.28D0 * dlog(nbio2) * dlog(pbio2)
+      vm_nutri = 3.946D0 + (0.921D0 * dlog(nbio2)) - (0.121D0 * dlog(pbio2))
+      vm_nutri = vm_nutri + (0.28D0 * dlog(nbio2) * dlog(pbio2))
       vm = dexp(vm_nutri) * 0.000001D0 ! Vcmax
 
       ! Vmax dependence on N and P after Domingues et al. 2010
@@ -973,6 +973,7 @@ contains
       ! NPP = min(NPP_N, NPP_P) i.e min(p_npp_pot, n_npp_pot)
       ! If ALLOCATION is P limited
       if(p_npp_pot .lt. n_npp_pot) then
+         no_allocation = .false.
          !print*, "P LIMTED"
          npp_leaf = npp_leafp   ! g(C) m-2 day-1
          npp_awood = npp_awoodp ! g(C) m-2 day-1
@@ -988,6 +989,7 @@ contains
          no_limit = .false.
          ! Else ALLOCATION is N limited
       else if(n_npp_pot .lt. p_npp_pot) then
+         no_allocation = .false.
          !print*, "N LIMTED"
          npp_leaf = npp_leafn   ! g(C) m-2 day-1
          npp_awood = npp_awoodn ! g(C) m-2 day-1
@@ -1002,6 +1004,7 @@ contains
          storage_out(1) = carbon_to_storage_n ! g(C) m-2
          no_limit = .false.
       else
+         no_allocation = .true.
          ! check for colimitation
          !print*, "COLIMTED"
          !if(abs(p_npp_pot - n_npp_pot) .lt. 0.00000001) then

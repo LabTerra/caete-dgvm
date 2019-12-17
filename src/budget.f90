@@ -13,10 +13,6 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
-!             João Paulo Darela Filho <darelafilho ( at ) gmail.com>
-
-
 module budget
   implicit none
   private
@@ -28,15 +24,11 @@ contains
 
 !,mineral_n,labile_p
 
-  subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-       &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
-       &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
-       &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&
-       &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
-       &, cfrootavg_pft, ocpavg, wueavg&
-       &, cueavg, c_defavg, vcmax, specific_la&
-       &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
-
+  subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh, mineral_n,&
+      & labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
+      & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
+      & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
+      & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lnr)
 
     use types
     use global_par
@@ -46,7 +38,7 @@ contains
 
 !     ----------------------------INPUTS-------------------------------
     real(r_4),dimension(ntraits,npls),intent(in) :: dt
-    real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous month last day) soil moisture storage (mm)
+    real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
     real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
     real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
     real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
@@ -112,7 +104,7 @@ contains
 
     real(r_8),dimension(npls) :: ocp_mm
     real(r_8),dimension(npls) :: ocp_coeffs !,ocp_coeffs2
-    logical(l_1),dimension(npls) :: ocp_wood !, ocp_wood2
+    logical(l_1),dimension(npls) :: light_limitation_bool !, ocp_wood2
 
 !     WBM COMMUNICATION (water balance)
     real(r_4) :: psnow                !Snowfall (mm/day)
@@ -204,8 +196,8 @@ contains
 !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
 !     =================================================================
     ocp_coeffs = 0.0D0
-    ocp_wood = .false.
-    call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, ocp_wood) ! def in funcs.f90
+    light_limitation_bool = .false.
+    call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, light_limitation_bool) ! def in funcs.f90
 
 
     if(debug) then
@@ -215,7 +207,7 @@ contains
        write(1234,*) cl1, cf1, ca1
        write(1234,*) '-------ocp_coeffs------------------------------'
        write(1234,*) ocp_coeffs
-       write(1234,*) ocp_wood
+       write(1234,*) light_limitation_bool
     endif
 
 !     Maximum evapotranspiration   (emax)
@@ -238,11 +230,10 @@ contains
 !      & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,sto1,ph,ar,&
 !      & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,sto2)
 
-       call prod(dt1,ocp_wood(p),temp,p0,w(p),ipar,rh,emax,cl1(p)&
-            &,ca1(p),cf1(p),dleaf(p),dwood(p),droot(p)&
-            &,sto_budg(:,p),ph(p),ar(p),nppa(p),laia(p)&
-            &,f5(p),vpd(p),rm(p),rg(p),rc2(p),wue(p),c_def(p)&
-            &,vcmax(p),specific_la(p),day_storage(:,p))
+       call prod(dt1, light_limitation_bool(p), temp, p0, w(p), ipar, rh, emax, cl1(p)&
+            &, ca1(p), cf1(p), dleaf(p), dwood(p), droot(p), sto_budg(:,p), ph(p), ar(p)&
+            &, nppa(p),laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p), wue(p), c_def(p)&
+            &, vcmax(p), specific_la(p), day_storage(:,p))
 
        sto_budg(:,p) = day_storage(:,p)
 
@@ -286,6 +277,7 @@ contains
             &,cf2(p),litter_l(p),cwd(p)&
             &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
 
+       !print *, "From alloc-------------------------"
        !print *, nupt, "NUPT"
        !print *, Pupt, "PUPT"
        sto_budg(:,p) = day_storage(:,p)

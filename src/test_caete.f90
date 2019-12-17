@@ -272,8 +272,8 @@ program test_carbon3
       !call spinup2(npp_pot, dt, cl, cf, ca)
 
       cl_ = 0.5
-      cf_ = 0.5
-      ca_ = 2.0
+      cf_ = 0.2
+      ca_ = 0.1
       cl1_pft = real(cl_, kind=r_8)
       cf1_pft = real(cf_, kind=r_8)
       ca1_pft = real(ca_, kind=r_8)
@@ -293,18 +293,19 @@ program test_carbon3
          &, cueavg, c_defavg, vcmax, specific_la&
          &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
 
-         print *, ""
+         ! print *, ""
 
-         print *, ""
-         print *, "Water ->",w2
-         print *,""
-         print *, "LAIA",laiavg
-         print *,""
-         print *,"CA ->",ca1_pft
-         print *,"CL ->",cl1_pft
-         print *,"CF ->",cf1_pft
-         print *,"ocp->", ocpavg
-         print *,
+         ! print *, ""
+         ! ! print *, "Water ->",w2
+         ! ! print *,""
+         ! ! print *, "LAIA",laiavg
+         ! ! print *,""
+         ! ! print *,"CA ->",ca1_pft
+         ! ! print *,"CL ->",cl1_pft
+         ! ! print *,"CF ->",cf1_pft
+         ! print *,"ocp->", ocpavg
+         ! print *, "nupt/pupt->", nupt, pupt
+         ! print *,
       enddo
 
       w1 = w2

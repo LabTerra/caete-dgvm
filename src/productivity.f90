@@ -13,9 +13,6 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-! contacts :: David Montenegro Lapola <lapoladm ( at ) gmail.com>
-
-
 module productivity
   implicit none
   private
@@ -25,9 +22,9 @@ module productivity
 
 contains
 
-  subroutine prod(dt,light_limit,temp,p0,w,ipar,rh,emax,cl1_prod,&
-       & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,sto1,ph,ar,&
-       & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,sto2)
+  subroutine prod(dt, light_limit, temp, p0, w, ipar, rh, emax, cl1_prod, &
+       & ca1_prod, cf1_prod, beta_leaf, beta_awood, beta_froot, sto1, ph, ar , &
+       & nppa, laia, f5, vpd, rm, rg, rc, wue, c_defcit, vm_out, sla, sto2)
 
     use types
     use global_par
