@@ -1,14 +1,34 @@
 FC = gfortran
+PYEXEC = python3.8
+PYFILE = create_pls_table.py
+SO_BUILD = ./build.sh
+
+##SO
+MFLAG = -m
+HFLAG = -h
+CFLAG = -c
+OVRTFLAG = --overwrite-signature
+F2PY = python3.8 -m numpy.f2py
+MODNAME = caete_module
+INTERFACES = $(MODNAME).pyf
+
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
-sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 productivity.f90 budget.f90 test_caete.f90
+sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 productivity.f90 budget.f90 caete.f90
 
 objects = global.o utils.o funcs.o soil_dec.o productivity.o budget.o test_caete.o
 
-
 test: $(objects)
+	$(SO_BUILD)
+	$(PYEXEC) $(PYFILE)
 	$(FC) -o test $(FCFLAGS) $(objects)
+
+interfaces: $(sources)
+	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG)
+
+so: $(sources) interfaces
+	$(F2PY) $(INTERFACES) $(CFLAG) $(sources)
 
 global.o: global.f90
 	$(FC) $(FLFLAGS) global.f90
