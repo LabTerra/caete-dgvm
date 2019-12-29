@@ -199,17 +199,6 @@ contains
       light_limitation_bool = .false.
       call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, light_limitation_bool) ! def in funcs.f90
 
-
-      if(debug) then
-         write(1234,*) '-----Message from budget-----------------------'
-         write(1234,*) '-----------------------------------------------'
-         write(1234,*) 'cl1        cf1         ca1'
-         write(1234,*) cl1, cf1, ca1
-         write(1234,*) '-------ocp_coeffs------------------------------'
-         write(1234,*) ocp_coeffs
-         write(1234,*) light_limitation_bool
-      endif
-
       !     Maximum evapotranspiration   (emax)
       !     =================================
       emax = evpot2(p0,temp,rh,available_energy(temp))
@@ -218,17 +207,9 @@ contains
       !     =================================
       do p = 1,npls
 
-         if(debug) then
-            write(1234,*) 'PFT n ---->', p
-         endif
-
          dt1 = dt(:,p) ! Pick up the pls functional attributes list
 
          end_pls = .false.
-
-         ! subroutine prod(dt,light_limit,temp,p0,w,ipar,rh,emax,cl1_prod,&
-         !      & ca1_prod,cf1_prod,beta_leaf,beta_awood,beta_froot,sto1,ph,ar,&
-         !      & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,sto2)
 
          call prod(dt1, light_limitation_bool(p), temp, p0, w(p), ipar, rh, emax, cl1(p)&
               &, ca1(p), cf1(p), dleaf(p), dwood(p), droot(p), sto_budg(:,p), ph(p), ar(p)&
@@ -237,11 +218,6 @@ contains
 
          sto_budg(:,p) = day_storage(:,p)
 
-         if(debug) then
-            write(1234,*) 'sto_budg ---->',sto_budg(:,p)
-            write(1234,*) 'dt1 --------->',dt1
-         endif
-         !!
          ! TODO INTRODUCE PTase activity here
          ! TODO INTRODUCE ROOT UPTAKE HERE
          ! SPM - Symbiotic P Mineralization
@@ -260,26 +236,16 @@ contains
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
-         if(debug) then
-            write(1234,*) 'INPUTS PRECEDING ALLOCATION'
-            write(1234,*) 'dt1', dt1
-            write(1234,*) 'nppa(p)', nppa(p)
-            write(1234,*) 'mineral_n', mineral_n
-            write(1234,*) 'labile_p', labile_p
-            write(1234,*) 'cl1(p)', cl1(p)
-            write(1234,*) 'cf1(p)', cf1(p)
-            write(1234,*) 'ca1(p)', ca1(p)
-            write(1234,*) 'stop(p)', sto_budg(:,p)
-         endif
 
          call allocation (dt1,nppa(p),mineral_n,labile_p,cl1(p),ca1(p)&
               &,cf1(p),sto_budg(:,p),day_storage(:,p),cl2(p),ca2(p)&
               &,cf2(p),litter_l(p),cwd(p)&
               &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
 
-         !print *, "From alloc-------------------------"
-         !print *, nupt, "NUPT"
-         !print *, Pupt, "PUPT"
+         print *, "From alloc in bdg-------------------------"
+         print *, nupt(p), "NUPT"
+         print *, pupt(p), "PUPT"
+         print*,
          sto_budg(:,p) = day_storage(:,p)
 
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
@@ -467,10 +433,6 @@ contains
 
       ! call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)
       ! ocpavg = (ocp_coeffs + ocp_coeffs2) / 2.0
-      if(debug) then
-         write(1234,*) '-----END Message from budget-------------------'
-         write(1234,*) '------------------------------------------------'
-      endif
 
       ! CLEAN NANs OF some outputs
       do p = 1,npls

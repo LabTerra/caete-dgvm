@@ -2,7 +2,7 @@
 
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
-!     the Free Software Foundation, either version 3 of the License, or
+!     the Free Software Fundation, either version 3 of the License, or
 !     (at your option) any later version.)
 
 !     This program is distributed in the hope that it will be useful,
@@ -21,13 +21,13 @@ module caete
 
 contains
 
-   subroutine caete_dyn(x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
-        &,cleaf_ini,cawood_ini,cfroot_ini,emaxm,tsoil,photo_comm,aresp_comm&
-        &,npp_comm,lai_comm,c_litter,c_soil,het_resp,rcm_comm,f51,runom_comm&
-        &,evapm_comm,wsoil_comm,rm_comm,rg_comm,cleaf_comm,cawood_comm,cfroot_comm&
-        &,grid_area,wue,cue,cdef,wfim,gfim,sfim,dl_final,dw_final,dr_final&
-        &,clf,caf,cff,nitro_min,phop_lab,vcmax,specific_la,nupt,pupt&
-        &,litter_l,cwd,litter_fr,lnr,storage_pool)
+   subroutine caete_dyn(x, y, run, dt, w0, g0, s0, dcl, dca, dcf, prec, temp, p0, par, rhs,&
+        & cleaf_ini, cawood_ini, cfroot_ini, emaxm, tsoil, photo_comm, aresp_comm,&
+        & npp_comm, lai_comm, c_litter, c_soil, het_resp, rcm_comm, f51, runom_comm,&
+        & evapm_comm, wsoil_comm, rm_comm, rg_comm, cleaf_comm, cawood_comm, cfroot_comm,&
+        & grid_area, wue, cue, cdef, wfim, gfim, sfim, dl_final, dw_final, dr_final,&
+        & clf, caf, cff, nitro_min, phop_lab, vcmax, specific_la, nupt, pupt,&
+        & litter_l, cwd, litter_fr, snr, lnr, storage_pool)
 
       use types
       use utils, only: gpid   => process_id
@@ -109,7 +109,8 @@ contains
       real(r_4),dimension(nt1),  intent(out) :: litter_l    ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
       real(r_4),dimension(nt1),  intent(out) :: cwd         ! CWM
       real(r_4),dimension(nt1),  intent(out) :: litter_fr   ! CWM
-      real(r_4),dimension(6,nt1),intent(out) :: lnr         ! Litter/Soil nutrient ratios
+      real(r_4),dimension(6,nt1),intent(out) :: lnr         ! Litter nutrient ratios
+      real(r_4),dimension(8,nt1),intent(out) :: snr         ! Soil nutrient ratios
       real(r_4),dimension(3,nt1),intent(out) :: storage_pool! Rapid Auxiliary daily storage pool for carbon and nutrients
 
       ! COMMUNITY WIDE
@@ -191,15 +192,9 @@ contains
 
 
       ! ### MODEL INITIALIZATION ---------------------
-      ! CALL here to initialize nutrient pools in soil
-
-      ! store initial soil nutrients contents
 
       aux_var0_0x29a = n_glob
       aux_var0_0x29b = p_glob
-
-      print*, n_glob, p_glob
-
 
       if(text_ts) then
          ! open log file
@@ -242,19 +237,6 @@ contains
       gini  = g0  !Soil ice_initial condition (mm)
       sini  = s0  !Overland snow_initial condition (mm)
 
-
-      if(debug) then
-         write(1234,*) 'cleaf1_pft - ', cleaf1_pft
-         write(1234,*) 'cawood1_pft - ', cawood1_pft
-         write(1234,*) 'cfroot1_pft - ', cfroot1_pft
-         write(1234,*) 'dl - ', dl
-         write(1234,*) 'dr - ', dr
-         write(1234,*) 'dw - ', dw
-         write(1234,*) '--------------------------------'
-         write(1234,*) '--part-1-END'
-         write(1234,*) '--------------------------------'
-      endif
-
       !82 columns----------------------------------------------------------------------
 
       ! Initialize variables - Internal Variables
@@ -286,12 +268,6 @@ contains
 
       !  ### End model initialization -------------------------------------------------
 
-      if(debug) then
-         write(1234,*) '--------------------------------'
-         write(1234,*) '--part-2-daily loop'
-         write(1234,*) '--------------------------------'
-      endif
-
       !     ======================
       !     START TIME INTEGRATION
       !     ======================
@@ -307,21 +283,7 @@ contains
             if(debug) write(1234,*) 'tsoil',tsoil(k), 'loop:', k
          endif
 
-         ! if(k .eq. 1) then
-         !    c_litter(:,k)  = litc
-         !    c_soil(:,k)    = soic
-         ! ! else
-         ! !    c_litter(:,k) = c_litter(:,k-1)
-         ! !    c_soil(:,k) = c_soil(:,k-1)
-         ! endif
-         ! ! if(k .eq. 1) then
-         ! !    ! if(k .lt. 1e4) then
-         ! !        n_mineral = 1
-         ! !        p_labile = 0.5
-         ! !    ! endif
-         ! ! endif
-
-         ! Converting units
+         ! Setting input variables and Converting units
          td = tsoil(k)
          spre = p0(k) * 0.01 ! transforamando de Pascal pra mbar (hPa)
          ta = temp(k) - 273.15 ! K to °C
@@ -366,6 +328,9 @@ contains
               &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
               &,litter_fr_com,lnr_com)
 
+         print*, "FROM CAETE"
+         print*, nupt_com
+         print*, pupt_com
          ! SAVE DAILY VALUES
          !82 columns-------------------------------------------------------------
          grd = gridocpmes
@@ -454,8 +419,10 @@ contains
          litc = c_litter(:,k)
          soic = c_soil(:,k)
 
-         nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
-         phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
+         if(k .gt. 30000) then
+            nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
+            phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
+            snr(:, k) = soil_nr_out
 
          ! if(k .gt.30000) then
          !    call set_uptake(1,pupt(k))
@@ -463,8 +430,15 @@ contains
          ! endif
 
         ! UPDATE MINERAL POOLS
-         n_glob = real(nitro_min(k),r_8)
-         p_glob = real(phop_lab(k), r_8)
+            n_glob = real(nitro_min(k),r_8)
+            p_glob = real(phop_lab(k), r_8)
+         else
+            nitro_min(k) = real(n_glob,r_4)
+            phop_lab(k) = real(p_glob,r_4)
+            snr(:, k) = soil_nr_out
+            n_glob = aux_var0_0x29a
+            p_glob = aux_var0_0x29b
+         endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
@@ -523,6 +497,10 @@ contains
             endif
          endif
 
+         if (k .gt. 200) then
+            print*, "stoping at line 200"
+            stop
+         endif
       enddo ! day_loop(nt1)
 
       ! Change this section to prevent NANs
@@ -596,8 +574,8 @@ contains
          print *, aux1, '=> INorganic P'
          print *, aux2, '=> INorganic N'
          print *, soil_nr_out, '=> SNR'
-         print *, get_uptake(1), '=>P uptake'
-         print *, get_uptake(2), '=>N uptake'
+         !print *, nupt(k), '=>P uptake'
+         !print *, pupt(), '=>N uptake'
       endif
 
    contains

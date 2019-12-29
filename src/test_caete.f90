@@ -246,7 +246,6 @@ program test_carbon3
       real(r_4),dimension(npls) :: ca_!                 cawood
 
       ! HELPER VARIABLES
-      real(r_4) :: npp_pot
       integer(i_4) :: index
 
 
@@ -304,7 +303,7 @@ program test_carbon3
          ! ! print *,"CL ->",cl1_pft
          ! ! print *,"CF ->",cf1_pft
          ! print *,"ocp->", ocpavg
-         ! print *, "nupt/pupt->", nupt, pupt
+         print *, "nupt/pupt->", nupt, pupt
          ! print *,
       enddo
 

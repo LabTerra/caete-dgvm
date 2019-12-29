@@ -2,6 +2,7 @@ FC = gfortran
 PYEXEC = python3.8
 PYFILE = create_pls_table.py
 SO_BUILD = ./build.sh
+CLEAN_DIR = ./clean_dir.sh
 
 ##SO
 MFLAG = -m
@@ -79,4 +80,8 @@ test_caete.o: test_caete.f90
 	$(FC) $(FLFLAGS) test_caete.f90
 
 clean:
-	rm -rf test $(objects) *.mod *.s *.so *.pyf
+	rm -rf test $(objects) *.mod *.s *.so *.pyf pls_ex.txt
+	$(CLEAN_DIR)
+
+clean_python:
+	rm -rf __pycache__

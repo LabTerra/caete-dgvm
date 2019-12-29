@@ -25,11 +25,10 @@ from caete_module import global_par as gp
 
 # Creation of gridcell instances
 grda = caete.gridcell_dyn(239, 183)
-grdb = caete.gridcell_dyn(219, 184)
-grdc = caete.gridcell_dyn(404, 186)  # aFRICA
-grd1 = caete.gridcell_dyn(440, 61)
-grd2 = caete.gridcell_dyn(572, 55)
-#grd3 = caete.gridcell_dyn(239, 183)
+# grdb = caete.gridcell_dyn(219, 184)
+# grdc = caete.gridcell_dyn(404, 186)
+# grd1 = caete.gridcell_dyn(440, 61)
+# grd2 = caete.gridcell_dyn(572, 55)
 
 # Open input data
 # The data_in-instance.pkl file is a instance of caete_inputs.py data_in saved as a pickle file
@@ -40,13 +39,13 @@ with open('../input/data_in-instance.pkl', 'rb') as fh:
 
 # Update(fill with input data) the created gridcells - init the gridcell with INPUT DATA
 grda.init_caete_dyn(dt1, 'AM - Manaus')
-grdb.init_caete_dyn(dt1, 'AM - Oeste')
-grdc.init_caete_dyn(dt1, 'Africa - SAV-FOR')
-grd1.init_caete_dyn(dt1, 'RU - Oeste')
-grd2.init_caete_dyn(dt1, 'RU - Norte')
+# grdb.init_caete_dyn(dt1, 'AM - Oeste')
+# grdc.init_caete_dyn(dt1, 'Africa - SAV-FOR')
+# grd1.init_caete_dyn(dt1, 'RU - Oeste')
+# grd2.init_caete_dyn(dt1, 'RU - Norte')
 
 # A list of gridcells prepared to be simulated
-works = [grda, grdb, grdc, grd1, grd2]  # , grd3]
+# works = [grda, grdb, grdc, grd1, grd2]  # , grd3]
 
 
 def f0(grd):
@@ -58,15 +57,15 @@ def f0(grd):
 
 
 # Serial procesing: only one gridcell
-# grd = f0(grda)
+grd = f0(grda)
 
 # Parallel processing
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    import multiprocessing as mp
+#     import multiprocessing as mp
 
-    with mp.Pool(processes=5) as p:
-        result = p.map(f0, works)
+#     with mp.Pool(processes=5) as p:
+#         result = p.map(f0, works)
 
 # # # def plots(): simple plot with matplotlib
 # colors = ['g', 'r', 'b', 'm', 'y', 'k']

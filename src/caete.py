@@ -1,4 +1,4 @@
-#-*-coding:utf-8-*-
+# -*-coding:utf-8-*-
 # "CAETÊ"
 
 """
@@ -53,22 +53,24 @@ class gridcell_dyn:
     """
 
     def __init__(self, x, y):
-
         """Construct the gridcell object"""
 
         # CELL Identifiers
         self.x = x                            # Grid point x coordinate
         self.y = y                            # Grid point y coordinate
-        self.name = str(y) + '-' + str(x)     # Name of the gridcell in the form of 'y-x'
-        self.pos = (int(self.x), int(self.y)) # Tuple of (x, y) gridcell position
+        # Name of the gridcell in the form of 'y-x'
+        self.name = str(y) + '-' + str(x)
+        # Tuple of (x, y) gridcell position
+        self.pos = (int(self.x), int(self.y))
 
-        #TODO
+        # TODO
         self.neighbours = []                  # Neighbours pos of the gridcell
 
         # Time related attributes and execution control
-        #TODO
+        # TODO
         self.complete = False   # Indicates if the gridcell already have runs
-        self.run_id = None      # String defining the stage of execution (spinup, hist, proj)
+        # String defining the stage of execution (spinup, hist, proj)
+        self.run_id = None
         self.run_index = []
         self.index_dicts = {}   # Dict containing the metadata about executed runs
         self.ndays = 0          # Number of days for the current execution
@@ -104,7 +106,7 @@ class gridcell_dyn:
         self.npp = None
         self.lai = None
         self.clit = None  # 2D
-        self.csoil = None # 3D
+        self.csoil = None  # 3D
         self.hresp = None
 
         self.rcm = None
@@ -150,7 +152,6 @@ class gridcell_dyn:
         # Let the gridcell object grow but be aware
 
     def init_caete_dyn(self, dt1, name, init_date=None, end_date=None, mode="spinup"):
-
         """ Prepare the gridcell instance for run.
             TODO: Adapt to the dynamics structure
 
@@ -197,7 +198,6 @@ def run_dyn(grd, at=np.copy(d_at)):
     # starting variables
     # execute the model according to grd time variables
 
-
     RUN = 0
     w0 = np.zeros(shape=npls,) + 0.01
     g0 = np.zeros(shape=npls,)
@@ -206,18 +206,17 @@ def run_dyn(grd, at=np.copy(d_at)):
     dcl = np.zeros(npls,)
     dca = np.zeros(npls,)
     dcf = np.zeros(npls,)
-
-    grd.clin, grd.cfin, grd.cwin = model_funcs.spinup2(0.5, at)
-
+    # model_funcs.spinup2(0.5, at)
+    grd.clin = np.zeros(npls,) + 0.1
+    grd.cfin = np.zeros(npls,) + 0.1
+    grd.cwin = np.zeros(npls,) + 0.1
 
     # ndays,x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
     #         &,cleaf_ini,cawood_ini,cfroot_ini
 
-
-
     outputs = model.caete_dyn(grd.x, grd.y, RUN, at, w0, g0, s0, dcl, dca, dcf, grd.pr,
-                           grd.tas, grd.ps, grd.rsds,
-                           grd.rhs, grd.clin, grd.cwin, grd.cfin)
+                              grd.tas, grd.ps, grd.rsds,
+                              grd.rhs, grd.clin, grd.cwin, grd.cfin)
 
     # TODO
     # atualizar attributos de tempo de grd
@@ -233,11 +232,11 @@ def run_dyn(grd, at=np.copy(d_at)):
     grd.npp = outputs[4]
     grd.lai = outputs[5]
     grd.clit = outputs[6]  # 2D
-    grd.csoil = outputs[7] # 3D
+    grd.csoil = outputs[7]  # 3D
     grd.hresp = outputs[8]
 
     grd.rcm = outputs[9]
-    grd.f5  = outputs[10]
+    grd.f5 = outputs[10]
     grd.runom = outputs[11]
     grd.evapm = outputs[12]
     grd.wsoil = outputs[13]
@@ -274,14 +273,13 @@ def run_dyn(grd, at=np.copy(d_at)):
     grd.lnr = outputs[41]
     grd.storage_pool = outputs[42]
 
-
     def spin(grd1, r_number):
         """ Continuation Runs """
 
         outputs = model.caete_dyn(grd.x, grd.y, r_number, at, grd1.wfim, grd1.gfim, grd1.sfim,
-                               grd1.dl_final, grd1.dw_final, grd1.dr_final, grd1.pr,
-                               grd1.tas, grd1.ps, grd1.rsds, grd1.rhs,
-                               grd1.clf, grd1.caf, grd1.cff)
+                                  grd1.dl_final, grd1.dw_final, grd1.dr_final, grd1.pr,
+                                  grd1.tas, grd1.ps, grd1.rsds, grd1.rhs,
+                                  grd1.clf, grd1.caf, grd1.cff)
 
         grd1.emaxm = np.hstack((grd1.emaxm, outputs[0]))
         grd1.tsoil = np.hstack((grd1.tsoil, outputs[1]))
@@ -333,26 +331,25 @@ def run_dyn(grd, at=np.copy(d_at)):
 
 # # GAMBIARRA NERVOSA
 
-    print('\n--run 1\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
+    # print('\n--run 1\n')
+    # RUN += int(gp.nt1)
+    # spin(grd, RUN)
 
-    print('\n--run 2\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
+    # print('\n--run 2\n')
+    # RUN += int(gp.nt1)
+    # spin(grd, RUN)
 
-    print('\n--run 3\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
+    # print('\n--run 3\n')
+    # RUN += int(gp.nt1)
+    # spin(grd, RUN)
 
-    print('\n--run 4\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
+    # print('\n--run 4\n')
+    # RUN += int(gp.nt1)
+    # spin(grd, RUN)
 
     # print('\n--run 5\n')
     # RUN += int(gp.nt1)
     # spin(grd, RUN)
-
 
     # print('run 6\n')
     # RUN += int(gp.nt1)
@@ -436,13 +433,16 @@ def run_dyn(grd, at=np.copy(d_at)):
         # cont_run(grd,RUN)
 # #---------------
 
+
 def model_flush(grd):
     """collect garbage grd"""
     pass
 
+
 def rm_apply(gridcell_obj):
     """apply the model--- to be employed in multiprocessing"""
     pass
+
 
 if __name__ == "__main__":
     pass
