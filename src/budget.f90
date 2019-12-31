@@ -24,8 +24,8 @@ contains
 
    !,mineral_n,labile_p
 
-   subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh, mineral_n,&
-        & labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
+   subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
+        & sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
         & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
         & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
         & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lnr)
@@ -35,7 +35,8 @@ contains
       use photo, only: pft_area_frac, allocation
       use water, only: evpot2, penman, available_energy, runoff
       use productivity
-
+      use soil_dec, only: mineral_n => inorg_n,&     ! Inorganic N in soil kg m-2
+                        & labile_p => inorg_p        ! Available P in soil kg m-2
       !     ----------------------------INPUTS-------------------------------
       real(r_4),dimension(ntraits,npls),intent(in) :: dt
       real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
@@ -47,12 +48,6 @@ contains
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
-      real(r_8),intent(in) :: mineral_n
-      real(r_8),intent(in) :: labile_p
-      ! State variables INPUTS & OUTPUTS
-      !NEW inout only for test pourposes. these are inputs
-      ! real(r_8),intent(in) :: mineral_n   ! Mineral pools (SOIL) kg(Nutrient) m-2
-      ! real(r_8),intent(in) :: labile_p
 
       real(r_8),dimension(3,npls),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
@@ -96,6 +91,9 @@ contains
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1
 
       !     -----------------------Internal Variables------------------------
+      real(r_8) :: avail_n
+      real(r_8) :: avail_p
+
       integer(i_4) :: p
       logical :: end_pls = .false.
       logical :: no_cell = .false.
@@ -140,6 +138,10 @@ contains
 
 
 
+      !     NUTRIENTS:
+      !     ==========
+      avail_n = real(mineral_n, kind=r_8)
+      avail_p = real(labile_p, kind=r_8)
 
       !     Precipitation
       !     =============
@@ -211,10 +213,46 @@ contains
 
          end_pls = .false.
 
+         ! subroutine prod(dt, light_limit, temp, p0, w, ipar, rh, emax, cl1_prod, &
+         !    & ca1_prod, cf1_prod, beta_leaf, beta_awood, beta_froot, sto1, ph, ar , &
+         !    & nppa, laia, f5, vpd, rm, rg, rc, wue, c_defcit, vm_out, sla, sto2)
+         !     use types
+         !     use global_par
+         !     use photo
+         !     use water
+         !     use utils
+         !     real(r_4),dimension(ntraits),intent(in) :: dt ! PLS data
+         !     real(r_4), intent(in) :: temp                 !Mean monthly temperature (oC)
+         !     real(r_4), intent(in) :: p0                   !Mean surface pressure (hPa)
+         !     real(r_4), intent(in) :: w                    !Soil moisture kg m-2
+         !     real(r_4), intent(in) :: ipar                 !Incident photosynthetic active radiation (w/m2)
+         !     real(r_4), intent(in) :: rh,emax !Relative humidity/MAXIMUM EVAPOTRANSPIRATION
+         !     real(r_8), intent(in) :: cl1_prod, cf1_prod, ca1_prod        !Carbon in plant tissues (kg/m2)
+         !     real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
+         !     real(r_8), intent(in) :: beta_awood
+         !     real(r_8), intent(in) :: beta_froot
+         !     real(r_8), dimension(3), intent(in) :: sto1
+         !     logical(l_1), intent(in) :: light_limit                !True for no ligth limitation
+
          call prod(dt1, light_limitation_bool(p), temp, p0, w(p), ipar, rh, emax, cl1(p)&
               &, ca1(p), cf1(p), dleaf(p), dwood(p), droot(p), sto_budg(:,p), ph(p), ar(p)&
               &, nppa(p),laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p), wue(p), c_def(p)&
               &, vcmax(p), specific_la(p), day_storage(:,p))
+
+         !   real(r_4), intent(out) :: ph                   !(Canopy) gross photosynthesis (kgC/m2/yr)
+         !   real(r_4), intent(out) :: rc                   !Stomatal resistence (not scaled to canopy!) (s/m)
+         !   real(r_4), intent(out) :: laia                 !Autotrophic respiration (kgC/m2/yr)
+         !   real(r_4), intent(out) :: ar                   !Leaf area index (m2 leaf/m2 area)
+         !   real(r_4), intent(out) :: nppa                 !Net primary productivity (kgC/m2/yr)
+         !   real(r_4), intent(out) :: vpd
+         !   real(r_4), intent(out) :: f5                   !Water stress response modifier (unitless)
+         !   real(r_4), intent(out) :: rm                   !autothrophic respiration (kgC/m2/day)
+         !   real(r_4), intent(out) :: rg
+         !   real(r_4), intent(out) :: wue
+         !   real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1)
+         !   real(r_8), intent(out) :: sla          !specific leaf area (m2/kg)
+         !   real(r_8), intent(out) :: vm_out
+         !   real(r_8), dimension(3), intent(out) :: sto2
 
          sto_budg(:,p) = day_storage(:,p)
 
@@ -237,15 +275,14 @@ contains
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
 
-         call allocation (dt1,nppa(p),mineral_n,labile_p,cl1(p),ca1(p)&
-              &,cf1(p),sto_budg(:,p),day_storage(:,p),cl2(p),ca2(p)&
-              &,cf2(p),litter_l(p),cwd(p)&
-              &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
+         call allocation (dt1, nppa(p), avail_n, avail_p, cl1(p), ca1(p)&
+              &,cf1(p), sto_budg(:,p), day_storage(:,p), cl2(p), ca2(p)&
+              &,cf2(p),litter_l(p),cwd(p),litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
 
-         print *, "From alloc in bdg-------------------------"
-         print *, nupt(p), "NUPT"
-         print *, pupt(p), "PUPT"
-         print*,
+         ! print *, "From alloc in bdg-------------------------"
+         ! print *, nupt(p), "NUPT"
+         ! print *, pupt(p), "PUPT"
+         ! print*,
          sto_budg(:,p) = day_storage(:,p)
 
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO

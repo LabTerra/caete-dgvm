@@ -16,7 +16,7 @@ sto = np.zeros(shape=(3,m.global_par.npls), order='F')
 # real(kind=r_8),dimension(npft),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
 cl1 = np.zeros(m.global_par.npls) + 1 * np.random.random(m.global_par.npls,) # np.random.random(m.global_par.npls) + 0.7
 cf1 = np.zeros(m.global_par.npls) + 1 * np.random.random(m.global_par.npls,)#np.random.random(m.global_par.npls) + 0.7
-ca1 = np.zeros(m.global_par.npls) + 10.8 * np.random.random(m.global_par.npls,) 
+ca1 = np.zeros(m.global_par.npls) + 10.8 * np.random.random(m.global_par.npls,)
 # real(kind=r_8),dimension(npft),intent(inout) :: cf1_pft  !                 froot
 # real(kind=r_8),dimension(npft),intent(inout) :: ca1_pft  !                 cawood
 dleaf = np.random.random(m.global_par.npls) * 0.002
@@ -46,17 +46,17 @@ def testb():
     # real(kind=r_4),intent(in) :: p0                   ! Surface pressure (mb)
     p0 = 1013.25
     # real(kind=r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
-    ipar = 290 / 2.18e5 
+    ipar = 290 / 2.18e5
     # real(kind=r_4),intent(in) :: rh                   ! Relative humidity
     rh = 0.80
-    # ! State variables INPUTS & OUTPUTS 
+    # ! State variables INPUTS & OUTPUTS
     # !NEW
     # real(kind=r_8),intent(in) :: mineral_n   ! Mineral pools (SOIL) kg(Nutrient) m-2
 
-    # real(kind=r_8),dimension(npft,3),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P) 
+    # real(kind=r_8),dimension(npft,3),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P)
     # real(kind=r_8),dimension(npft),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
     # real(kind=r_8),dimension(npft),intent(inout) :: droot
-    # real(kind=r_8),dimension(npft),intent(inout) :: dwood 
+    # real(kind=r_8),dimension(npft),intent(inout) :: dwood
 
     # subroutine daily_budget(dt,w1,g1,s1,ts,temp,prec,p0,ipar,rh&
     #                       &,mineral_n,labile_p,sto_budg&
@@ -72,7 +72,7 @@ def test_b_dyn():
     # real(kind=r_8),dimension(npft),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
     cl1 = np.zeros(m.global_par.npls) + 1 # np.random.random(m.global_par.npls) + 0.7
     cf1 = np.zeros(m.global_par.npls) + 1 #np.random.random(m.global_par.npls) + 0.7
-    ca1 = np.zeros(m.global_par.npls) + 10.8 
+    ca1 = np.zeros(m.global_par.npls) + 10.8
     # real(kind=r_8),dimension(npft),intent(inout) :: cf1_pft  !                 froot
     # real(kind=r_8),dimension(npft),intent(inout) :: ca1_pft  !                 cawood
     dleaf = np.random.random(m.global_par.npls) * 0.002
@@ -80,9 +80,6 @@ def test_b_dyn():
     dwood = np.random.random(m.global_par.npls) * 0.002
 
     io0  = [sto,cl1,ca1,cf1,dleaf,droot,dwood]
-    nmin = np.array([0.001,])
-    # real(kind=r_8),intent(in) :: labile_p
-    plab = np.array([0.00001,])
 
     # out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,rh,nmin,plab,sto,cl1,ca1,cf1,dleaf,droot,dwood)
     data = dict()
@@ -100,26 +97,26 @@ def test_b_dyn():
     # real(kind=r_4),intent(in) :: p0                   ! Surface pressure (mb)
     p0 = 1013.25
     # real(kind=r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
-    ipar = 290 / 2.18e5 
+    ipar = 290 / 2.18e5
     # real(kind=r_4),intent(in) :: rh                   ! Relative humidity
     rh = 0.70
 
-    out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,rh,nmin,plab,sto,cl1,ca1,cf1,dleaf,droot,dwood)
+    out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,rh,sto,cl1,ca1,cf1,dleaf,droot,dwood)
     ion  = [sto,cl1,ca1,cf1,dleaf,droot,dwood]
-    io0  = [nmin[:],plab[:],sto[:],cl1[:],ca1[:],cf1[:],dleaf[:],droot[:],dwood[:]]
+    io0  = [sto[:],cl1[:],ca1[:],cf1[:],dleaf[:],droot[:],dwood[:]]
 
 
 
     for nz in range(50):
 
-        
+
         out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,
             rh,io0[0],io0[1],io0[2],io0[3],io0[4],io0[5],io0[6],io0[7],io0[8])
 
         io0 = [io0[0],io0[1],io0[2],io0[3],io0[4],io0[5],io0[6],io0[7],io0[8]]
 
         #print(io0)
-        inouts = 'nmin,plab,sto,cl1,ca1,cf1,dleaf,droot,dwood'.split(',')
+        inouts = 'sto,cl1,ca1,cf1,dleaf,droot,dwood'.split(',')
 
         lst = ('w2,g2,s2,smavg,ruavg,evavg,epavg,phavg,aravg,nppavg,laiavg,rcavg,f5avg,rmavg,\
                rgavg,cleafavg_pft,cawoodavg_pft,cfrootavg_pft,ocpavg,wueavg,cueavg,c_defavg,vcmax,\

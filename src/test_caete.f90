@@ -196,10 +196,8 @@ program test_carbon3
       real(r_4) :: temp = 23.0                 ! Surface air temperature (oC)
       real(r_4) :: prec = 2.0                 ! Precipitation (mm/day)
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
-      real(r_4) :: ipar = 250.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+      real(r_4) :: ipar = 0.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4) :: rh = 0.8                   ! Relative humidity
-      real(r_8) :: mineral_n =  0.00010D0
-      real(r_8) :: labile_p = 0.000010D0
       ! inouts
       real(r_8),dimension(3,npls) :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls) :: cl1_pft ! initial BIOMASS cleaf compartment
@@ -256,6 +254,7 @@ program test_carbon3
       read(45,12) dt
       !print *, dt(:,1)
 
+      ipar = 0.5 * 200 / 2.18e5
       w1 = 0.1
       g1 = 0.01
       s1 = 0.01
@@ -284,8 +283,9 @@ program test_carbon3
          print *,
 
          call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-         &, mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+         &, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
          &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
+!c OUT
          &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&
          &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
          &, cfrootavg_pft, ocpavg, wueavg&
@@ -294,8 +294,15 @@ program test_carbon3
 
          ! print *, ""
 
-         ! print *, ""
-         ! ! print *, "Water ->",w2
+          print *, ""
+          print *, phavg  , "ph"
+          print *, aravg, "ar"
+          print *, nppavg, "npp"
+          print *, laiavg, "laia"
+          print *,
+          print *,
+          print *,
+          ! ! print *, "Water ->",w2
          ! ! print *,""
          ! ! print *, "LAIA",laiavg
          ! ! print *,""

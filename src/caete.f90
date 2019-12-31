@@ -320,7 +320,25 @@ contains
          c_defmes = 0.0
 
 
-         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
+   ! subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh, mineral_n,&
+   !    & labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
+   !    & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
+   !    & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
+   !    & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lnr)
+
+         ! real(r_4),dimension(ntraits,npls),intent(in) :: dt
+         ! real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
+         ! real(r_4),dimension(npls),intent(in) :: g1   !Initial soil ice storage (mm)
+         ! real(r_4),dimension(npls),intent(in) :: s1   !Initial overland snow storage (mm)
+         ! real(r_4),intent(in) :: ts                   ! Soil temperature (oC)
+         ! real(r_4),intent(in) :: temp                 ! Surface air temperature (oC)
+         ! real(r_4),intent(in) :: prec                 ! Precipitation (mm/day)
+         ! real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
+         ! real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
+         ! real(r_4),intent(in) :: rh                   ! Relative humidity
+
+
+         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
               &,dl,dw,dr,wfim,gfim,sfim,smes,rmes,emes,epmes,phmes,armes,nppmes&
               &,laimes,rcmes,f5mes,rmmes,rgmes,cleafmes,cawoodmes&
@@ -328,9 +346,9 @@ contains
               &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
               &,litter_fr_com,lnr_com)
 
-         print*, "FROM CAETE"
-         print*, nupt_com
-         print*, pupt_com
+         !print*, "FROM CAETE"
+         !print*, nupt_com
+         !print*, pupt_com
          ! SAVE DAILY VALUES
          !82 columns-------------------------------------------------------------
          grd = gridocpmes
@@ -497,10 +515,10 @@ contains
             endif
          endif
 
-         if (k .gt. 200) then
-            print*, "stoping at line 200"
-            stop
-         endif
+         !if (k .gt. 200) then
+         !   print*, "stoping at line 200"
+         !   stop
+         !endif
       enddo ! day_loop(nt1)
 
       ! Change this section to prevent NANs

@@ -25,6 +25,9 @@ test: $(objects)
 	$(PYEXEC) $(PYFILE)
 	$(FC) -o test $(FCFLAGS) $(objects)
 
+test1: $(objects)
+	$(FC) -o test $(FCFLAGS) $(objects)
+
 interfaces: $(sources)
 	$(F2PY) $(HFLAG) $(INTERFACES) $(sources) $(MFLAG) $(MODNAME) $(OVRTFLAG)
 
