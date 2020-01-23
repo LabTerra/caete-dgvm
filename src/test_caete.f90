@@ -276,7 +276,7 @@ program test_carbon3
       cf1_pft = real(cf_, kind=r_8)
       ca1_pft = real(ca_, kind=r_8)
 
-      do index = 1,5000
+      do index = 1,500
          print *,
          print *,
          print *, 'rodada: ', index

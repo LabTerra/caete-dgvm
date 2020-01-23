@@ -26,6 +26,7 @@ module utils
     public :: abort_on_inf
     public :: ascii2bin
     public :: leap
+    public :: cwm
 
     contains
 
@@ -152,5 +153,16 @@ function process_id() result(ipid)
 
      !=================================================================
      !=================================================================
+
+    function cwm(var_arr, area_arr) result(retval)
+
+        use types
+        use global_par
+
+        real(kind=r_8), dimension(npls), intent(in) :: var_arr, area_arr
+        real(kind=r_4) :: retval
+        retval = real(sum(var_arr * area_arr, mask = .not. isnan(var_arr)), r_4)
+
+     end function cwm
 
 end module utils
