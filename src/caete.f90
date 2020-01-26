@@ -73,60 +73,65 @@ contains
 
       ! real(r_4),intent(in) :: n_mineral    ! Initial Mineral Content disponible (kg m-2)
       ! real(r_4),intent(in) :: p_labile     ! Initial Mineral Content disponible
-
       !     -----------------------------E N D-------------------------------
 
+      ! emaxm, tsoil, photo_comm, aresp_comm,&
+      ! & npp_comm, lai_comm, c_litter, c_soil, het_resp, rcm_comm, f51, runom_comm,&
+      ! & evapm_comm, wsoil_comm, rm_comm, rg_comm, cleaf_comm, cawood_comm, cfroot_comm,&
+      ! & grid_area, wue, cue, cdef, wfim, gfim, sfim, dl_final, dw_final, dr_final,&
+      ! & clf, caf, cff, nitro_min, phop_lab, vcmax, specific_la, nupt, pupt,&
+      ! & litter_l, cwd, litter_fr, snr, lnr, storage_pool
+
       !     -------------------------O U T P U T S---------------------------
-      ! INTGRATED FROM COMMUNITY
-      real(r_4),dimension(nt1),  intent(out) :: tsoil        ! soil temperature °C
-      real(r_4),dimension(nt1),  intent(out) :: emaxm        ! Max.evapotranspiration (kg m-2 day-1)
-      real(r_8),dimension(nt1),  intent(out) :: photo_comm    ! daily photosynthesis   (kgC m-2 year-1)
-      real(r_8),dimension(nt1),  intent(out) :: aresp_comm    ! daily autotrophic res  (kgC m-2 year-1)
-      real(r_8),dimension(nt1),  intent(out) :: npp_comm      ! daily net primary produ (kgC m-2 year-1)
-      real(r_8),dimension(nt1),  intent(out) :: lai_comm      ! daily leaf area index m2 m-2
-      real(r_4),dimension(2,nt1),intent(out) :: c_litter   ! daily litter carbon KgC m-2
-      real(r_4),dimension(2,nt1),intent(out) :: c_soil     ! daily soil carbon KgC m-2
-      real(r_4),dimension(nt1),  intent(out) :: het_resp     ! daily het resp  (kgC/m2)
-      real(r_8),dimension(nt1),  intent(out) :: rcm_comm      ! Canopy resistence s m-1
-      real(r_8),dimension(nt1),  intent(out) :: f51          ! Water stress modifier (dimensionless)
-      real(r_8),dimension(nt1),  intent(out) :: runom_comm    ! Runoff kg m-2 day-1
-      real(r_8),dimension(nt1),  intent(out) :: evapm_comm    ! Actual evapotranspiration kg m-2 day-1
-      real(r_8),dimension(nt1),  intent(out) :: wsoil_comm    ! Soil moisture (kg m-2)
-      real(r_8),dimension(nt1),  intent(out) :: wue,cue,cdef ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1; 2 - npp/gpp; 3 - kgC m-2
-      real(r_8),dimension(nt1),  intent(out) :: rm_comm       ! Plant (autotrophic) Maintenance respiration
-      real(r_8),dimension(nt1),  intent(out) :: rg_comm       ! Plant (autotrophic) Growth respiration
-      real(r_8),dimension(nt1),  intent(out) :: cleaf_comm    ! leaf biomass (KgC/m2)
-      real(r_8),dimension(nt1),  intent(out) :: cawood_comm   ! aboveground wood biomass (KgC/m2)
-      real(r_8),dimension(nt1),  intent(out) :: cfroot_comm   ! fine root biomass (KgC/m2)
+      real(r_4),dimension(nt1),  intent(out) :: emaxm        ! 1   ! Max.evapotranspiration (kg m-2 day-1)
+      real(r_4),dimension(nt1),  intent(out) :: tsoil        ! 2   ! soil temperature °C
+      real(r_8),dimension(nt1),  intent(out) :: photo_comm   ! 3   ! daily photosynthesis   (kgC m-2 year-1)
+      real(r_8),dimension(nt1),  intent(out) :: aresp_comm   ! 4   ! daily autotrophic res  (kgC m-2 year-1)
+      real(r_8),dimension(nt1),  intent(out) :: npp_comm     ! 5   ! daily net primary produ (kgC m-2 year-1)
+      real(r_8),dimension(nt1),  intent(out) :: lai_comm     ! 6   ! daily leaf area index m2 m-2
+      real(r_4),dimension(2,nt1),intent(out) :: c_litter     ! 7   ! litter carbon KgC m-2
+      real(r_4),dimension(2,nt1),intent(out) :: c_soil       ! 8   ! soil carbon KgC m-2
+      real(r_4),dimension(nt1),  intent(out) :: het_resp     ! 9   ! daily het resp  (kgC/m2)
+      real(r_8),dimension(nt1),  intent(out) :: rcm_comm     ! 10  ! leaf resistence s m-1
+      real(r_8),dimension(nt1),  intent(out) :: f51          ! 11  ! Water stress modifier (dimensionless)
+      real(r_8),dimension(nt1),  intent(out) :: runom_comm   ! 12  ! Runoff kg m-2 day-1
+      real(r_8),dimension(nt1),  intent(out) :: evapm_comm   ! 13  ! Actual evapotranspiration kg m-2 day-1
+      real(r_8),dimension(nt1),  intent(out) :: wsoil_comm   ! 14  ! Soil moisture (kg m-2)
+      real(r_8),dimension(nt1),  intent(out) :: rm_comm      ! 15  ! Plant (autotrophic) Maintenance respiration
+      real(r_8),dimension(nt1),  intent(out) :: rg_comm      ! 16  ! Plant (autotrophic) Growth respiration
+      real(r_8),dimension(nt1),  intent(out) :: cleaf_comm   ! 17  ! leaf biomass (KgC/m2)
+      real(r_8),dimension(nt1),  intent(out) :: cawood_comm  ! 18  ! aboveground wood biomass (KgC/m2)
+      real(r_8),dimension(nt1),  intent(out) :: cfroot_comm  ! 19  ! fine root biomass (KgC/m2)
+      real(r_8),dimension(npls), intent(out) :: grid_area    ! 20  ! gridcell area fraction of pfts! ratio (0-1)
+      real(r_8),dimension(nt1),  intent(out) :: wue          ! 21  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
+      real(r_8),dimension(nt1),  intent(out) :: cue          ! 22  ! 2 - npp/gpp;
+      real(r_8),dimension(nt1),  intent(out) :: cdef         ! 23  ! 3 - kgC m-2
+      real(r_4),dimension(npls), intent(out) :: wfim         ! 24  ! Kg m-2
+      real(r_4),dimension(npls), intent(out) :: gfim         ! 25  ! Kg m-2
+      real(r_4),dimension(npls), intent(out) :: sfim         ! 26  ! Kg m-2  final day water pools (snow; water; ice)
+      real(r_8),dimension(npls), intent(out) :: dl_final     ! 27  ! delta(now, last day pool size)
+      real(r_8),dimension(npls), intent(out) :: dw_final     ! 28  !
+      real(r_8),dimension(npls), intent(out) :: dr_final     ! 29  ! KgC m-2
+      real(r_8),dimension(npls), intent(out) :: clf          ! 30  ! final carbon pools (cveg) for each pft (not scaled to cell area)
+      real(r_8),dimension(npls), intent(out) :: caf          ! 31  ! KgC m-2
+      real(r_8),dimension(npls), intent(out) :: cff          ! 32
+      real(r_4),dimension(nt1),  intent(out) :: nitro_min    ! 33  ! Nitrogen inorganic pool
+      real(r_4),dimension(nt1),  intent(out) :: phop_lab     ! 34  ! Phosphorus labile pool
 
-      !  Under construction
-      real(r_4),dimension(nt1),  intent(out) :: nitro_min   ! Nitrogen inorganic pool
-      real(r_4),dimension(nt1),  intent(out) :: phop_lab    ! Phosphorus labile pool
-      real(r_4),dimension(nt1),  intent(out) :: vcmax       ! mol m⁻² s⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: specific_la ! m²g⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: nupt        ! n plant uptake - CWM
-      real(r_4),dimension(nt1),  intent(out) :: pupt        ! p plant uptake - CWM
-      real(r_4),dimension(nt1),  intent(out) :: litter_l    ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: cwd         ! CWM
-      real(r_4),dimension(nt1),  intent(out) :: litter_fr   ! CWM
-      real(r_4),dimension(6,nt1),intent(out) :: lnr         ! Litter nutrient ratios
-      real(r_4),dimension(8,nt1),intent(out) :: snr         ! Soil nutrient ratios
-      real(r_4),dimension(3,nt1),intent(out) :: storage_pool! Rapid Auxiliary daily storage pool for carbon and nutrients
+      ! CHECK THE WRITE OF THESE
+      real(r_4),dimension(nt1),  intent(out) :: vcmax        ! 35  ! mol m⁻² s⁻¹
+      real(r_4),dimension(nt1),  intent(out) :: specific_la  ! 36  ! m²g⁻¹
 
-      ! COMMUNITY WIDE
-      real(r_4),dimension(npls), intent(out) :: sfim           ! Kg m-2  final day water pools (snow; water; ice)
-      real(r_4),dimension(npls), intent(out) :: wfim           ! Kg m-2
-      real(r_4),dimension(npls), intent(out) :: gfim           ! Kg m-2
+      ! TODO FIND UNITS TO UPT
+      real(r_4),dimension(nt1),  intent(out) :: nupt         ! 37  ! n plant uptake - CWM  TODO units
+      real(r_4),dimension(nt1),  intent(out) :: pupt         ! 38  ! p plant uptake - CWM
 
-      real(r_8),dimension(npls),intent(out) :: grid_area      ! gridcell area fraction of pfts! ratio (0-1)
-
-      real(r_8),dimension(npls),intent(out) :: clf            ! final carbon pools (cveg) for each pft (not scaled to cell area)
-      real(r_8),dimension(npls),intent(out) :: caf            ! KgC m-2
-      real(r_8),dimension(npls),intent(out) :: cff
-
-      real(r_8),dimension(npls),intent(out) :: dl_final       ! delta(now, last day pool size)
-      real(r_8),dimension(npls),intent(out) :: dr_final       ! KgC m-2
-      real(r_8),dimension(npls),intent(out) :: dw_final
+      real(r_4),dimension(nt1),  intent(out) :: litter_l     ! 39  ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
+      real(r_4),dimension(nt1),  intent(out) :: cwd          ! 40  ! CWM
+      real(r_4),dimension(nt1),  intent(out) :: litter_fr    ! 41  ! CWM
+      real(r_4),dimension(8,nt1),intent(out) :: snr          ! 42  ! Soil nutrient ratios g/g
+      real(r_4),dimension(6,nt1),intent(out) :: lnr          ! 43  ! Litter nutrient ratios
+      real(r_4),dimension(3,nt1),intent(out) :: storage_pool ! 44  ! Rapid Auxiliary daily storage pool for carbon and nutrients g m⁻²
 
       !  c     --------------------------------E N D----------------------------
 

@@ -62,7 +62,7 @@ def testb():
     #                       &,mineral_n,labile_p,sto_budg&
     #                       &,cl1_pft,ca1_pft,cf1_pft,dleaf,dwood
 
-    out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,rh,n_min,p_min,sto,cl1,ca1,cf1,dleaf,droot,dwood)
+    out = m.budget.daily_budget(dt,w1,ga1,s1,tsoil,temp,prec,p0,ipar,rh,sto,cl1,ca1,cf1,dleaf,droot,dwood)
     return out
 
 
