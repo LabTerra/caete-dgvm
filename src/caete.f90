@@ -32,8 +32,6 @@ contains
       use types
       use utils, only: gpid   => process_id
       use global_par
-      use soil_dec, only: get_uptake, set_uptake
-      use soil_dec, only: get_inorgn, get_inorgp
       use soil_dec, only: litc   => litter_carbon  ,&
                         & soic   => soil_carbon    ,&
                         & p_glob => available_p    ,&
@@ -442,26 +440,28 @@ contains
          litc = c_litter(:,k)
          soic = c_soil(:,k)
 
-         if(k .gt. 30000) then
-            nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
-            phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
-            snr(:, k) = soil_nr_out
+      !     if(k .gt. 200) then
+      !        nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
+      !        phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
+      !        snr(:, k) = soil_nr_out
+      !        n_glob = real(nitro_min(k), r_8)
+      !        p_glob = real(phop_lab(k) , r_8)
 
-         ! if(k .gt.30000) then
-         !    call set_uptake(1,pupt(k))
-         !    call set_uptake(2,nupt(k))
-         ! endif
+      ! !    ! if(k .gt.30000) then
+      ! !    !    call set_uptake(1,pupt(k))
+      ! !    !    call set_uptake(2,nupt(k))
+      ! !    ! endif
 
-        ! UPDATE MINERAL POOLS
-            n_glob = real(nitro_min(k),r_8)
-            p_glob = real(phop_lab(k), r_8)
-         else
-            nitro_min(k) = real(n_glob,r_4)
-            phop_lab(k) = real(p_glob,r_4)
-            snr(:, k) = soil_nr_out
-            n_glob = aux_var0_0x29a
-            p_glob = aux_var0_0x29b
-         endif
+      ! !   ! UPDATE MINERAL POOLS
+      ! !       n_glob = real(nitro_min(k),r_8)
+      ! !       p_glob = real(phop_lab(k), r_8)
+      !     else
+             nitro_min(k) = real(n_glob,r_4)
+             phop_lab(k) = real(p_glob,r_4)
+         !     snr(:, k) = soil_nr_out
+         !     !n_glob = aux_var0_0x29a
+         !     !p_glob = aux_var0_0x29b
+         !  endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
@@ -581,8 +581,6 @@ contains
       !       call fill_no_data_4b(lnr(nindex,:), ndays)
       !    enddo
       ! endif
-      aux1 = get_inorgp()
-      aux2 = get_inorgn()
       ! IDENTIFYING PROCESS
       if (text_ts) then
          print *, ''
@@ -594,11 +592,7 @@ contains
          print *, soic, ' => soil_carbon'
          print *, p_glob, ' => labile_p_glob'
          print *, n_glob, ' => mineral_n_glob'
-         print *, aux1, '=> INorganic P'
-         print *, aux2, '=> INorganic N'
          print *, soil_nr_out, '=> SNR'
-         !print *, nupt(k), '=>P uptake'
-         !print *, pupt(), '=>N uptake'
       endif
 
    contains

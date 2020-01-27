@@ -659,8 +659,8 @@ contains
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_8),intent(in) :: nmin ! N in mineral N pool(kg m-2)
-      real(r_8),intent(in) :: plab ! P in labile pool (kg m-2)
+      real(r_8),intent(in) :: nmin ! N in mineral N pool(g m-2)
+      real(r_8),intent(in) :: plab ! P in labile pool (g m-2)
       real(r_8),dimension(3),intent(in) :: storage ! Three element array- storage pool([C,N,P]) g m-2
       ! O
       real(r_8),dimension(3),intent(out) :: storage_out
@@ -799,8 +799,8 @@ contains
       ! Compare disponible nutrients with potential uptake
       ! Calculate available pools
       ! TODO - the influence of AM and Ptase are calculated before
-      available_n = (nmin * 1D3) + storage(2) !g m⁻²
-      available_p = (plab * 1D3) + storage(3) !g m⁻²
+      available_n = (nmin) + storage(2) !g m⁻²
+      available_p = (plab) + storage(3) !g m⁻²
       potential_uptake_n = nscl + nsca + nscf !g m⁻²
       potential_uptake_p = pscl + psca + pscf !g m⁻²
       nuptk = available_n - potential_uptake_n ! g(N) m-2
@@ -947,8 +947,8 @@ contains
             npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
             npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
             npp_froot = (npp_frootn + npp_frootp) / 2.0D0 ! g(C) m-2 day-1
-            nuptk = nmin * 1D3           ! g(N) m-2
-            puptk = plab * 1D3           ! g(P) m-2
+            nuptk = nmin           ! g(N) m-2
+            puptk = plab           ! g(P) m-2
             storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
       endif
 

@@ -37,20 +37,19 @@ module soil_dec
    ! These are global variables that are initialized in caete_init.
    ! New inputs -- Estimated from literature for Manaus Region
    ! For SPINUP only
-   real(r_8),public :: available_n = 3.775999e-4 ! kg m-2 Xu et al. 2013 ?
-   real(r_8),public :: available_p = 2.4299955e-4  ! kg m-2 Yang et al., 2013
+   real(r_8),public :: available_n = 3.775999e-1 ! g m-2 Xu et al. 2013 ?
+   real(r_8),public :: available_p = 2.4299955e-1  ! g m-2 Yang et al., 2013
 
 
    ! Internal Variables storing POOLS (IN)organic Nutrients
    real(r_4),public :: inorg_p = 0.0            ! Pool of N biomineralized (gm⁻²)
    real(r_4),public :: inorg_n = 0.0            ! Pool of P biomineralized
    real(r_4),public :: sorbed_p = 0.0           ! Sorbed P - Secondary Mineral P
+
    ! Available pools
 !   real(r_4),private :: avail_p = 0.0            ! Avilable P
 !   real(r_4),private :: avail_n = 0.0            ! Avilable N
-   ! Nutrients  Uptake
-   real(r_4),private :: p_uptk = 0.0             ! P uptake in Day N
-   real(r_4),private :: n_uptk = 0.0             ! N utake in Day N
+
 
    real(r_4),private,dimension(4) :: nmass_org = 0.0
    real(r_4),private,dimension(4) :: pmass_org = 0.0
@@ -65,95 +64,7 @@ module soil_dec
    public :: sorbed_p_equil  ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
    public :: bnf             ! Biological Nitrogen Fixation
 
-   ! GETTERS AND SETTERS SECTION
-   public :: get_inorgp, set_inorgp
-   public :: get_inorgn, set_inorgn
-   public :: get_orgn, get_orgp
-   public :: get_uptake, set_uptake
-
-
 contains
-   ! GETTER and SETTER to daily uptake
-   function get_uptake(nut) result(retval)
-
-      integer(i_4), intent(in) :: nut
-      real(r_4) :: retval
-
-      if(nut .eq. 1) then
-         retval = p_uptk
-      else if (nut .eq. 2) then
-         retval = n_uptk
-      else
-         retval = 0.0
-         call abort
-      endif
-      return
-   end function get_uptake
-
-   subroutine set_uptake(nut, val)
-
-      integer(i_4), intent(in) :: nut
-      real(r_4), intent(in) :: val
-
-      if(nut .eq. 1) then
-         p_uptk = val
-      else if (nut .eq. 2) then
-         n_uptk = val
-      else
-         call abort
-      endif
-   end subroutine set_uptake
-
-   ! GETTERS AND SETTERS FOR P AND N INORGANIC POOLS
-   function get_inorgp() result(retval)
-
-      real(r_4) :: retval
-
-      retval = inorg_p
-
-   end function get_inorgp
-
-   function get_inorgn() result(retval)
-
-      real(r_4) :: retval
-
-      retval = inorg_n
-
-   end function get_inorgn
-
-   subroutine set_inorgp(arg)
-
-      real(r_4),intent(in) :: arg
-
-      inorg_p = arg
-
-   end subroutine set_inorgp
-
-   subroutine set_inorgn(arg)
-
-      real(r_4),intent(in) :: arg
-
-      inorg_n = arg
-
-   end subroutine set_inorgn
-   ! GETTERS AND SETTERS FOR P AND N INORGANIC POOLS
-
-   ! Getters for organic Nutrients
-   function get_orgn() result(organic_nitrogen)
-
-      real(r_4) :: organic_nitrogen
-
-      organic_nitrogen = sum(nmass_org)
-
-   end function get_orgn
-
-   function get_orgp() result(organic_phosphorus)
-
-      real(r_4) :: organic_phosphorus
-
-      organic_phosphorus = sum(pmass_org)
-
-   end function get_orgp
 
 ! -------------------------------------------------------------
 
@@ -189,6 +100,7 @@ contains
 
 
    function sorbed_p_equil(arg) result(retval)
+      ! Linear equilibrium between inorganic P and available P pool
 
       real(r_4), intent(in) :: arg
       real(r_4) :: retval
@@ -202,7 +114,7 @@ contains
       real(r_4), intent(in) :: c_amount
       real(r_4) :: n_amount
 
-      n_amount = c_amount * (1.0/29.0)
+      n_amount = c_amount * (1.0/30.0)
 
    end function bnf
 
@@ -230,7 +142,7 @@ contains
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
-      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake
+      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻²)
       !     Outputs
       !     -------
       real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
@@ -401,12 +313,12 @@ contains
       inorg_p = inorg_p + sum(nutri_min_p)
 
       ! Update available N pool
-      available_n = real(inorg_n * 0.001, kind=r_8) ! Global Variable
+      available_n = real((inorg_n - pupt), kind=r_8) ! Global Variable
       !avail_n = inorg_n - nupt
 
       ! INLCUDE SORPTION DYNAMICS
       sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = real((inorg_p - sorbed_p) * 0.001, kind=r_8) ! Transform in 8 bytes real
+      available_p = real((inorg_p - sorbed_p - pupt), kind=r_8) ! Transform in 8 bytes real
       !avail_p = inorg_p - sorbed_p - pupt
       ! INCLUDE BIOLOGICAL NITROGEN FIXATION
 
