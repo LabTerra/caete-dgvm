@@ -177,15 +177,15 @@ def table_gen(NPLS):
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
     # # ----
-    leaf_n2c = np.random.uniform(0.005, 0.1, NPLS)
-    awood_n2c = np.random.uniform(0.005, 0.1, NPLS)
+    leaf_n2c = np.random.uniform(0.05, 0.1, NPLS)
+    awood_n2c = np.random.uniform(0.05, 0.1, NPLS)
     awood_n2c[0:alloc_g.shape[0]] = 0.0
-    froot_n2c = np.random.uniform(0.005, 0.1, NPLS)
+    froot_n2c = np.random.uniform(0.05, 0.1, NPLS)
 
-    leaf_p2c = np.random.uniform(0.0005, 0.009, NPLS)
-    awood_p2c = np.random.uniform(0.0005, 0.009, NPLS)
+    leaf_p2c = np.random.uniform(0.01, 0.1, NPLS)
+    awood_p2c = np.random.uniform(0.01, 0.1, NPLS)
     awood_p2c[0:alloc_g.shape[0]] = 0.0
-    froot_p2c = np.random.uniform(0.0005, 0.009, NPLS)
+    froot_p2c = np.random.uniform(0.01, 0.1, NPLS)
 
     stack = (g1, vcmax, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,

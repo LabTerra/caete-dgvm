@@ -36,6 +36,8 @@ contains
                         & soic   => soil_carbon    ,&
                         & p_glob => available_p    ,&
                         & n_glob => available_n    ,&
+                        & p_init => available_p_init    ,&
+                        & n_init => available_n_init    ,&
                         & carb3  => carbon3
       ! TODO correct soil_dec imports
       use water, only : soil_temp, soil_temp_sub
@@ -433,35 +435,21 @@ contains
 !             &  nupt, pupt, cl_out, cs_out, snr, hr)
 ! ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
-         call carb3(td, (t1ww / wmax),litter_l(k),cwd(k),litter_fr(k),lnr(:,k)&
-              &, litc,soic,nupt(k), pupt(k),c_litter(:,k),c_soil(:,k)&
+         call carb3(td, (t1ww / wmax), litter_l(k), cwd(k), litter_fr(k), lnr(:,k)&
+              &, litc, soic, nupt(k), pupt(k), c_litter(:,k), c_soil(:,k)&
               &,soil_nr_out, het_resp(k))
 
          litc = c_litter(:,k)
          soic = c_soil(:,k)
+         snr(:, k) = soil_nr_out
 
-      !     if(k .gt. 200) then
-      !        nitro_min(k) = real(n_glob,r_4) - (nupt(k) * 1e-3)
-      !        phop_lab(k) = real(p_glob,r_4) - (pupt(k) * 1e-3)
-      !        snr(:, k) = soil_nr_out
-      !        n_glob = real(nitro_min(k), r_8)
-      !        p_glob = real(phop_lab(k) , r_8)
-
-      ! !    ! if(k .gt.30000) then
-      ! !    !    call set_uptake(1,pupt(k))
-      ! !    !    call set_uptake(2,nupt(k))
-      ! !    ! endif
-
-      ! !   ! UPDATE MINERAL POOLS
-      ! !       n_glob = real(nitro_min(k),r_8)
-      ! !       p_glob = real(phop_lab(k), r_8)
-      !     else
-             nitro_min(k) = real(n_glob,r_4)
-             phop_lab(k) = real(p_glob,r_4)
-         !     snr(:, k) = soil_nr_out
-         !     !n_glob = aux_var0_0x29a
-         !     !p_glob = aux_var0_0x29b
-         !  endif
+         if(run .gt. 20000) then
+           nitro_min(k) = n_glob ! - nupt(k)
+           phop_lab(k) = p_glob ! - pupt(k)
+         else
+           nitro_min(k) = n_init
+           phop_lab(k) = p_init
+         endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
@@ -469,7 +457,7 @@ contains
          dr_final = dr
          dw_final = dw
 
-         ! UPDATE CVEG POOLS FOR NEXT LOOP
+         ! UPDATE CVEG POOLS FOR NEXT
          ! CLEAN NANs to prevent failure between cont_runs (pass only numbers to cff, clf, caf)
          cleaf1_pft  = cleafmes
          cawood1_pft = cawoodmes

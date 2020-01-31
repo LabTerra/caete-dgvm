@@ -37,9 +37,11 @@ module soil_dec
    ! These are global variables that are initialized in caete_init.
    ! New inputs -- Estimated from literature for Manaus Region
    ! For SPINUP only
-   real(r_8),public :: available_n = 3.775999e-1 ! g m-2 Xu et al. 2013 ?
-   real(r_8),public :: available_p = 2.4299955e-1  ! g m-2 Yang et al., 2013
+   real(r_4),public :: available_n = 0.30775999 ! g m-2 Xu et al. 2013 ?
+   real(r_4),public :: available_p = 0.204299955  ! g m-2 Yang et al., 2013
 
+   real(r_4),public :: available_n_init = 0.30775999 ! g m-2 Xu et al. 2013 ?
+   real(r_4),public :: available_p_init = 0.204299955  ! g m-2 Yang et al., 2013
 
    ! Internal Variables storing POOLS (IN)organic Nutrients
    real(r_4),public :: inorg_p = 0.0            ! Pool of N biomineralized (gm⁻²)
@@ -135,14 +137,15 @@ contains
       !     Inputs
       !     ------
       real(r_4),intent(in) :: tsoil, water_sat       ! soil temperature (°C); soil water relative content (dimensionless)
-      real(r_4),intent(in) :: leaf_l                 ! Mass of C comming from living pools g(C)m⁻²
-      real(r_4),intent(in) :: cwd                    ! Mass of C comming from living pools g(C)m⁻²
-      real(r_4),intent(in) :: root_l                 ! Mass of C comming from living pools g(C)m⁻²
+      real(r_4),intent(in) :: leaf_l, cwd, root_l    ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),dimension(6),intent(in) :: lnr       ! g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
       real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻²)
+
+      !real(r_4),intent(inout) :: avail_nitrogen
+      !real(r_4),intent(inout) :: avail_phosphorus
       !     Outputs
       !     -------
       real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
@@ -308,29 +311,45 @@ contains
          nutri_min_p(index) = het_resp(index)*aux_ratio_p(index)
       enddo
 
-      ! UPDATE INORGANIC POOLS
-      inorg_n = inorg_n + sum(nutri_min_n)
-      inorg_p = inorg_p + sum(nutri_min_p)
-
-      ! Update available N pool
-      available_n = real((inorg_n - pupt), kind=r_8) ! Global Variable
-      !avail_n = inorg_n - nupt
-
-      ! INLCUDE SORPTION DYNAMICS
-      sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = real((inorg_p - sorbed_p - pupt), kind=r_8) ! Transform in 8 bytes real
-      !avail_p = inorg_p - sorbed_p - pupt
-      ! INCLUDE BIOLOGICAL NITROGEN FIXATION
-
-      ! UPDATE N and P in SOIL POOLS
+      ! UPDATE N and P ORGANIC in SOIL POOLS
       do index=1,4
          nmass_org(index) = nmass_org(index) - nutri_min_n(index)
          pmass_org(index) = pmass_org(index) - nutri_min_p(index)
       enddo
 
+      ! UPDATE INORGANIC POOLS
+      print*, sum(nutri_min_n), 'nMin'
+      print*, sum(nutri_min_p), 'pMin'
+
+      inorg_n = sum(nutri_min_n) + inorg_n
+
+      ! Update available N pool
+      ! BNF
+      available_n = inorg_n - nupt + available_n ! Global Variable
+
+      ! INLCUDE SORPTION DYNAMICS
+      inorg_p = sum(nutri_min_p) + inorg_p
+      sorbed_p = sorbed_p_equil(inorg_p)
+      available_p = inorg_p - sorbed_p - pupt + available_p
+
+      print*, inorg_n, 'iN'
+      print*, inorg_p, 'iP'
+      print*, sorbed_p, 'sP'
+      print*,
+      print*, pupt, 'pupt'
+      print*, nupt, 'nupt'
+      print*, available_n, 'aN'
+      print*, available_p, 'aP'
+
+
+      if (inorg_p .lt. 0.0) inorg_p = 0.0
+      if (inorg_n .lt. 0.0) inorg_n = 0.0
+
+      if (available_p .lt. 0.0) available_p = 0.0
+      if (available_n .lt. 0.0) available_n = 0.0
+
       !OUTPUT  Heterotrophic respiration
       hr = sum(het_resp)
-
 
       ! FEATURES TO BE IMPLEMENTED
 

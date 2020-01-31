@@ -35,6 +35,8 @@ program test_carbon3
    print *,
    print *, "Testing/debugging /Budget/Prod/Allocation"
    call test_dbudget
+
+
    contains
 
    ! subroutine template(arg1,  arg2)
@@ -109,14 +111,14 @@ program test_carbon3
    subroutine test_c3()
 
       integer(i_4) :: index, j
-      real(r_4) :: soilt=23.0, water_s=0.8, ll=0.0000001, lf=0.0000001, lw=0.0000001
-      real(r_4), dimension(6) :: lnr = (/0.000001, 0.000001, 0.000001, 0.000001, 0.000001, 0.00001/)
+      real(r_4) :: soilt=23.0, water_s=0.8, ll=0.01, lf=0.01, lw=0.01
+      real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0
       real(r_4) :: hr, nupt, pupt
 
-      pupt = 0.05
-      nupt = 0.02
+      pupt = 0.002
+      nupt = 0.001
 
       do index = 1,1000000
          call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
@@ -130,6 +132,10 @@ program test_carbon3
       print *, hr,"<- hr"
       print *, cl,"<- cl"
       print *, cs,"<- cs"
+      print *, available_n, 'aN'
+      print *, available_p, 'aP'
+      print *, inorg_n, 'iN'
+      print *, inorg_p, 'iP'
 
    end subroutine test_c3
 
@@ -146,8 +152,8 @@ program test_carbon3
       real(r_8) :: scl1 = 0.5d0 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8) :: sca1 = 7.0d0 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8) :: scf1 = 0.5d0! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_8) :: nmin = 0.00002d0 ! N in mineral N pool(kg m-2)
-      real(r_8) :: plab  = 0.00001d0 ! P in labile pool (kg m-2)
+      real(r_4) :: nmin = 0.3 ! N in mineral N pool(g m-2)
+      real(r_4) :: plab  = 0.2 ! P in labile pool (g m-2)
       real(r_8),dimension(3) :: storage = (/0.0d0, 0.0d0, 0.0d0/)! Three element array- storage pool([C,N,P]) g m-2
 
       ! OUTPUTS
@@ -166,7 +172,7 @@ program test_carbon3
       integer(l_1) :: index
 
 
-      do index = 1,10
+      do index = 1,100
 
          call allocation(dt, npp, nmin,plab,scl1,sca1,scf1,storage,&
          &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&
@@ -193,8 +199,8 @@ program test_carbon3
       real(r_4),dimension(npls) :: g1   !Initial soil ice storage (mm)
       real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
       real(r_4) :: ts = 23.0                  ! Soil temperature (oC)
-      real(r_4) :: temp = 23.0                 ! Surface air temperature (oC)
-      real(r_4) :: prec = 2.0                 ! Precipitation (mm/day)
+      real(r_4) :: temp = 27.0                 ! Surface air temperature (oC)
+      real(r_4) :: prec = 30.0                 ! Precipitation (mm/month)
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
       real(r_4) :: ipar = 0.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4) :: rh = 0.8                   ! Relative humidity
@@ -254,7 +260,7 @@ program test_carbon3
       read(45,12) dt
       !print *, dt(:,1)
 
-      ipar = 0.5 * 200 / 2.18e5
+      ipar = 0.5 * 700 / 2.18e5
       w1 = 0.1
       g1 = 0.01
       s1 = 0.01
@@ -269,14 +275,14 @@ program test_carbon3
 
       !call spinup2(npp_pot, dt, cl, cf, ca)
 
-      cl_ = 0.5
+      cl_ = 1.0
       cf_ = 0.2
       ca_ = 0.1
       cl1_pft = real(cl_, kind=r_8)
       cf1_pft = real(cf_, kind=r_8)
       ca1_pft = real(ca_, kind=r_8)
 
-      do index = 1,500
+      do index = 1,5000
          print *,
          print *,
          print *, 'rodada: ', index

@@ -230,6 +230,7 @@ contains
       endif
 
       f5 = real(f5_64,4)
+      if (f5 .lt. 0.0) f5 = 0.0
    end function water_stress_modifier
 
    ! =============================================================
@@ -659,8 +660,8 @@ contains
       real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_8),intent(in) :: nmin ! N in mineral N pool(g m-2)
-      real(r_8),intent(in) :: plab ! P in labile pool (g m-2)
+      real(r_4),intent(in) :: nmin ! N in mineral N pool(g m-2)
+      real(r_4),intent(in) :: plab ! P in labile pool (g m-2)
       real(r_8),dimension(3),intent(in) :: storage ! Three element array- storage pool([C,N,P]) g m-2
       ! O
       real(r_8),dimension(3),intent(out) :: storage_out
@@ -708,8 +709,8 @@ contains
       real(r_4) :: awood_p2c = 0.0
       real(r_4) :: froot_p2c = 0.0
 
-      real(r_8) :: available_n = 0.0D0
-      real(r_8) :: available_p = 0.0D0
+      real(r_8) :: avail_n = 0.0D0
+      real(r_8) :: avail_p = 0.0D0
       real(r_8) :: potential_uptake_n = 0.0D0
       real(r_8) :: potential_uptake_p = 0.0D0
 
@@ -720,10 +721,11 @@ contains
       logical(l_1) :: p_limited = .false.
       logical(l_1) :: no_allocation = .false.
 
+      real(r_4) :: mult_factor = 1.0
+
       ! initialize some outputs
       ! If end_pls_day then PLS in not in the gridcell
       end_pls_day = .false.
-
       storage_out = (/0.0D0, 0.0D0, 0.0D0/)
 
       ! First check for the carbon content in leafs and fine roots (scl1 & scf1).
@@ -767,7 +769,7 @@ contains
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
       npp_pot = (npp * 2.73791) ! Transform Kg m-2 Year-1 to g m-2 day
-      if(storage(1) .gt. 0.0) npp_pot = (npp * 2.73791) + storage(1)
+      if(storage(1) .gt. 0.0) npp_pot = npp_pot + storage(1)
       no_cell = .false.
       no_allocation = .false.
 
@@ -796,21 +798,29 @@ contains
       pscf = npp_froot * froot_p2c  ! g(P) m-2
       psca = npp_awood * awood_p2c  ! g(P) m-2
 
+      potential_uptake_n = nscl + nsca + nscf !g m⁻²
+      potential_uptake_p = pscl + psca + pscf !g m⁻²
+
       ! Compare disponible nutrients with potential uptake
       ! Calculate available pools
       ! TODO - the influence of AM and Ptase are calculated before
-      available_n = (nmin) + storage(2) !g m⁻²
-      available_p = (plab) + storage(3) !g m⁻²
-      potential_uptake_n = nscl + nsca + nscf !g m⁻²
-      potential_uptake_p = pscl + psca + pscf !g m⁻²
-      nuptk = available_n - potential_uptake_n ! g(N) m-2
-      puptk = available_p - potential_uptake_p ! g(P) m-2
+      if(storage(2) .gt. 0.0) then
+         avail_n = (mult_factor * nmin) + storage(2) !g m⁻²
+      else
+         avail_n = mult_factor * nmin
+      endif
 
-      if(nuptk .eq. -0.00000000) nuptk = 0.0
-      if(puptk .eq. -0.00000000) puptk = 0.0
+      if(storage(3) .gt. 0.0) then
+         avail_p = (mult_factor * plab) + storage(3) !g m⁻²
+      else
+         avail_p = mult_factor * plab
+      endif
 
-      if(nuptk .lt. 0.000000) n_limited = .true.
-      if(puptk .lt. 0.000000) p_limited = .true.
+      nuptk = avail_n - potential_uptake_n ! g(N) m-2
+      puptk = avail_p - potential_uptake_p ! g(P) m-2
+
+      if(nuptk .lt. 0.0) n_limited = .true.
+      if(puptk .lt. 0.0) p_limited = .true.
 
       ! Then check for limitation
       if(.not. n_limited .and. .not. p_limited) then ! no LIMITATION
@@ -870,9 +880,6 @@ contains
          aux1 = abs(puptk) * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
          aux2 = abs(puptk) * aawood          ! allocation coefficients
          aux3 = abs(puptk) * afroot
-         ! if (aux1 .eq. -0.0000000) aux1 = 0.0
-         ! if (aux2 .eq. -0.0000000) aux2 = 0.0
-         ! if (aux3 .eq. -0.0000000) aux3 = 0.0
       else
          aux1 = 0.0
          aux2 = 0.0
@@ -892,6 +899,7 @@ contains
       ! TOTAL NPP ALLOCATED GIVEN th Nitrogen Limitation
       p_npp_pot = npp_pot - carbon_to_storage_p
 99    continue
+
       ! real NPP
       npp_leafp =  p_npp_pot * aleaf
       npp_awoodp = p_npp_pot * aawood
@@ -911,9 +919,9 @@ contains
 
          npp_froot = npp_frootp ! g(C) m-2 day-1
          puptk = potential_uptake_p   !
-         if(p_limited) puptk = available_p
+         if(p_limited) puptk = avail_p
          if(n_limited) then
-            nuptk = available_n           ! g(N) m-2
+            nuptk = avail_n           ! g(N) m-2
          else
             nuptk = potential_uptake_n
          endif
@@ -929,9 +937,9 @@ contains
          npp_awood = npp_awoodn ! g(C) m-2 day-1
          npp_froot = npp_frootn ! g(C) m-2 day-1
          nuptk = potential_uptake_n            ! g(N) m-2
-         if(n_limited) nuptk = available_n
+         if(n_limited) nuptk = avail_n
          if(p_limited) then
-            puptk = available_p           ! g(P) m-2
+            puptk = avail_p           ! g(P) m-2
          else
             puptk = potential_uptake_p
          endif
@@ -947,8 +955,8 @@ contains
             npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
             npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
             npp_froot = (npp_frootn + npp_frootp) / 2.0D0 ! g(C) m-2 day-1
-            nuptk = nmin           ! g(N) m-2
-            puptk = plab           ! g(P) m-2
+            nuptk = avail_n           ! g(N) m-2
+            puptk = avail_p           ! g(P) m-2
             storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
       endif
 

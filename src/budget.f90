@@ -21,9 +21,6 @@ module budget
 
 contains
 
-
-   !,mineral_n,labile_p
-
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
         & sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
         & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
@@ -35,8 +32,8 @@ contains
       use photo, only: pft_area_frac, allocation
       use water, only: evpot2, penman, available_energy, runoff
       use productivity
-      use soil_dec, only: mineral_n => inorg_n,&     ! Inorganic N in soil kg m-2
-                        & labile_p => inorg_p        ! Available P in soil kg m-2
+      use soil_dec, only: mineral_n => available_n,&     ! Inorganic N in soil g m-2
+                        & labile_p => available_p        ! Available P in soil g m-2
       !     ----------------------------INPUTS-------------------------------
       real(r_4),dimension(ntraits,npls),intent(in) :: dt
       real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
@@ -56,7 +53,6 @@ contains
       real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(inout) :: droot
       real(r_8),dimension(npls),intent(inout) :: dwood
-
 
       !     ----------------------------OUTPUTS------------------------------
       real(r_4),intent(out) :: epavg                          !Maximum evapotranspiration (mm/day)
@@ -91,8 +87,6 @@ contains
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1
 
       !     -----------------------Internal Variables------------------------
-      real(r_8) :: avail_n
-      real(r_8) :: avail_p
 
       integer(i_4) :: p
       logical :: end_pls = .false.
@@ -108,6 +102,8 @@ contains
       real(r_4) :: psnow                !Snowfall (mm/day)
       real(r_4) :: prain                !Rainfall (mm/day)
       real(r_4) :: emax
+      real(r_4) :: disp_n
+      real(r_4) :: disp_p
 
       real(r_4),dimension(npls) :: rimelt               !Runoff due to soil ice melting
       real(r_4),dimension(npls) :: smelt                !Snowmelt (mm/day)
@@ -135,14 +131,11 @@ contains
       real(r_8),dimension(npls) ::  cl1,cf1,ca1 ! carbon pre-allocation
       real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
       real(r_8),dimension(3,npls) :: day_storage   ! g m-2
+      real(r_8),dimension(npls) :: n_uptake           ! g m-2
+      real(r_8),dimension(npls) :: p_uptake           ! g m-2
 
-
-
-      !     NUTRIENTS:
-      !     ==========
-      avail_n = real(mineral_n, kind=r_8)
-      avail_p = real(labile_p, kind=r_8)
-
+      disp_n = mineral_n
+      disp_p = labile_p
       !     Precipitation
       !     =============
       psnow = 0.0
@@ -275,14 +268,15 @@ contains
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
 
-         call allocation (dt1, nppa(p), avail_n, avail_p, cl1(p), ca1(p)&
+         call allocation (dt1, nppa(p), disp_n, disp_p, cl1(p), ca1(p)&
               &,cf1(p), sto_budg(:,p), day_storage(:,p), cl2(p), ca2(p)&
-              &,cf2(p),litter_l(p),cwd(p),litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
+              &,cf2(p),litter_l(p),cwd(p),litter_fr(p),n_uptake(p), p_uptake(p)&
+              &,lnr(:,p),end_pls)
 
-         ! print *, "From alloc in bdg-------------------------"
+         ! print *, "From alloc in bdg-------------------------PLS", p
          ! print *, nupt(p), "NUPT"
          ! print *, pupt(p), "PUPT"
-         ! print*,
+         ! ! print*,
          sto_budg(:,p) = day_storage(:,p)
 
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
@@ -376,8 +370,8 @@ contains
          !  sto_budg(:,p) = sto_budg(:,p) !* ocp_coeffs(p)
 
          !  ! Variables used to carbon in soil
-         !  nupt(p) = nupt(p) !* ocp_coeffs(p)
-         !  pupt(p) = pupt(p) !* ocp_coeffs(p)
+         nupt(p) = n_uptake(p) !* ocp_coeffs(p)
+         pupt(p) = p_uptake(p) !* ocp_coeffs(p)
          !  litter_l(p) = litter_l(p) !* ocp_coeffs(p)
          !  cwd(p) = cwd(p) !* ocp_coeffs(p)
          !  litter_fr(p) = litter_fr(p) !* ocp_coeffs(p)

@@ -67,6 +67,9 @@ grd = f0(grda)
 #     with mp.Pool(processes=5) as p:
 #         result = p.map(f0, works)
 
+
+# --------------------------------------------------
+
 # # # def plots(): simple plot with matplotlib
 # colors = ['g', 'r', 'b', 'm', 'y', 'k']
 # legend = []

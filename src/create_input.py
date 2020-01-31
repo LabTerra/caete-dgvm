@@ -1,20 +1,20 @@
 import pickle as pkl
-from create_input import data_in
+from caete_input import data_in
 
 # Location of the input data downloaded from ISIMIP-PIK server via rsync
-files = "/d/c1/homes/amazonfaceme/jpdarela/dlds/dlds_daily" 
+files = "/d/c1/homes/amazonfaceme/jpdarela/dlds/dlds_daily"
 
 # INstantiate our input data object
 data_in = data_in(files)
 
 # TODO parrallelization of gridcell input creation/update
 
-## Use with a mask (creates a bunch og gridcells)
+# Use with a mask (creates a bunch og gridcells)
 #data_in = data_in.data_dict(mask=ct.mask)
 
 # OR
 
-## Update a existent instance of data_in
+# Update a existent instance of data_in
 with open("data_in-instance.pkl", 'rb') as fh:
     data_in = pkl.load(fh)
 
@@ -33,4 +33,3 @@ for x, y in grid_points:
 
 with open("data_in-instance.pkl", 'wb') as fh:
     pkl.dump(data_in, fh)
-
