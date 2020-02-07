@@ -142,7 +142,7 @@ contains
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
-      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻²)
+      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
 
       !real(r_4),intent(inout) :: avail_nitrogen
       !real(r_4),intent(inout) :: avail_phosphorus
@@ -161,7 +161,7 @@ contains
       real(r_4),dimension(ps) :: ps_nitrogen = 0.0   ! & so forth
       real(r_4),dimension(ps) :: ps_phosphorus = 0.0
 
-      real(r_4) :: leaf_n  ! Mass of Nutrients in MO comming from Vegetation  g(Nutrient m⁻²)
+      real(r_4) :: leaf_n  ! Mass of Nutrients in MO comming from Vegetation  g(Nutrient) m⁻²
       real(r_4) :: froot_n
       real(r_4) :: wood_n
       real(r_4) :: leaf_p
@@ -170,7 +170,7 @@ contains
 
       real(r_4) :: water_modifier ! Multiplicator for water influence on C decay
 
-      real(r_4) :: frac1,frac2
+      real(r_4) :: frac1,frac2    ! Constants for litter partitioning
 
       real(r_4),dimension(pl+ps) :: het_resp, cdec
       real(r_4),dimension(pl+ps) :: aux_ratio_n, aux_ratio_p
@@ -325,12 +325,12 @@ contains
 
       ! Update available N pool
       ! BNF
-      available_n = inorg_n - nupt + available_n ! Global Variable
+      available_n = inorg_n - nupt !+ available_n ! Global Variable
 
       ! INLCUDE SORPTION DYNAMICS
       inorg_p = sum(nutri_min_p) + inorg_p
       sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = inorg_p - sorbed_p - pupt + available_p
+      available_p = inorg_p - sorbed_p - pupt !+ available_p
 
       print*, inorg_n, 'iN'
       print*, inorg_p, 'iP'

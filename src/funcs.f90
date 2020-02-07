@@ -722,6 +722,8 @@ contains
       logical(l_1) :: no_allocation = .false.
 
       real(r_4) :: mult_factor = 1.0
+      real(r_8) :: test_n_limitation
+      real(r_8) :: test_p_limitation
 
       ! initialize some outputs
       ! If end_pls_day then PLS in not in the gridcell
@@ -763,12 +765,15 @@ contains
          npp_awood = 0.0
          npp_froot = 0.0
          npp_leaf = 0.0
+         nuptk = 0.0
+         puptk = 0.0
          goto 294
       endif
 
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
       npp_pot = (npp * 2.73791) ! Transform Kg m-2 Year-1 to g m-2 day
+      if (npp_pot .lt. 0.0) npp_pot = 0.0
       if(storage(1) .gt. 0.0) npp_pot = npp_pot + storage(1)
       no_cell = .false.
       no_allocation = .false.
@@ -816,11 +821,11 @@ contains
          avail_p = mult_factor * plab
       endif
 
-      nuptk = avail_n - potential_uptake_n ! g(N) m-2
-      puptk = avail_p - potential_uptake_p ! g(P) m-2
+      test_n_limitation = avail_n - potential_uptake_n ! g(N) m-2
+      test_p_limitation = avail_p - potential_uptake_p ! g(P) m-2
 
-      if(nuptk .lt. 0.0) n_limited = .true.
-      if(puptk .lt. 0.0) p_limited = .true.
+      if(test_n_limitation .lt. 0.0) n_limited = .true.
+      if(test_p_limitation .lt. 0.0) p_limited = .true.
 
       ! Then check for limitation
       if(.not. n_limited .and. .not. p_limited) then ! no LIMITATION
@@ -839,9 +844,9 @@ contains
       !
       if(n_limited) then     ! If nuptk is negative
          ! Calculate the missing N for each CVEG pool
-         aux1 = abs(nuptk) * aleaf     ! g(N) m-2 - Nitrogen amount
-         aux2 = abs(nuptk) * aawood
-         aux3 = abs(nuptk) * afroot
+         aux1 = abs(test_n_limitation) * aleaf     ! g(N) m-2 - Nitrogen amount
+         aux2 = abs(test_n_limitation) * aawood
+         aux3 = abs(test_n_limitation) * afroot
       else
          ! There is no N limitation
          aux1 = 0.0D0
@@ -877,9 +882,9 @@ contains
       ! auxi need to be zero or a negative number.
 
       if(p_limited) then
-         aux1 = abs(puptk) * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
-         aux2 = abs(puptk) * aawood          ! allocation coefficients
-         aux3 = abs(puptk) * afroot
+         aux1 = abs(test_p_limitation) * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
+         aux2 = abs(test_p_limitation) * aawood          ! allocation coefficients
+         aux3 = abs(test_p_limitation) * afroot
       else
          aux1 = 0.0
          aux2 = 0.0
@@ -910,25 +915,22 @@ contains
       ! NPP = min(NPP_N, NPP_P) i.e min(p_npp_pot, n_npp_pot)
       ! If ALLOCATION is P limited
       if(p_npp_pot .lt. n_npp_pot) then
+         p_limited = .true.
          no_allocation = .false.
          no_limit = .false.
          no_cell = .false.
          !print*, "P LIMTED"
          npp_leaf = npp_leafp   ! g(C) m-2 day-1
          npp_awood = npp_awoodp ! g(C) m-2 day-1
-
          npp_froot = npp_frootp ! g(C) m-2 day-1
-         puptk = potential_uptake_p   !
-         if(p_limited) puptk = avail_p
-         if(n_limited) then
-            nuptk = avail_n           ! g(N) m-2
-         else
-            nuptk = potential_uptake_n
-         endif
+
+         puptk = avail_p ! g(P) m-2
+         nuptk = (npp_leaf * leaf_n2c) + (npp_awood * awood_n2c) + (npp_froot * froot_n2c) ! g(N) m-2
          storage_out(1) = carbon_to_storage_p ! g(C) m-2
 
          ! Else ALLOCATION is N limited
       else if(n_npp_pot .lt. p_npp_pot) then
+         n_limited = .true.
          no_allocation = .false.
          no_limit = .false.
          no_cell = .false.
@@ -936,13 +938,10 @@ contains
          npp_leaf = npp_leafn   ! g(C) m-2 day-1
          npp_awood = npp_awoodn ! g(C) m-2 day-1
          npp_froot = npp_frootn ! g(C) m-2 day-1
-         nuptk = potential_uptake_n            ! g(N) m-2
-         if(n_limited) nuptk = avail_n
-         if(p_limited) then
-            puptk = avail_p           ! g(P) m-2
-         else
-            puptk = potential_uptake_p
-         endif
+
+         nuptk = avail_n ! g(N) m-2
+         puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
+
          storage_out(1) = carbon_to_storage_n ! g(C) m-2
 
       else
@@ -955,8 +954,8 @@ contains
             npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
             npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
             npp_froot = (npp_frootn + npp_frootp) / 2.0D0 ! g(C) m-2 day-1
-            nuptk = avail_n           ! g(N) m-2
-            puptk = avail_p           ! g(P) m-2
+            nuptk = (npp_leaf * leaf_n2c) + (npp_awood * awood_n2c) + (npp_froot * froot_n2c) ! g(N) m-2
+            puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
             storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
       endif
 
@@ -1379,16 +1378,16 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1e3)) * 27.0 * exp(0.07*temp))
+         rms64 = ((n2cw * (csa * 1e3)) * 15.0 * exp(0.03*temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1e3)) * 27.0 * exp(0.07*temp))
+      rml64 = ((n2cl * (cl1_mr * 1e3)) * 15.0 * exp(0.03*temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 27.0 * exp(0.07*temp))
+      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 15.0 * exp(0.03*temp))
 
-      storage_resp = ((ston * stoc) * 27.0 * exp(0.07*temp))
+      storage_resp = ((ston * stoc) * 15.0 * exp(0.03*temp))
 
       rm64 = (rml64 + rmf64 + rms64 + storage_resp) * 1e-3
 

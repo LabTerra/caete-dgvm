@@ -18,11 +18,11 @@ program test_carbon3
    ! call test_water_function()
 
 
-   ! print *,
-   ! print *,
-   ! print *, "Testing/debugging CARBON3"
+   print *,
+   print *,
+   print *, "Testing/debugging CARBON3"
 
-   !  call test_c3()
+    call test_c3()
 
    ! print *,
    ! print *,
@@ -31,10 +31,10 @@ program test_carbon3
    ! call test_alloc()
 
 
-   print *,
-   print *,
-   print *, "Testing/debugging /Budget/Prod/Allocation"
-   call test_dbudget
+   ! print *,
+   ! print *,
+   ! print *, "Testing/debugging /Budget/Prod/Allocation"
+   ! call test_dbudget
 
 
    contains
@@ -111,16 +111,16 @@ program test_carbon3
    subroutine test_c3()
 
       integer(i_4) :: index, j
-      real(r_4) :: soilt=23.0, water_s=0.8, ll=0.01, lf=0.01, lw=0.01
+      real(r_4) :: soilt=23.0, water_s=0.9, ll=1.0, lf=1.0, lw=1.0
       real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0
       real(r_4) :: hr, nupt, pupt
 
-      pupt = 0.002
-      nupt = 0.001
+      pupt = 0.2
+      nupt = 0.1
 
-      do index = 1,1000000
+      do index = 1,100000
          call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
          do j = 1,2
             cs(j) = cs_out(j)

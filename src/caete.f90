@@ -343,7 +343,7 @@ contains
          ! real(r_4),intent(in) :: rh                   ! Relative humidity
 
 
-         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru&
+         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
               &,dl,dw,dr,wfim,gfim,sfim,smes,rmes,emes,epmes,phmes,armes,nppmes&
               &,laimes,rcmes,f5mes,rmmes,rgmes,cleafmes,cawoodmes&
@@ -443,13 +443,16 @@ contains
          soic = c_soil(:,k)
          snr(:, k) = soil_nr_out
 
-         if(run .gt. 20000) then
-           nitro_min(k) = n_glob ! - nupt(k)
-           phop_lab(k) = p_glob ! - pupt(k)
-         else
-           nitro_min(k) = n_init
-           phop_lab(k) = p_init
-         endif
+         ! if(run .gt. nt1) then
+            nitro_min(k) = n_glob!  - nupt(k)
+            phop_lab(k) = p_glob ! - pupt(k)
+            !n_glob = nitro_min(k)
+            !p_glob = phop_lab(k)
+
+         ! else
+         !    nitro_min(k) = n_init
+         !    phop_lab(k) = p_init
+         ! endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS

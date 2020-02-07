@@ -22,7 +22,7 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
-        & sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
+        & mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
         & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
         & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
         & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lnr)
@@ -32,8 +32,8 @@ contains
       use photo, only: pft_area_frac, allocation
       use water, only: evpot2, penman, available_energy, runoff
       use productivity
-      use soil_dec, only: mineral_n => available_n,&     ! Inorganic N in soil g m-2
-                        & labile_p => available_p        ! Available P in soil g m-2
+      !use soil_dec, only: mineral_n => available_n,&     ! Inorganic N in soil g m-2
+      !                  & labile_p => available_p        ! Available P in soil g m-2
       !     ----------------------------INPUTS-------------------------------
       real(r_4),dimension(ntraits,npls),intent(in) :: dt
       real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
@@ -45,6 +45,8 @@ contains
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
+      real(r_4),intent(in) :: mineral_n
+      real(r_4),intent(in) :: labile_p
 
       real(r_8),dimension(3,npls),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
