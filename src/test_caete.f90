@@ -193,17 +193,18 @@ program test_carbon3
 
 
    subroutine test_dbudget()
+
       ! ins
       real(r_4),dimension(ntraits,npls) :: dt
       real(r_4),dimension(npls):: w1   !Initial (previous month last day) soil moisture storage (mm)
       real(r_4),dimension(npls) :: g1   !Initial soil ice storage (mm)
       real(r_4),dimension(npls) :: s1   !Initial overland snow storage (mm)
-      real(r_4) :: ts = 23.0                  ! Soil temperature (oC)
-      real(r_4) :: temp = 27.0                 ! Surface air temperature (oC)
-      real(r_4) :: prec = 30.0                 ! Precipitation (mm/month)
+      real(r_4) :: ts = 28.0                  ! Soil temperature (oC)
+      real(r_4) :: temp = 28.0                 ! Surface air temperature (oC)
+      real(r_4) :: prec = 60.0                 ! Precipitation (mm/month)
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
       real(r_4) :: ipar = 0.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
-      real(r_4) :: rh = 0.8                   ! Relative humidity
+      real(r_4) :: rh = 0.9                   ! Relative humidity
       ! inouts
       real(r_8),dimension(3,npls) :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls) :: cl1_pft ! initial BIOMASS cleaf compartment
@@ -251,7 +252,8 @@ program test_carbon3
 
       ! HELPER VARIABLES
       integer(i_4) :: index
-
+      real(r_4) :: n_av
+      real(r_4) :: p_av
 
       open(45,file='/home/jdarela/Desktop/caete/caete-dgvm/src/pls_ex.txt',&
         &   status='old',form='formatted',access='sequential')
@@ -260,7 +262,7 @@ program test_carbon3
       read(45,12) dt
       !print *, dt(:,1)
 
-      ipar = 0.5 * 700 / 2.18e5
+      ipar = 0.5 * 800 / 2.18e5
       w1 = 0.1
       g1 = 0.01
       s1 = 0.01
@@ -282,14 +284,17 @@ program test_carbon3
       cf1_pft = real(cf_, kind=r_8)
       ca1_pft = real(ca_, kind=r_8)
 
+
       do index = 1,5000
          print *,
          print *,
          print *, 'rodada: ', index
          print *,
+         n_av = available_n
+         p_av = available_p
 
          call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-         &, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+         &, n_av, p_av, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
          &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
 !c OUT
          &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&

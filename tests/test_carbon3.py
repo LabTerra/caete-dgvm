@@ -16,8 +16,8 @@ def zeroes(*args):
 
 cl = zeroes(2) + 0.01
 cs = zeroes(2) + 0.01
-nmin = zeroes(1) + 0.02
-plab = zeroes(1) + 0.003
+nupt = 0.02
+pupt = 0.01
 lnr = zeroes(6) + np.random.random(6,) * 0.001
 header = ['hr', 'cl1', 'cl2', 'cs1', 'cs2', 'cs3', 'snr1',
           'snr2', 'snr3', 'snr4', 'snr5', 'snr6', 'snr7', 'snr8']
@@ -28,7 +28,7 @@ with open('carbon3_test.csv', 'w') as fh:
     CSV_WRITER = csv.writer(fh, delimiter=',')
     CSV_WRITER.writerow(header)
     for x in range(250000):
-        df = funcs.carbon3(22, 0.1, 2, 2, 2, lnr, cl, cs)
+        df = funcs.carbon3(22, 0.5, 20, 20, 20, lnr, cl, cs, nupt, pupt)
         line = [df[-1],
                 df[0][0],
                 df[0][1],

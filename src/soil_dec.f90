@@ -37,8 +37,8 @@ module soil_dec
    ! These are global variables that are initialized in caete_init.
    ! New inputs -- Estimated from literature for Manaus Region
    ! For SPINUP only
-   real(r_4),public :: available_n = 0.30775999 ! g m-2 Xu et al. 2013 ?
-   real(r_4),public :: available_p = 0.204299955  ! g m-2 Yang et al., 2013
+   real(r_4),public :: available_n = 0.30775999e2 ! g m-2 Xu et al. 2013 ?
+   real(r_4),public :: available_p = 0.204299955e2  ! g m-2 Yang et al., 2013
 
    real(r_4),public :: available_n_init = 0.30775999 ! g m-2 Xu et al. 2013 ?
    real(r_4),public :: available_p_init = 0.204299955  ! g m-2 Yang et al., 2013

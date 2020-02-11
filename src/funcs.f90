@@ -760,7 +760,7 @@ contains
       ! Potential NPP.
       ! transform Kg m-2 yr-1 in g m-2 day-1 plus the C in storage pool.
       ! If there is not NPP then no allocation process! only deallocation label 294
-      if(npp .le. 0.00000001 .and. storage(1) .le. 0.00000001) then
+      if(npp .le. 0.0 .and. storage(1) .le. 0.0) then
          no_allocation = .true.
          npp_awood = 0.0
          npp_froot = 0.0
@@ -770,14 +770,19 @@ contains
          goto 294
       endif
 
+
+      !# There is C to allocate
+      no_cell = .false.
+      no_allocation = .false.
+
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
       npp_pot = (npp * 2.73791) ! Transform Kg m-2 Year-1 to g m-2 day
       if (npp_pot .lt. 0.0) npp_pot = 0.0
-      if(storage(1) .gt. 0.0) npp_pot = npp_pot + storage(1)
-      no_cell = .false.
-      no_allocation = .false.
-
+      if(storage(1) .gt. 0.0) then
+         npp_pot = npp_pot + storage(1)
+         storage_out(1) = 0.0D0
+      endif
 ! According to the CAETÊ heuristic, NPP is partitioned into 3 fluxes (# 3 cveg pools). Each one goes to a
 ! specific pool. BUT the stoichiometry of each pls need to be satisfied i.e.
 ! N:C and P:C must remain the same in VEG carbon pools after the allocation process
@@ -811,12 +816,14 @@ contains
       ! TODO - the influence of AM and Ptase are calculated before
       if(storage(2) .gt. 0.0) then
          avail_n = (mult_factor * nmin) + storage(2) !g m⁻²
+         storage_out(2) = 0.0D0
       else
          avail_n = mult_factor * nmin
       endif
 
       if(storage(3) .gt. 0.0) then
          avail_p = (mult_factor * plab) + storage(3) !g m⁻²
+         storage_out(3) = 0.0D0
       else
          avail_p = mult_factor * plab
       endif
@@ -824,24 +831,34 @@ contains
       test_n_limitation = avail_n - potential_uptake_n ! g(N) m-2
       test_p_limitation = avail_p - potential_uptake_p ! g(P) m-2
 
-      if(test_n_limitation .lt. 0.0) n_limited = .true.
-      if(test_p_limitation .lt. 0.0) p_limited = .true.
-
-      ! Then check for limitation
-      if(.not. n_limited .and. .not. p_limited) then ! no LIMITATION
-         ! Real nutrient Uptake
-         nuptk = potential_uptake_n ! g(N) m-2
-         puptk = potential_uptake_p ! g(P) m-2
-         no_limit = .true.
-         goto 294 ! GOTO deallocation
+      if(test_n_limitation .lt. 0.0) then
+         n_limited = .true.
+      else
+         n_limited = .false.
       endif
+
+      if(test_p_limitation .lt. 0.0)then
+         p_limited = .true.
+      else
+         p_limited = .false.
+      endif
+
+      ! ! Then check for limitation
+      ! if(.not. n_limited .and. .not. p_limited) then ! no LIMITATION
+      !    ! Real nutrient Uptake
+      !    nuptk = potential_uptake_n ! g(N) m-2
+      !    puptk = potential_uptake_p ! g(P) m-2
+      !    no_limit = .true.
+      !    goto 294 ! GOTO deallocation
+      ! endif
 
       ! Calculate N and P limitation-----------------------------------------------
 
       ! n/puptk is the quantity of N/P that cannot be allocated
 
       ! N limitation --------------------------------------------------------------
-      !
+      ! TODO include the value of limitation as an output
+
       if(n_limited) then     ! If nuptk is negative
          ! Calculate the missing N for each CVEG pool
          aux1 = abs(test_n_limitation) * aleaf     ! g(N) m-2 - Nitrogen amount
@@ -878,8 +895,6 @@ contains
 
       ! P limitation ----------------------------------------------------------------
       ! Using the same approach of N limitation
-      ! I need to know the carbon amount that cannot be alnoutplocated given my P limitation
-      ! auxi need to be zero or a negative number.
 
       if(p_limited) then
          aux1 = abs(test_p_limitation) * aleaf           ! g(P) m-2 - Phosphorus limitation is weighted by
@@ -914,49 +929,60 @@ contains
 
       ! NPP = min(NPP_N, NPP_P) i.e min(p_npp_pot, n_npp_pot)
       ! If ALLOCATION is P limited
-      if(p_npp_pot .lt. n_npp_pot) then
-         p_limited = .true.
-         no_allocation = .false.
-         no_limit = .false.
-         no_cell = .false.
-         !print*, "P LIMTED"
-         npp_leaf = npp_leafp   ! g(C) m-2 day-1
-         npp_awood = npp_awoodp ! g(C) m-2 day-1
-         npp_froot = npp_frootp ! g(C) m-2 day-1
+      if (n_limited .or. p_limited) then
 
-         puptk = avail_p ! g(P) m-2
-         nuptk = (npp_leaf * leaf_n2c) + (npp_awood * awood_n2c) + (npp_froot * froot_n2c) ! g(N) m-2
-         storage_out(1) = carbon_to_storage_p ! g(C) m-2
+         if(p_npp_pot .lt. n_npp_pot) then
+            p_limited = .true.
+            no_allocation = .false.
+            no_limit = .false.
+            no_cell = .false.
+            !print*, "P LIMTED"
+            npp_leaf = npp_leafp   ! g(C) m-2 day-1
+            npp_awood = npp_awoodp ! g(C) m-2 day-1
+            npp_froot = npp_frootp ! g(C) m-2 day-1
 
-         ! Else ALLOCATION is N limited
-      else if(n_npp_pot .lt. p_npp_pot) then
-         n_limited = .true.
-         no_allocation = .false.
-         no_limit = .false.
-         no_cell = .false.
-         !print*, "N LIMTED"
-         npp_leaf = npp_leafn   ! g(C) m-2 day-1
-         npp_awood = npp_awoodn ! g(C) m-2 day-1
-         npp_froot = npp_frootn ! g(C) m-2 day-1
-
-         nuptk = avail_n ! g(N) m-2
-         puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
-
-         storage_out(1) = carbon_to_storage_n ! g(C) m-2
-
-      else
-         no_allocation = .false.
-         no_limit = .false.
-         no_cell = .false.
-         ! check for colimitation
-         !print*, "COLIMTED"
-         !if(abs(p_npp_pot - n_npp_pot) .lt. 0.00000001) then
-            npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
-            npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
-            npp_froot = (npp_frootn + npp_frootp) / 2.0D0 ! g(C) m-2 day-1
+            puptk = avail_p ! g(P) m-2
             nuptk = (npp_leaf * leaf_n2c) + (npp_awood * awood_n2c) + (npp_froot * froot_n2c) ! g(N) m-2
+            if(nuptk .gt. avail_n) nuptk = avail_n
+            storage_out(1) = carbon_to_storage_p ! g(C) m-2
+
+            ! Else ALLOCATION is N limited
+         else if(n_npp_pot .lt. p_npp_pot) then
+            n_limited = .true.
+            no_allocation = .false.
+            no_limit = .false.
+            no_cell = .false.
+            !print*, "N LIMTED"
+            npp_leaf = npp_leafn   ! g(C) m-2 day-1
+            npp_awood = npp_awoodn ! g(C) m-2 day-1
+            npp_froot = npp_frootn ! g(C) m-2 day-1
+
+            nuptk = avail_n ! g(N) m-2
             puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
-            storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
+            if(puptk .gt. avail_p) puptk = avail_p
+            storage_out(1) = carbon_to_storage_n ! g(C) m-2
+
+         else
+            no_allocation = .false.
+            no_limit = .false.
+            no_cell = .false.
+            ! check for colimitation
+            !print*, "COLIMITED"
+            !if(abs(p_npp_pot - n_npp_pot) .lt. 0.00000001) then
+               npp_leaf = (npp_leafn + npp_leafp) / 2.0D0    ! g(C) m-2 day-1
+               npp_awood = (npp_awoodn + npp_awoodp) / 2.0D0 ! g(C) m-2 day-1
+               npp_froot = (npp_frootn + npp_frootp) / 2.0D0 ! g(C) m-2 day-1
+               nuptk = (npp_leaf * leaf_n2c) + (npp_awood * awood_n2c) + (npp_froot * froot_n2c) ! g(N) m-2
+               puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
+               storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
+         endif
+      else
+         ! No Limitation
+         ! Real nutrient Uptake
+         nuptk = potential_uptake_n ! g(N) m-2
+         puptk = potential_uptake_p ! g(P) m-2
+         no_limit = .true.
+          goto 294 ! GOTO deallocation
       endif
 
 
@@ -1116,6 +1142,8 @@ contains
          puptk = 0.0
          litter_nutrient_ratios = 0.0
       endif
+      if(nuptk .lt. 0.0) nuptk = 0.0
+      if(puptk .lt. 0.0) puptk = 0.0
 
       return
 
@@ -1378,16 +1406,16 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1e3)) * 15.0 * exp(0.03*temp))
+         rms64 = ((n2cw * (csa * 1e3)) * 25.0 * exp(0.03*temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1e3)) * 15.0 * exp(0.03*temp))
+      rml64 = ((n2cl * (cl1_mr * 1e3)) * 25.0 * exp(0.03*temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 15.0 * exp(0.03*temp))
+      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 25.0 * exp(0.03*temp))
 
-      storage_resp = ((ston * stoc) * 15.0 * exp(0.03*temp))
+      storage_resp = ((ston * stoc) * 25.0 * exp(0.03*temp))
 
       rm64 = (rml64 + rmf64 + rms64 + storage_resp) * 1e-3
 

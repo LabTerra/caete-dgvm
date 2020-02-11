@@ -443,16 +443,16 @@ contains
          soic = c_soil(:,k)
          snr(:, k) = soil_nr_out
 
-         ! if(run .gt. nt1) then
+          if(run .gt. nt1) then
             nitro_min(k) = n_glob!  - nupt(k)
             phop_lab(k) = p_glob ! - pupt(k)
-            !n_glob = nitro_min(k)
-            !p_glob = phop_lab(k)
+            n_glob = nitro_min(k)
+            p_glob = phop_lab(k)
 
-         ! else
-         !    nitro_min(k) = n_init
-         !    phop_lab(k) = p_init
-         ! endif
+          else
+             nitro_min(k) = n_init
+             phop_lab(k) = p_init
+          endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS

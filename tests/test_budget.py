@@ -8,15 +8,15 @@ import plsgen as pls
 # real(kind=r_4),dimension(ntraits,npft),intent(in) :: dt
 dt = pls.table_gen(m.global_par.npls)
 
-n_min = 3.775999e-4
-p_min = 2.43e-4
+n_min = 0.3775999
+p_min = 0.243
 
 sto = np.zeros(shape=(3,m.global_par.npls), order='F')
 # !OLD
 # real(kind=r_8),dimension(npft),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
 cl1 = np.zeros(m.global_par.npls) + 1 * np.random.random(m.global_par.npls,) # np.random.random(m.global_par.npls) + 0.7
-cf1 = np.zeros(m.global_par.npls) + 1 * np.random.random(m.global_par.npls,)#np.random.random(m.global_par.npls) + 0.7
-ca1 = np.zeros(m.global_par.npls) + 10.8 * np.random.random(m.global_par.npls,)
+cf1 = np.zeros(m.global_par.npls) + 0.5 * np.random.random(m.global_par.npls,)#np.random.random(m.global_par.npls) + 0.7
+ca1 = np.zeros(m.global_par.npls) + 0.1 * np.random.random(m.global_par.npls,)
 # real(kind=r_8),dimension(npft),intent(inout) :: cf1_pft  !                 froot
 # real(kind=r_8),dimension(npft),intent(inout) :: ca1_pft  !                 cawood
 dleaf = np.random.random(m.global_par.npls) * 0.002
@@ -72,7 +72,7 @@ def test_b_dyn():
     # real(kind=r_8),dimension(npft),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
     cl1 = np.zeros(m.global_par.npls) + 1 # np.random.random(m.global_par.npls) + 0.7
     cf1 = np.zeros(m.global_par.npls) + 1 #np.random.random(m.global_par.npls) + 0.7
-    ca1 = np.zeros(m.global_par.npls) + 10.8
+    ca1 = np.zeros(m.global_par.npls) + 1
     # real(kind=r_8),dimension(npft),intent(inout) :: cf1_pft  !                 froot
     # real(kind=r_8),dimension(npft),intent(inout) :: ca1_pft  !                 cawood
     dleaf = np.random.random(m.global_par.npls) * 0.002
