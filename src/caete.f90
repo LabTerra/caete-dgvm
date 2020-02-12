@@ -32,14 +32,6 @@ contains
       use types
       use utils, only: gpid   => process_id
       use global_par
-      ! use soil_dec, only: litc   => litter_carbon  ,&
-      !                   & soic   => soil_carbon    ,&
-      !                   & p_glob => available_p    ,&
-      !                   & n_glob => available_n    ,&
-      !                   & p_init => available_p_init    ,&
-      !                   & n_init => available_n_init    ,&
-      !                   & carb3  => carbon3
-      ! TODO correct soil_dec imports
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
 
@@ -104,8 +96,8 @@ contains
       real(r_8),dimension(npls), intent(out) :: clf          ! 30  ! final carbon pools (cveg) for each pft (not scaled to cell area)
       real(r_8),dimension(npls), intent(out) :: caf          ! 31  ! KgC m-2
       real(r_8),dimension(npls), intent(out) :: cff          ! 32
-      real(r_4),dimension(nt1),  intent(out) :: nitro_min    ! 33  ! Nitrogen inorganic pool
-      real(r_4),dimension(nt1),  intent(out) :: phop_lab     ! 34  ! Phosphorus labile pool
+      ! real(r_4),dimension(nt1),  intent(out) :: nitro_min    ! 33  ! Nitrogen inorganic pool
+      ! real(r_4),dimension(nt1),  intent(out) :: phop_lab     ! 34  ! Phosphorus labile pool
 
       ! CHECK THE WRITE OF THESE
       real(r_4),dimension(nt1),  intent(out) :: vcmax        ! 35  ! mol m⁻² s⁻¹
@@ -329,21 +321,26 @@ contains
          ! real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
          ! real(r_4),intent(in) :: rh                   ! Relative humidity
 
-         if (run .gt. 3 * nt1) then
-            av_p = p_glob
-            av_n = n_glob
-         else
-            av_p = p_init
-            av_n = n_init
-         endif
+         ! if (run .gt. 3 * nt1) then
+         !    av_p = p_glob
+         !    av_n = n_glob
+         ! else
+         !    av_p = p_init
+         !    av_n = n_init
+         ! endif
 
-         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,av_n,av_p&
-              &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
-              &,dl,dw,dr,wfim,gfim,sfim,smes,rmes,emes,epmes,phmes,armes,nppmes&
-              &,laimes,rcmes,f5mes,rmmes,rgmes,cleafmes,cawoodmes&
-              &,cfrootmes,gridocpmes,wuemes,cuemes,c_defmes,vcmax_com&
-              &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
-              &,litter_fr_com,lnr_com)
+         call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru, av_n, av_p&
+              &, storage_pool_com, cleaf1_pft, cawood1_pft, cfroot1_pft&
+              &, dl, dw, dr, cl, cs, wfim, gfim, sfim, smes, rmes, emes, epmes, phmes, armes, nppmes&
+              &, laimes, rcmes, f5mes, rmmes, rgmes, cleafmes, cawoodmes&
+              &, cfrootmes ,gridocpmes ,wuemes ,cuemes ,c_defmes, vcmax_com&
+              &, specific_la_com, nupt_com, pupt_com, litter_l_com, cwd_com&
+              &, litter_fr_com, hr_com, lnr_com, snr_comm)
+
+              ! TO DO
+              ! REZA A LENDA QUE TUDO QUE FOR MES VAI VIRAR DAILY
+              ! CRIAR AS NOVAS VARIAVEIS NESTE ESCOPO
+              ! APLICAR A CWM e limpar a porra toda
 
          !82 columns-------------------------------------------------------------
          grd = gridocpmes
@@ -376,8 +373,8 @@ contains
               & mask=.not. isnan(specific_la_com)),r_4)
 
          ! nutrient uptake
-         nupt(k) = real(sum(nupt_com, mask= .not. isnan(nupt_com)),r_4)
-         pupt(k) = real(sum(pupt_com, mask= .not. isnan(pupt_com)),r_4)
+         nupt(k) = real(sum(nupt_com * grd, mask= .not. isnan(nupt_com)),r_4)
+         pupt(k) = real(sum(pupt_com * grd, mask= .not. isnan(pupt_com)),r_4)
 
          litter_l(k) = real(sum(litter_l_com * grd,&
               & mask=.not. isnan(litter_l_com)),r_4)
@@ -417,28 +414,6 @@ contains
             gini(p) = t2ww
             sini(p) = t3ww
          enddo
-
-
-         ! if(run .gt. 3 * nt1) then
-         !    nitro_min(k) = n_glob!  - nupt(k) * 1000.0
-         !    phop_lab(k) = p_glob!  - pupt(k)  * 1000.0
-         !    n_glob = nitro_min(k)
-         !    p_glob = phop_lab(k)
-         !    spn = .false.
-         ! else
-         !    nitro_min(k) = n_init
-         !    phop_lab(k) = p_init
-         !    spn = .true.
-         ! endif
-
-         ! call carb3(td, (t1ww / wmax), litter_l(k), cwd(k), litter_fr(k), lnr(:,k)&
-         !      &, litc, soic, nupt(k), pupt(k), spn, c_litter(:,k), c_soil(:,k)&
-         !      &,soil_nr_out, het_resp(k))
-
-         ! litc = c_litter(:,k)
-         ! soic = c_soil(:,k)
-         ! snr(:, k) = soil_nr_out
-
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS

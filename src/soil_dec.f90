@@ -121,8 +121,7 @@ contains
    end function bnf
 
 
-   subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
-                    &  nupt, pupt, spinup, cl_out, cs_out, snr, hr)
+   subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr,nupt, pupt, cl, cs, snr, hr)
       ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
       real(r_4),parameter :: clit_atm = 0.7
@@ -139,20 +138,13 @@ contains
       real(r_4),intent(in) :: tsoil, water_sat       ! soil temperature (°C); soil water relative content (dimensionless)
       real(r_4),intent(in) :: leaf_l, cwd, root_l    ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),dimension(6),intent(in) :: lnr       ! g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
-
-      real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
-      real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
       real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
-      logical(l_1),intent(in) :: spinup
-      !real(r_4),intent(inout) :: avail_nitrogen
-      !real(r_4),intent(inout) :: avail_phosphorus
+      real(r_4),dimension(pl),intent(inout) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
+      real(r_4),dimension(ps),intent(inout) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
       !     Outputs
       !     -------
-      real(r_4),dimension(pl),intent(out) :: cl_out  ! g(C)m⁻² State Variable -> The size of the carbon pools
-      real(r_4),dimension(ps),intent(out) :: cs_out  ! State Variable -> The size of the carbon pools
       real(r_4),dimension(8), intent(out) :: snr     ! Soil pools Nutrient to C ratios
       real(r_4),intent(out) :: hr                    ! Heterotrophic (microbial) respiration (gC/m2/day)
-
 
       !TODO ! Insert output: Total mineralized N and P
       !INTERNAL VARIABLES
@@ -218,7 +210,7 @@ contains
       aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon from vegetation
       aux2 = cdec(1) * clit_atm                                              ! processed (dacayed) Carbon lost to ATM
       aux3 = cdec(1) - aux2                                                  ! Carbon going to cl_out(2) (next pool)
-      cl_out(1) = (cl(1) - cdec(1)) + aux1                                   ! Update Litter Carbon 1
+      cl(1) = (cl(1) - cdec(1)) + aux1                                   ! Update Litter Carbon 1
       het_resp(1) = aux2                                                     ! Heterotrophic respiration
       aux4 = aux3                                                            ! Carbon going to the next pool
       pl_nitrogen(1) = nmass_org(1) + (leaf_n * frac1) + (froot_n * frac1)   ! Calculate the organic N/P pool
@@ -230,7 +222,7 @@ contains
       aux1 = (frac2 * leaf_l) + (frac2 * root_l) + (cwd * frac2) + aux4         ! Incoming Carbon
       aux2 = cdec(2) * clit_atm                                                 ! C to ATM
       aux3 = cdec(2) - aux2                                                     ! C going to csoil(1)
-      cl_out(2) = (cl(2) - cdec(2)) + aux1                                      ! Update Litter Carbon 2
+      cl(2) = (cl(2) - cdec(2)) + aux1                                      ! Update Litter Carbon 2
       het_resp(2) = aux2                                                        ! Heterotrophic respiration
       aux4 = aux3                                                               ! Carbon going to the next pool
       pl_nitrogen(2) = nmass_org(2) + (leaf_n * frac2) + (froot_n * frac2)&     ! Calculate the organic N/P pool
@@ -244,7 +236,7 @@ contains
       aux1 = (frac1 * cwd) + aux4                             ! Incoming Carbon
       aux2 = cdec(3) * cwd_atm                                ! C to ATM
       aux3 = cdec(3) - aux2                                   ! C to csoil(2)
-      cs_out(1) = (cs(1) - cdec(3)) + aux1                    ! Update Soil Carbon 1
+      cs(1) = (cs(1) - cdec(3)) + aux1                    ! Update Soil Carbon 1
       het_resp(3) = aux2                                      ! Het resp
       aux4 = aux3                                             ! Carbon going to the next pool
       ps_nitrogen(1) = nmass_org(3) + (wood_n * frac1)        ! Calculate the organic N/P pool
@@ -259,7 +251,7 @@ contains
 
       !SOIL II
       het_resp(4) = cdec(4) * cwd_atm            ! C to atm
-      cs_out(2) = cs(2) - het_resp(4) + aux4     ! Aux 4 is the carbon comming from preceding pool
+      cs(2) = cs(2) - het_resp(4) + aux4     ! Aux 4 is the carbon comming from preceding pool
 
       ps_nitrogen(2) = nmass_org(4) + aux1
       ps_phosphorus(2) = pmass_org(4) + aux2
@@ -274,18 +266,18 @@ contains
       ! NUTRIENT RATIOS in SOIL
       do index = 1,4
          if(index .lt. 3) then
-            aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1
-            aux_ratio_p(index) = pmass_org(index) / cl_out(index) ! g(P)g(C)-1
+            aux_ratio_n(index) = nmass_org(index) / cl(index) ! g(N)g(C)-1
+            aux_ratio_p(index) = pmass_org(index) / cl(index) ! g(P)g(C)-1
          else
-            if (cs_out(index-2) .le. 0.0) then
+            if (cs(index-2) .le. 0.0) then
                aux_ratio_n(index) = 0.0
             else
-               aux_ratio_n(index) = nmass_org(index) / cs_out(index-2) ! g(N)g(C)-1
+               aux_ratio_n(index) = nmass_org(index) / cs(index-2) ! g(N)g(C)-1
             endif
-            if (cs_out(index-2) .le. 0.0) then
+            if (cs(index-2) .le. 0.0) then
                aux_ratio_p(index) = 0.0
             else
-                aux_ratio_p(index) = pmass_org(index) / cs_out(index-2) ! g(P)g(C)-1
+                aux_ratio_p(index) = pmass_org(index) / cs(index-2) ! g(P)g(C)-1
             endif
          endif
       enddo
@@ -321,14 +313,7 @@ contains
       enddo
 
       ! UPDATE INORGANIC POOLS
-      print*, sum(nutri_min_n), 'nMin'
-      print*, sum(nutri_min_p), 'pMin'
-      if(spinup) then
-         available_n = available_n_init
-         available_p = available_p_init
-         inorg_p = 0.0
-         inorg_n = 0.0
-      else
+
          inorg_n =  inorg_n + sum(nutri_min_n)
 
          ! Update available N pool
@@ -339,7 +324,6 @@ contains
          inorg_p = inorg_p + sum(nutri_min_p)
          sorbed_p = sorbed_p_equil(inorg_p)
          available_p = inorg_p - sorbed_p - (pupt * 1.0) !+ available_p
-      endif
 
 
          print*, inorg_n, 'iN'

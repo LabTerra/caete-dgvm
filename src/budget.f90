@@ -22,18 +22,24 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
-        & mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot, w2, g2,&
+        & mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
+        & cl, cs, w2, g2,&
         & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
         & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
-        & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, lnr)
+        & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
 
       use types
       use global_par
       use photo, only: pft_area_frac, allocation
       use water, only: evpot2, penman, available_energy, runoff
       use productivity
-      !use soil_dec, only: mineral_n => available_n,&     ! Inorganic N in soil g m-2
-      !                  & labile_p => available_p        ! Available P in soil g m-2
+      use soil_dec, only: litc   => litter_carbon  ,&
+                  & soic   => soil_carbon          ,&
+                  & p_glob => available_p          ,&
+                  & n_glob => available_n          ,&
+                  & p_init => available_p_init     ,&
+                  & n_init => available_n_init     ,&
+                  & carb3  => carbon3
       !     ----------------------------INPUTS-------------------------------
       real(r_4),dimension(ntraits,npls),intent(in) :: dt
       real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
@@ -55,6 +61,9 @@ contains
       real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(inout) :: droot
       real(r_8),dimension(npls),intent(inout) :: dwood
+      real(r_4),dimension(2,npls),intent(inout) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
+      real(r_4),dimension(2,npls),intent(inout) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+
 
       !     ----------------------------OUTPUTS------------------------------
       real(r_4),intent(out) :: epavg                          !Maximum evapotranspiration (mm/day)
@@ -80,14 +89,17 @@ contains
       real(r_8),intent(out),dimension(npls) :: c_defavg       ! kg(C) m-2
       real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8),intent(out),dimension(npls) :: specific_la    ! m2 g(C)-1
-      real(r_8),intent(out),dimension(npls) :: nupt           ! g m-2
-      real(r_8),intent(out),dimension(npls) :: pupt           ! g m-2
-      real(r_8),intent(out),dimension(npls) :: litter_l       ! g m-2
-      real(r_8),intent(out),dimension(npls) :: cwd            ! g m-2
-      real(r_8),intent(out),dimension(npls) :: litter_fr      ! g m-2
-      ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
-      real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1
+      real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2
+      real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2
+      real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2
+      real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2
+      real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2
+      real(r_8),intent(out),dimension(npls) :: het_resp       ! gC m-2
 
+      ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
+      real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1 Litter Nutrient to C ratios (Comming from cveg pools)
+      ! Snr variables         [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
+      real(r_8),intent(out),dimension(8,npls) :: snr         ! g(N) g(C)-1 Soil Nutrient to C ratios (IN soil C pools)
       !     -----------------------Internal Variables------------------------
 
       integer(i_4) :: p
@@ -208,64 +220,12 @@ contains
 
          end_pls = .false.
 
-         ! subroutine prod(dt, light_limit, temp, p0, w, ipar, rh, emax, cl1_prod, &
-         !    & ca1_prod, cf1_prod, beta_leaf, beta_awood, beta_froot, sto1, ph, ar , &
-         !    & nppa, laia, f5, vpd, rm, rg, rc, wue, c_defcit, vm_out, sla, sto2)
-         !     use types
-         !     use global_par
-         !     use photo
-         !     use water
-         !     use utils
-         !     real(r_4),dimension(ntraits),intent(in) :: dt ! PLS data
-         !     real(r_4), intent(in) :: temp                 !Mean monthly temperature (oC)
-         !     real(r_4), intent(in) :: p0                   !Mean surface pressure (hPa)
-         !     real(r_4), intent(in) :: w                    !Soil moisture kg m-2
-         !     real(r_4), intent(in) :: ipar                 !Incident photosynthetic active radiation (w/m2)
-         !     real(r_4), intent(in) :: rh,emax !Relative humidity/MAXIMUM EVAPOTRANSPIRATION
-         !     real(r_8), intent(in) :: cl1_prod, cf1_prod, ca1_prod        !Carbon in plant tissues (kg/m2)
-         !     real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
-         !     real(r_8), intent(in) :: beta_awood
-         !     real(r_8), intent(in) :: beta_froot
-         !     real(r_8), dimension(3), intent(in) :: sto1
-         !     logical(l_1), intent(in) :: light_limit                !True for no ligth limitation
-
          call prod(dt1, light_limitation_bool(p), temp, p0, w(p), ipar, rh, emax, cl1(p)&
               &, ca1(p), cf1(p), dleaf(p), dwood(p), droot(p), sto_budg(:,p), ph(p), ar(p)&
               &, nppa(p),laia(p), f5(p), vpd(p), rm(p), rg(p), rc2(p), wue(p), c_def(p)&
               &, vcmax(p), specific_la(p), day_storage(:,p))
 
-         !   real(r_4), intent(out) :: ph                   !(Canopy) gross photosynthesis (kgC/m2/yr)
-         !   real(r_4), intent(out) :: rc                   !Stomatal resistence (not scaled to canopy!) (s/m)
-         !   real(r_4), intent(out) :: laia                 !Autotrophic respiration (kgC/m2/yr)
-         !   real(r_4), intent(out) :: ar                   !Leaf area index (m2 leaf/m2 area)
-         !   real(r_4), intent(out) :: nppa                 !Net primary productivity (kgC/m2/yr)
-         !   real(r_4), intent(out) :: vpd
-         !   real(r_4), intent(out) :: f5                   !Water stress response modifier (unitless)
-         !   real(r_4), intent(out) :: rm                   !autothrophic respiration (kgC/m2/day)
-         !   real(r_4), intent(out) :: rg
-         !   real(r_4), intent(out) :: wue
-         !   real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1)
-         !   real(r_8), intent(out) :: sla          !specific leaf area (m2/kg)
-         !   real(r_8), intent(out) :: vm_out
-         !   real(r_8), dimension(3), intent(out) :: sto2
-
          sto_budg(:,p) = day_storage(:,p)
-
-         ! TODO INTRODUCE PTase activity here
-         ! TODO INTRODUCE ROOT UPTAKE HERE
-         ! SPM - Symbiotic P Mineralization
-         ! the root potential to extract nutrients from soil is
-         ! calculated here
-
-         ! f(fine_root_mass, fine_root_residence_time)
-
-         ! Specific root area (fine roots)
-         ! Specific root length
-
-         ! upt_capacity <- root specific uptake capacity g (P or N) m-2(root) day-1
-
-         ! A function like F5
-
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
@@ -275,10 +235,6 @@ contains
               &,cf2(p),litter_l(p),cwd(p),litter_fr(p),n_uptake(p), p_uptake(p)&
               &,lnr(:,p),end_pls)
 
-         ! print *, "From alloc in bdg-------------------------PLS", p
-         ! print *, nupt(p), "NUPT"
-         ! print *, pupt(p), "PUPT"
-         ! ! print*,
          sto_budg(:,p) = day_storage(:,p)
 
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
@@ -363,6 +319,10 @@ contains
          f5avg(p) = f5(p) !* ocp_coeffs(p)
          rmavg(p) = rm(p) !* ocp_coeffs(p)
          rgavg(p) = rg(p) !* ocp_coeffs(p)
+
+         ! INSERT HERE THE CARBON3 function
+         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), nupt(p), pupt(p),&
+                   & cl(:,p), cs(:,p), snr(:,p), het_resp(p))
 
          ! Vcmax and SLA ! These are CWM: Dependent on (respectively) Foliar N and P; tau_leaf (resid. time)
          !  vcmax(p) = vcmax(p) !* ocp_coeffs(p)
