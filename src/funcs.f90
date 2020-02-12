@@ -929,7 +929,7 @@ contains
 
       ! NPP = min(NPP_N, NPP_P) i.e min(p_npp_pot, n_npp_pot)
       ! If ALLOCATION is P limited
-      if (n_limited .or. p_limited) then
+ !     if (n_limited .or. p_limited) then
 
          if(p_npp_pot .lt. n_npp_pot) then
             p_limited = .true.
@@ -976,14 +976,14 @@ contains
                puptk = (npp_leaf * leaf_p2c) + (npp_awood * awood_p2c) + (npp_froot * froot_p2c) ! g(P) m-2
                storage_out(1) = (carbon_to_storage_n + carbon_to_storage_p) /2.0D0 ! g(C) m-2
          endif
-      else
-         ! No Limitation
-         ! Real nutrient Uptake
-         nuptk = potential_uptake_n ! g(N) m-2
-         puptk = potential_uptake_p ! g(P) m-2
-         no_limit = .true.
-          goto 294 ! GOTO deallocation
-      endif
+      ! else
+      !    ! No Limitation
+      !    ! Real nutrient Uptake
+      !    nuptk = potential_uptake_n ! g(N) m-2
+      !    puptk = potential_uptake_p ! g(P) m-2
+      !    no_limit = .true.
+      !     goto 294 ! GOTO deallocation
+      ! endif
 
 
       ! DEALLOCATION PROCESS
@@ -1406,16 +1406,16 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1e3)) * 25.0 * exp(0.03*temp))
+         rms64 = ((n2cw * (csa * 1e3)) * 25.0 * exp(0.07*temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1e3)) * 25.0 * exp(0.03*temp))
+      rml64 = ((n2cl * (cl1_mr * 1e3)) * 25.0 * exp(0.07*temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 25.0 * exp(0.03*temp))
+      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 25.0 * exp(0.07*temp))
 
-      storage_resp = ((ston * stoc) * 25.0 * exp(0.03*temp))
+      storage_resp = ((ston * stoc) * 25.0 * exp(0.07*temp))
 
       rm64 = (rml64 + rmf64 + rms64 + storage_resp) * 1e-3
 

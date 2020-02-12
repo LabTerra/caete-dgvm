@@ -32,17 +32,16 @@ contains
       use types
       use utils, only: gpid   => process_id
       use global_par
-      use soil_dec, only: litc   => litter_carbon  ,&
-                        & soic   => soil_carbon    ,&
-                        & p_glob => available_p    ,&
-                        & n_glob => available_n    ,&
-                        & p_init => available_p_init    ,&
-                        & n_init => available_n_init    ,&
-                        & carb3  => carbon3
+      ! use soil_dec, only: litc   => litter_carbon  ,&
+      !                   & soic   => soil_carbon    ,&
+      !                   & p_glob => available_p    ,&
+      !                   & n_glob => available_n    ,&
+      !                   & p_init => available_p_init    ,&
+      !                   & n_init => available_n_init    ,&
+      !                   & carb3  => carbon3
       ! TODO correct soil_dec imports
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
-
 
       !     --------------------------I N P U T S----------------------------
 
@@ -70,17 +69,7 @@ contains
       real(r_4),dimension(nt1),intent(in) :: temp       ! entry: K; convert - Temperature (oC)
       real(r_4),dimension(nt1),intent(in) :: par        ! entry: RSDS shortwave downward rad. -W m-2; convert - IPAR (Ein/m2/s) molþ m-2 s-1
       real(r_4),dimension(nt1),intent(in) :: rhs        ! entry: %; tranform to ratio (0-1) Relative humidity
-
-      ! real(r_4),intent(in) :: n_mineral    ! Initial Mineral Content disponible (kg m-2)
-      ! real(r_4),intent(in) :: p_labile     ! Initial Mineral Content disponible
       !     -----------------------------E N D-------------------------------
-
-      ! emaxm, tsoil, photo_comm, aresp_comm,&
-      ! & npp_comm, lai_comm, c_litter, c_soil, het_resp, rcm_comm, f51, runom_comm,&
-      ! & evapm_comm, wsoil_comm, rm_comm, rg_comm, cleaf_comm, cawood_comm, cfroot_comm,&
-      ! & grid_area, wue, cue, cdef, wfim, gfim, sfim, dl_final, dw_final, dr_final,&
-      ! & clf, caf, cff, nitro_min, phop_lab, vcmax, specific_la, nupt, pupt,&
-      ! & litter_l, cwd, litter_fr, snr, lnr, storage_pool
 
       !     -------------------------O U T P U T S---------------------------
       real(r_4),dimension(nt1),  intent(out) :: emaxm        ! 1   ! Max.evapotranspiration (kg m-2 day-1)
@@ -179,8 +168,8 @@ contains
       real(r_4) :: t2ww
       real(r_4) :: t3ww
 
-      real(r_8) :: aux_var0_0x29a = nodata
-      real(r_8) :: aux_var0_0x29b = nodata
+      real(r_4) :: av_n = 0.0
+      real(r_4) :: av_p = 0.0
       real(r_4) :: aux1, aux2
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
@@ -192,14 +181,12 @@ contains
       character(len=9), parameter :: fname = 'pools_din'
       character(len=4), parameter :: fext = '.txt'
       real(r_4),dimension(8) :: soil_nr_out
+      logical(l_1) :: spn
 
       !  END OF DECLARATION
 
 
       ! ### MODEL INITIALIZATION ---------------------
-
-      aux_var0_0x29a = n_glob
-      aux_var0_0x29b = p_glob
 
       if(text_ts) then
          ! open log file
@@ -342,8 +329,15 @@ contains
          ! real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
          ! real(r_4),intent(in) :: rh                   ! Relative humidity
 
+         if (run .gt. 3 * nt1) then
+            av_p = p_glob
+            av_n = n_glob
+         else
+            av_p = p_init
+            av_n = n_init
+         endif
 
-         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
+         call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,av_n,av_p&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
               &,dl,dw,dr,wfim,gfim,sfim,smes,rmes,emes,epmes,phmes,armes,nppmes&
               &,laimes,rcmes,f5mes,rmmes,rgmes,cleafmes,cawoodmes&
@@ -351,13 +345,10 @@ contains
               &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
               &,litter_fr_com,lnr_com)
 
-         !print*, "FROM CAETE"
-         !print*, nupt_com
-         !print*, pupt_com
-         ! SAVE DAILY VALUES
          !82 columns-------------------------------------------------------------
          grd = gridocpmes
          emaxm(k) = epmes
+
          ! SOIL WATER
          gsoil(k)     = real(sum(gfim * grd, mask= .not. isnan(gfim)),r_4)
          ssoil(k)     = real(sum(sfim * grd, mask= .not. isnan(sfim)),r_4)
@@ -366,6 +357,7 @@ contains
          runom_comm(k) = real(sum(rmes * grd, mask= .not. isnan(rmes)),r_4)
          evapm_comm(k) = real(sum(emes * grd, mask= .not. isnan(emes)),r_4)
          f51(k)       = real(sum(f5mes* grd, mask= .not. isnan(f5mes)),r_4)
+
          ! PRODUCTIVITY
          rcm_comm(k)   = real(sum(rcmes * grd, mask= .not. isnan(rcmes)),r_4)
          lai_comm(k)   = real(sum(laimes* grd, mask= .not. isnan(laimes)),r_4)
@@ -384,8 +376,8 @@ contains
               & mask=.not. isnan(specific_la_com)),r_4)
 
          ! nutrient uptake
-         nupt(k) = real(sum(nupt_com * grd, mask= .not. isnan(nupt_com)),r_4)
-         pupt(k) = real(sum(pupt_com * grd, mask= .not. isnan(pupt_com)),r_4)
+         nupt(k) = real(sum(nupt_com, mask= .not. isnan(nupt_com)),r_4)
+         pupt(k) = real(sum(pupt_com, mask= .not. isnan(pupt_com)),r_4)
 
          litter_l(k) = real(sum(litter_l_com * grd,&
               & mask=.not. isnan(litter_l_com)),r_4)
@@ -426,33 +418,27 @@ contains
             sini(p) = t3ww
          enddo
 
-         ! UPDATE Soil Pools
 
+         ! if(run .gt. 3 * nt1) then
+         !    nitro_min(k) = n_glob!  - nupt(k) * 1000.0
+         !    phop_lab(k) = p_glob!  - pupt(k)  * 1000.0
+         !    n_glob = nitro_min(k)
+         !    p_glob = phop_lab(k)
+         !    spn = .false.
+         ! else
+         !    nitro_min(k) = n_init
+         !    phop_lab(k) = p_init
+         !    spn = .true.
+         ! endif
 
-      !1if(mod(k, 25000) .eq. 0) print *, "NUTRIENTS: ", nupt, pupt
+         ! call carb3(td, (t1ww / wmax), litter_l(k), cwd(k), litter_fr(k), lnr(:,k)&
+         !      &, litc, soic, nupt(k), pupt(k), spn, c_litter(:,k), c_soil(:,k)&
+         !      &,soil_nr_out, het_resp(k))
 
-!          subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
-!             &  nupt, pupt, cl_out, cs_out, snr, hr)
-! ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
+         ! litc = c_litter(:,k)
+         ! soic = c_soil(:,k)
+         ! snr(:, k) = soil_nr_out
 
-         call carb3(td, (t1ww / wmax), litter_l(k), cwd(k), litter_fr(k), lnr(:,k)&
-              &, litc, soic, nupt(k), pupt(k), c_litter(:,k), c_soil(:,k)&
-              &,soil_nr_out, het_resp(k))
-
-         litc = c_litter(:,k)
-         soic = c_soil(:,k)
-         snr(:, k) = soil_nr_out
-
-          if(run .gt. nt1) then
-            nitro_min(k) = n_glob!  - nupt(k)
-            phop_lab(k) = p_glob ! - pupt(k)
-            n_glob = nitro_min(k)
-            p_glob = phop_lab(k)
-
-          else
-             nitro_min(k) = n_init
-             phop_lab(k) = p_init
-          endif
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS

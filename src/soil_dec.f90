@@ -37,8 +37,8 @@ module soil_dec
    ! These are global variables that are initialized in caete_init.
    ! New inputs -- Estimated from literature for Manaus Region
    ! For SPINUP only
-   real(r_4),public :: available_n = 0.30775999e2 ! g m-2 Xu et al. 2013 ?
-   real(r_4),public :: available_p = 0.204299955e2  ! g m-2 Yang et al., 2013
+   real(r_4),public :: available_n = 0.30775999 ! g m-2 Xu et al. 2013 ?
+   real(r_4),public :: available_p = 0.204299955  ! g m-2 Yang et al., 2013
 
    real(r_4),public :: available_n_init = 0.30775999 ! g m-2 Xu et al. 2013 ?
    real(r_4),public :: available_p_init = 0.204299955  ! g m-2 Yang et al., 2013
@@ -122,7 +122,7 @@ contains
 
 
    subroutine carbon3(tsoil,water_sat,leaf_l, cwd, root_l, lnr, cl, cs, &
-                    &  nupt, pupt, cl_out, cs_out, snr, hr)
+                    &  nupt, pupt, spinup, cl_out, cs_out, snr, hr)
       ! CARBON3 <- SOIL DECOMPOSITION MODEL FOR CAETÊ
 
       real(r_4),parameter :: clit_atm = 0.7
@@ -143,7 +143,7 @@ contains
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
       real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
-
+      logical(l_1),intent(in) :: spinup
       !real(r_4),intent(inout) :: avail_nitrogen
       !real(r_4),intent(inout) :: avail_phosphorus
       !     Outputs
@@ -215,9 +215,9 @@ contains
       ! C:N:P CYCLING
 
       !LITTER I
-      aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon
-      aux2 = cdec(1) * clit_atm                                              ! Carbon lost to ATM
-      aux3 = cdec(1) - aux2                                                  ! Carbon going to cl_out(2)
+      aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon from vegetation
+      aux2 = cdec(1) * clit_atm                                              ! processed (dacayed) Carbon lost to ATM
+      aux3 = cdec(1) - aux2                                                  ! Carbon going to cl_out(2) (next pool)
       cl_out(1) = (cl(1) - cdec(1)) + aux1                                   ! Update Litter Carbon 1
       het_resp(1) = aux2                                                     ! Heterotrophic respiration
       aux4 = aux3                                                            ! Carbon going to the next pool
@@ -267,7 +267,8 @@ contains
       nmass_org(4) = ps_nitrogen(2)
       pmass_org(4) = ps_phosphorus(2)
 
-
+      print *, pmass_org, 'orgP'
+      print *, nmass_org, 'orgN'
       ! THIS SECTION - Mineralized nutrients =====================================================
       ! The amounts of Minerilized nutrients are dependent on N:C and P:C mass ratios of soil pools
       ! NUTRIENT RATIOS in SOIL
@@ -298,6 +299,8 @@ contains
       litt_nr(4) = aux_ratio_p(2)
       soil_nr(3) = aux_ratio_p(3)
       soil_nr(4) = aux_ratio_p(4)
+      print *, soil_nr, 'snr'
+      print *, litt_nr, 'lnr'
 
       ! OUTPUT SOIL NUTRIENT RATIOS
       do index = 1,8
@@ -320,27 +323,34 @@ contains
       ! UPDATE INORGANIC POOLS
       print*, sum(nutri_min_n), 'nMin'
       print*, sum(nutri_min_p), 'pMin'
+      if(spinup) then
+         available_n = available_n_init
+         available_p = available_p_init
+         inorg_p = 0.0
+         inorg_n = 0.0
+      else
+         inorg_n =  inorg_n + sum(nutri_min_n)
 
-      inorg_n = sum(nutri_min_n) + inorg_n
+         ! Update available N pool
+         ! BNF
+         available_n = inorg_n - (nupt * 1.0) !+ available_n ! Global Variable
 
-      ! Update available N pool
-      ! BNF
-      available_n = inorg_n - nupt !+ available_n ! Global Variable
+         ! INLCUDE SORPTION DYNAMICS
+         inorg_p = inorg_p + sum(nutri_min_p)
+         sorbed_p = sorbed_p_equil(inorg_p)
+         available_p = inorg_p - sorbed_p - (pupt * 1.0) !+ available_p
+      endif
 
-      ! INLCUDE SORPTION DYNAMICS
-      inorg_p = sum(nutri_min_p) + inorg_p
-      sorbed_p = sorbed_p_equil(inorg_p)
-      available_p = inorg_p - sorbed_p - pupt !+ available_p
 
-      print*, inorg_n, 'iN'
-      print*, inorg_p, 'iP'
-      print*, sorbed_p, 'sP'
-      print*,
-      print*, pupt, 'pupt'
-      print*, nupt, 'nupt'
-      print*, available_n, 'aN'
-      print*, available_p, 'aP'
-
+         print*, inorg_n, 'iN'
+         print*, inorg_p, 'iP'
+         print*, sorbed_p, 'sP'
+         print*, pupt, 'pupt'
+         print*, nupt, 'nupt'
+         print*, available_n, 'aN'
+         print*, available_p, 'aP'
+         print*,
+         print*,
 
       if (inorg_p .lt. 0.0) inorg_p = 0.0
       if (inorg_n .lt. 0.0) inorg_n = 0.0
