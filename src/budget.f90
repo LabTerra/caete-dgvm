@@ -23,23 +23,16 @@ contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
         & mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
-        & cl, cs, w2, g2,&
-        & s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
+        & clitter, csoil, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
         & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
-        & cueavg, c_defavg, vcmax, specific_la, nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
+        & cueavg, c_defavg, vcmax, specific_la, soilc, nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
 
       use types
       use global_par
       use photo, only: pft_area_frac, allocation
       use water, only: evpot2, penman, available_energy, runoff
       use productivity
-      use soil_dec, only: litc   => litter_carbon  ,&
-                  & soic   => soil_carbon          ,&
-                  & p_glob => available_p          ,&
-                  & n_glob => available_n          ,&
-                  & p_init => available_p_init     ,&
-                  & n_init => available_n_init     ,&
-                  & carb3  => carbon3
+      use soil_dec, only: carb3 => carbon3
       !     ----------------------------INPUTS-------------------------------
       real(r_4),dimension(ntraits,npls),intent(in) :: dt
       real(r_4),dimension(npls),intent(in) :: w1   !Initial (previous day) soil moisture storage (mm)
@@ -61,8 +54,8 @@ contains
       real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(inout) :: droot
       real(r_8),dimension(npls),intent(inout) :: dwood
-      real(r_4),dimension(2,npls),intent(inout) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
-      real(r_4),dimension(2,npls),intent(inout) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+      real(r_4),dimension(2,npls),intent(inout) :: clitter       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
+      real(r_4),dimension(2,npls),intent(inout) :: csoil      ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
 
 
       !     ----------------------------OUTPUTS------------------------------
@@ -89,16 +82,19 @@ contains
       real(r_8),intent(out),dimension(npls) :: c_defavg       ! kg(C) m-2
       real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8),intent(out),dimension(npls) :: specific_la    ! m2 g(C)-1
-      real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2
-      real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2
-      real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2
-      real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2
-      real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2
-      real(r_8),intent(out),dimension(npls) :: het_resp       ! gC m-2
+      real(r_4),intent(out),dimension(4,npls) :: soilc        ! Soil carbon pools (gC m-2)
+      real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2 ! Nitrogen uptake
+      real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2 ! Phosphoruns uptake
+      real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
+      real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
+      real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
 
-      ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
+
+
+      real(r_8),intent(out),dimension(npls) :: het_resp       ! gC m-2
+      ! Litter Nutrient Ratisos :: variables(6)         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1 Litter Nutrient to C ratios (Comming from cveg pools)
-      ! Snr variables         [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
+      ! Soil Nutrient Ratios :: variables(8)         [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
       real(r_8),intent(out),dimension(8,npls) :: snr         ! g(N) g(C)-1 Soil Nutrient to C ratios (IN soil C pools)
       !     -----------------------Internal Variables------------------------
 
@@ -216,7 +212,7 @@ contains
       !     =================================
       do p = 1,npls
 
-         dt1 = dt(:,p) ! Pick up the pls functional attributes list
+         dt1 = dt(:,p) ! Pick up the pls functional attributes list of PLS npls
 
          end_pls = .false.
 
@@ -303,52 +299,36 @@ contains
             roff(p) = roff(p) + rimelt(p) !Total runoff
          endif
 
+         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p),&
+                  & real(n_uptake(p), r_4), real(p_uptake(p), r_4), clitter(:,p),&
+                  & csoil(:,p), snr(:,p), het_resp(p))
+
          if (p .eq. 1) epavg = emax !mm/day
-         w2(p) = real(w(p),r_4) !* ocp_coeffs(p), r_4)
-         g2(p) = real(g(p),r_4) !* ocp_coeffs(p), r_4)
-         s2(p) = real(s(p),r_4) !* ocp_coeffs(p), r_4)
-         smavg(p) = smelt(p) !* ocp_coeffs(p)
-         ruavg(p) = roff(p)  !!* ocp_coeffs(p)   ! mm day-1
-         evavg(p) = evap(p)  !!* ocp_coeffs(p)   ! mm day-1
-         phavg(p) = ph(p)    !!* ocp_coeffs(p)   !kgC/m2/day
-         aravg(p) = ar(p)    !!* ocp_coeffs(p)   !kgC/m2/year
-         nppavg(p) = nppa(p) !!* ocp_coeffs(p)   !kgC/m2/day
-         laiavg(p) = laia(p) !* ocp_coeffs(p)
-         rcavg(p) = rc2(p)   !!* ocp_coeffs(p)   ! s m -1
-         ! F5 goes out!
-         f5avg(p) = f5(p) !* ocp_coeffs(p)
-         rmavg(p) = rm(p) !* ocp_coeffs(p)
-         rgavg(p) = rg(p) !* ocp_coeffs(p)
-
-         ! INSERT HERE THE CARBON3 function
-         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), nupt(p), pupt(p),&
-                   & cl(:,p), cs(:,p), snr(:,p), het_resp(p))
-
-         ! Vcmax and SLA ! These are CWM: Dependent on (respectively) Foliar N and P; tau_leaf (resid. time)
-         !  vcmax(p) = vcmax(p) !* ocp_coeffs(p)
-         !  specific_la(p) = specific_la(p) !* ocp_coeffs(p)
-
-         !  !Rapid Storage Pool
-         !  sto_budg(:,p) = sto_budg(:,p) !* ocp_coeffs(p)
-
-         !  ! Variables used to carbon in soil
-         nupt(p) = n_uptake(p) !* ocp_coeffs(p)
-         pupt(p) = p_uptake(p) !* ocp_coeffs(p)
-         !  litter_l(p) = litter_l(p) !* ocp_coeffs(p)
-         !  cwd(p) = cwd(p) !* ocp_coeffs(p)
-         !  litter_fr(p) = litter_fr(p) !* ocp_coeffs(p)
-         !  lnr(:,p) = lnr(:,p) !* ocp_coeffs(p)
-
-         cleafavg_pft(p)  =  cl2(p) !- ((c_def(p) * 0.00273791) / 3.0)
-         cawoodavg_pft(p) =  ca2(p) !- ((c_def(p) * 0.00273791) / 3.0)
-         cfrootavg_pft(p) =  cf2(p) !- ((c_def(p) * 0.00273791) / 3.0)
-         wueavg(p) = wue(p)  !!* ocp_coeffs(p)
-         cueavg(p) = cue(p)  !!* ocp_coeffs(p)
-         c_defavg(p) = c_def(p) !* ocp_coeffs(p)
-
-         !  gridcell Occupation
-         ocpavg(p) = ocp_coeffs(p)
-
+         w2(p)            = real(w(p),r_4)
+         g2(p)            = real(g(p),r_4)
+         s2(p)            = real(s(p),r_4)
+         smavg(p)         = smelt(p)
+         ruavg(p)         = roff(p)    ! mm day-1
+         evavg(p)         = evap(p)    ! mm day-1
+         phavg(p)         = ph(p)      !kgC/m2/day
+         aravg(p)         = ar(p)      !kgC/m2/year
+         nppavg(p)        = nppa(p)    !kgC/m2/day
+         laiavg(p)        = laia(p)
+         rcavg(p)         = rc2(p)     ! s m -1
+         f5avg(p)         = f5(p)
+         rmavg(p)         = rm(p)
+         rgavg(p)         = rg(p)
+         soilc(1:2,p)     = clitter(:,p)
+         soilc(3:4,p)     = csoil(:,p)
+         nupt(p)          = n_uptake(p)
+         pupt(p)          = p_uptake(p)
+         cleafavg_pft(p)  = cl2(p)
+         cawoodavg_pft(p) = ca2(p)
+         cfrootavg_pft(p) = cf2(p)
+         wueavg(p)        = wue(p)
+         cueavg(p)        = cue(p)
+         c_defavg(p)      = c_def(p)
+         ocpavg(p)        = ocp_coeffs(p)
 
          if(c_def(p) .gt. 0.0) then
             if(dt1(7) .gt. 0.0) then
@@ -373,16 +353,6 @@ contains
          endif
 
          no_cell = .false.
-
-         !  if(cf1_pft(p).le.0.0 .and. cl1_pft(p).le.0.0) then
-         !     no_cell = .true.
-         !  else if(ca1_pft(p).lt. 0.0 .and. dt1(7) .gt. 0.0) then
-         !     no_cell = .true.
-         !  else
-         !     continue
-         !  endif
-         ! :,p
-         !
 666      continue
          if(no_cell) then
             ! All*** outputs are set to zero except epavg
