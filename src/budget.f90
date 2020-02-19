@@ -299,7 +299,7 @@ contains
             roff(p) = roff(p) + rimelt(p) !Total runoff
          endif
 
-         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p),&
+         call carb3(p, ocp_coeffs(p), ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p),&
                   & real(n_uptake(p), r_4), real(p_uptake(p), r_4), clitter(:,p),&
                   & csoil(:,p), snr(:,p), het_resp(p))
 
