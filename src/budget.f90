@@ -88,9 +88,6 @@ contains
       real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
       real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
       real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
-
-
-
       real(r_8),intent(out),dimension(npls) :: het_resp       ! gC m-2
       ! Litter Nutrient Ratisos :: variables(6)         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1 Litter Nutrient to C ratios (Comming from cveg pools)
@@ -140,6 +137,7 @@ contains
       real(r_4),dimension(npls) ::  wue, cue, c_def
       real(r_8),dimension(npls) ::  cl1,cf1,ca1 ! carbon pre-allocation
       real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
+      real(r_4),dimension(2, npls) :: litter_carbon_bdg, soil_carbon_bdg
       real(r_8),dimension(3,npls) :: day_storage   ! g m-2
       real(r_8),dimension(npls) :: n_uptake           ! g m-2
       real(r_8),dimension(npls) :: p_uptake           ! g m-2
@@ -158,50 +156,56 @@ contains
 
       !     Initialization
       !     --------------
-      epavg   = 0.0
-      w       = w1     ! hidrological pools state vars
-      g       = g1
-      s       = s1
-      smavg   = 0.0    !  plss vectors (outputs)
-      ruavg   = 0.0
-      evavg   = 0.0
-      rcavg   = 0.0
-      laiavg  = 0.0
-      phavg   = 0.0
-      aravg   = 0.0
-      nppavg  = 0.0
-      rmavg   = 0.0
-      rgavg   = 0.0
-      ocpavg  = 0.0
-      wueavg  = 0.0
-      cueavg  = 0.0
-      ocp_mm  = 0.0
-      emax  = 0.0
-
-      cl1 = cl1_pft ! daily initial carbonVEG pools
-      ca1 = ca1_pft
-      cf1 = cf1_pft
-
-      nppa  = 0.0
-      ph    = 0.0
-      ar    = 0.0
-      laia  = 0.0
-      f5    = 0.0
-      f1    = 0.0
-      vpd   = 0.0
-      rc2   = 0.0
-      rm    = 0.0
-      rg    = 0.0
-      wue   = 0.0
-      cue   = 0.0
-      rc2   = 0.0
-      f1    = 0.0
-      f5    = 0.0
+      epavg                 = 0.0
+      w                     = w1     ! hidrological pools state vars
+      g                     = g1
+      s                     = s1
+      cl1                   = cl1_pft ! daily initial carbonVEG pools
+      ca1                   = ca1_pft
+      cf1                   = cf1_pft
+      litter_carbon_bdg     = clitter
+      soil_carbon_bdg       = csoil
+      smavg                 = 0.0    !  plss vectors (outputs)
+      ruavg                 = 0.0
+      evavg                 = 0.0
+      rcavg                 = 0.0
+      laiavg                = 0.0
+      phavg                 = 0.0
+      aravg                 = 0.0
+      nppavg                = 0.0
+      rmavg                 = 0.0
+      rgavg                 = 0.0
+      ocpavg                = 0.0
+      wueavg                = 0.0
+      cueavg                = 0.0
+      ocp_mm                = 0.0
+      emax                  = 0.0
+      nupt                  = 0.0
+      pupt                  = 0.0
+      litter_l              = 0.0
+      cwd                   = 0.0
+      litter_fr             = 0.0
+      het_resp              = 0.0
+      nppa                  = 0.0
+      ph                    = 0.0
+      ar                    = 0.0
+      laia                  = 0.0
+      f5                    = 0.0
+      f1                    = 0.0
+      vpd                   = 0.0
+      rc2                   = 0.0
+      rm                    = 0.0
+      rg                    = 0.0
+      wue                   = 0.0
+      cue                   = 0.0
+      rc2                   = 0.0
+      f1                    = 0.0
+      f5                    = 0.0
+      ocp_coeffs            = 0.0D0
+      light_limitation_bool = .false.
 
       !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
       !     =================================================================
-      ocp_coeffs = 0.0D0
-      light_limitation_bool = .false.
       call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, light_limitation_bool) ! def in funcs.f90
 
       !     Maximum evapotranspiration   (emax)
@@ -298,10 +302,15 @@ contains
             if (w(p).lt.0.) w(p) = 0.
             roff(p) = roff(p) + rimelt(p) !Total runoff
          endif
+!!!!====================================================
 
          call carb3(p, ocp_coeffs(p), ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p),&
-                  & real(n_uptake(p), r_4), real(p_uptake(p), r_4), clitter(:,p),&
-                  & csoil(:,p), snr(:,p), het_resp(p))
+                  & real(n_uptake(p), r_4), real(p_uptake(p), r_4), litter_carbon_bdg(:,p),&
+                  & soil_carbon_bdg(:,p), snr(:,p), het_resp(p))
+
+
+         clitter(:, p) = litter_carbon_bdg(:, p)
+         csoil(:, p) = soil_carbon_bdg(:,p)
 
          if (p .eq. 1) epavg = emax !mm/day
          w2(p)            = real(w(p),r_4)
@@ -318,8 +327,8 @@ contains
          f5avg(p)         = f5(p)
          rmavg(p)         = rm(p)
          rgavg(p)         = rg(p)
-         soilc(1:2,p)     = clitter(:,p)
-         soilc(3:4,p)     = csoil(:,p)
+         soilc(1:2,p)     = litter_carbon_bdg(:, p)
+         soilc(3:4,p)     = soil_carbon_bdg(:, p)
          nupt(p)          = n_uptake(p)
          pupt(p)          = p_uptake(p)
          cleafavg_pft(p)  = cl2(p)

@@ -370,7 +370,7 @@ module caete
          sorbed_p(k)    = so_p
 
          do index = 1,4
-            csoil(index, k) = soc_soil_dec(index)
+            csoil(index, k) = cwm(real(soc(index, :), r_8), grd)
          enddo
 
          do index = 1,6
@@ -390,6 +390,8 @@ module caete
             gini(p) = t2ww
             sini(p) = t3ww
          enddo
+
+         soc_soil_dec = real(csoil(:, k), r_8)
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
