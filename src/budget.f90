@@ -100,9 +100,9 @@ contains
       real(r_4),intent(out),dimension(npls) :: sorbed_p
       real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2 ! Nitrogen uptake
       real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2 ! Phosphoruns uptake
-      real(r_4),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
-      real(r_4),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
-      real(r_4),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
+      real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
+      real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
+      real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
       real(r_4),intent(out),dimension(npls) :: het_resp       ! gC m-2
       ! Litter Nutrient Ratisos :: variables(6)         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1 Litter Nutrient to C ratios (Comming from cveg pools)
@@ -335,15 +335,10 @@ contains
          endif
 !!!!====================================================
 
-         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p), clitter(:,p),&
+         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), real(lnr(:,p), r_4), clitter(:,p),&
                   & csoil(:, p), snr_internal(:,p), real(n_uptake(p), r_4), real(p_uptake(p), r_4),&
                   & av_p(p), in_n(p), in_p(p), so_p(p), litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
-
-
-
-         !clitter(:, p) = litter_carbon_bdg(:, p)
-         !csoil(:, p) = soil_carbon_bdg(:,p)
 
          do index = 1,8
             snr_internal(index,p) = snr_aux(index,p)
@@ -383,7 +378,7 @@ contains
          inorganic_p(p)   = in_p(p)
          inorganic_n(p)   = in_n(p)
          available_p(p)   = av_p(p)
-         sorbed_p(p)         = so_p(p)
+         sorbed_p(p)      = so_p(p)
 
          do index = 1,8
             snr(index,p)  = snr_internal(index,p)

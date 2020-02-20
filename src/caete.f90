@@ -170,7 +170,7 @@ module caete
       real(r_8),dimension(npls) :: cawoodcom
       real(r_8),dimension(npls) :: cfrootcom
       real(r_8),dimension(npls) :: gridocpcom
-      real(r_8),dimension(npls) :: hr_com
+      real(r_4),dimension(npls) :: hr_com
       real(r_8),dimension(npls) :: wue_com
 
       real(r_4),dimension(4,npls) :: soilcarbon_com
@@ -179,7 +179,10 @@ module caete
       real(r_4),dimension(npls)   :: in_n_com
       real(r_4),dimension(npls)   :: av_p_com
       real(r_4),dimension(npls)   :: so_p_com
-      real(r_4) :: csoil_in, snr_in, in_p_in, in_n_in, av_p_in, so_p_in ! Auxiliary variables
+      ! Auxiliary to loop transition
+      real(r_4),dimension(4) :: csoil_in
+      real(r_4),dimension(8) :: snr_in
+      real(r_4) :: in_p_in, in_n_in, av_p_in, so_p_in ! Auxiliary variables
       real(r_8),dimension(npls) :: grd
       real(r_4) :: pr,spre,ta,td,ipar,ru
       integer(i_4) :: p
@@ -250,7 +253,6 @@ module caete
       aresp_cwm          = 0.0     ! daily autotrophic respiration (kgC/m2/y)
       npp_cwm            = 0.0     ! daily net primary productivity (sum of PLSs) (kgC/m2/y)
       lai_cwm            = 0.0     ! daily leaf area index m2 m-2n
-      csoil              = 0.0     ! Carbon in soil g C m-2 (l1, l2, s1, s2)
       hr_cwm             = 0.0     ! daily heterotrophic respiration (kgC/m2/y)
       rcm_cwm            = 0.0     ! molH2O m-2 s-1
       f51                = 0.0     ! dimensionless
@@ -263,7 +265,7 @@ module caete
       rg_cwm             = 0.0     ! Growth respiration
       wue                = 0.0     ! Water use efficiency (Medlyn et al. 2011 Reconciling...)
       cue                = 0.0     ! Carbon Use efficiency (NPP/GPP)
-      soilcarbon_com     = 0.0
+      soilcarbon_com     = 0.0     ! Carbon in soil g C m-2 (l1, l2, s1, s2)
       snr_com            = 0.0
       in_p_com           = 0.0
       in_n_com           = 0.0
@@ -321,27 +323,6 @@ module caete
          c_def_com               = 0.0
          hr_com                  = 0.0
 
-
-         ! ! AVAILABLE NUTRIENTS:
-         ! if (run .lt. 5000) then
-         !    av_n = available_n_init
-         !    av_p = available_p_init
-         ! else
-         !    av_n = available_n
-         !    av_p = available_p
-         ! endif
-
-         ! subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
-         !    & inorg_p, inorg_n, avail_p, sorb_p, sto_budg,&
-         !    & cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
-         !    & csoil, snr_com, w2, g2, s2, smavg, ruavg, evavg, epavg,&
-         !    & phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
-         !    & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft,&
-         !    & ocpavg, wueavg, cueavg, c_defavg, vcmax, specific_la, soilc,&
-         !    & inorganic_p, inorganic_n, available_p, sorbed_p,&
-         !    & nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
-
-
          call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru&
               &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft&
               &, cawood1_pft, cfroot1_pft, dl, dw, dr, csoil_in, snr_in, wfim, gfim, sfim&
@@ -351,11 +332,6 @@ module caete
               &, specific_la_com, soilcarbon_com, in_p_com, in_n_com, av_p_com, so_p_com&
               &, nupt_com, pupt_com, litter_l_com, cwd_com&
               &, litter_fr_com, hr_com, lnr_com, snr_com)
-
-              ! TO DO
-              ! REZA A LENDA QUE TUDO QUE FOR MES VAI VIRAR DAILY
-              ! CRIAR AS NOVAS VARIAVEIS NESTE ESCOPO
-              ! APLICAR A CWM e limpar a porra toda
 
          !82 columns-------------------------------------------------------------
          grd            = gridocpcom
@@ -387,9 +363,9 @@ module caete
          cleaf_cwm(k)   = cwm(cleafcom, grd)
          cawood_cwm(k)  = cwm(cawoodcom, grd)
          cfroot_cwm(k)  = cwm(cfrootcom, grd)
-         hr_cwm(k)      = cwm(hr_com, grd)
 
          ! SOIL CNP OUTPUTS
+         hr_cwm(k)        = cwm_soil(hr_com, grd)
          soil_carbon(1,k) = cwm_soil(soilcarbon_com(1,:), grd)
          soil_carbon(2,k) = cwm_soil(soilcarbon_com(2,:), grd)
          soil_carbon(3,k) = cwm_soil(soilcarbon_com(3,:), grd)
@@ -466,10 +442,10 @@ module caete
                  & ,cleaf_cwm(k)&
                  & ,cawood_cwm(k)&
                  & ,cfroot_cwm(k)&
-                 & ,csoil(1,k)&
-                 & ,csoil(2,k)&
-                 & ,csoil(3,k)&
-                 & ,csoil(4,k)&
+                 & ,csoil_in(1)&
+                 & ,csoil_in(2)&
+                 & ,csoil_in(3)&
+                 & ,csoil_in(4)&
                  & ,wsoil_cwm(k)&
                  & ,photo_cwm(k)&
                  & ,aresp_cwm(k)&
@@ -557,10 +533,10 @@ module caete
          print *, 'process number: ', getpid()
          print *, 'process number_from soil_dec: ',gpid()
          print *, 'soil_dec variables for this process: '
-         print *, soc_soil_dec(1:2), ' => litter_carbon'
-         print *, soc_soil_dec(3:4), ' => soil_carbon'
-         print *, available_p, ' => labile_p_glob'
-         print *, available_n, ' => mineral_n_glob'
+         print *, csoil_in(1:2), ' => litter_carbon'
+         print *, csoil_in(3:4), ' => soil_carbon'
+         print *, av_p_in, ' => labile_p_glob'
+         print *, in_n_in, ' => mineral_n_glob'
       endif
 
    contains
@@ -611,7 +587,7 @@ module caete
             real(kind=r_4) :: retval
             retval = sum(var_arr * real(area_arr, r_4), mask = .not. isnan(var_arr))
 
-         end function cwm
+         end function cwm_soil
 
    end subroutine caete_dyn
 

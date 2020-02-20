@@ -5,8 +5,9 @@
 # | |___ / ___ \| |___  | | | |___
 #  \____/_/   \_\_____| |_| |_____|
 
-# import csv
+import csv
 import pickle
+import glob
 # import multiprocessing as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +17,7 @@ from caete_input import data_in
 # our module
 import caete
 from caete_module import global_par as gp
+import os
 
 # Example of (x, y) gridcell position
 # ISIMIP2b input data
@@ -59,16 +61,60 @@ def f0(grd):
 # Serial procesing: only one gridcell
 grd = f0(grda)
 
+
 # Parallel processing
 # if __name__ == "__main__":
 
 #     import multiprocessing as mp
 
-#     with mp.Pool(processes=5) as p:
-#         result = p.map(f0, works)
+# with mp.Pool(processes=5) as p:
+#     result = p.map(f0, works)
+
+fname = glob.glob1(os.getcwd(), "pools_din*")[0]
+l = []
+with open(fname, mode='r') as fh:
+    for row in fh.readlines():
+        l.append([x for x in row.rstrip().lstrip().split(' ') if x != ''])
+
+
+def wcsv(li, mon=True):
+    with open('pools.csv', 'w', newline='') as fh:
+        wt = csv.writer(fh, delimiter=',')
+        if mon:
+            wt.writerow(['n', 'month', 'leaf', 'wood', 'root', 'litter', 'soil', 'wsoil',
+                         'gpp', 'ra', 'npp', 'hr', 'rm', 'rg', 'wue', 'cue'])
+        else:
+            wt.writerow(['day', 'leaf', 'wood', 'root', 'litter1', 'litter2', 'soil1',
+                         'soil2', 'wsoil', 'gpp', 'ra', 'npp', 'hr', 'rm', 'rg', 'wue', 'cue', 'rcm', 'ls'])
+
+        wt.writerows(li)
+
+
+s
+wcsv(l, False)
+
+data = pd.read_csv('pools.csv')
 
 
 # --------------------------------------------------
+# header = ['run', 'cleaf',
+#           'cawood_comm',
+#           'cfroot_comm',
+#           'c_litter1',
+#           'c_litter2',
+#           'c_soil1',
+#           'c_soil2',
+#           'wsoil_comm',
+#           'photo_comm',
+#           'aresp_comm',
+#           'npp_comm',
+#           'het_resp',
+#           'rm_comm',
+#           'rg_comm',
+#           'wue',
+#           'cue',
+#           'rcm_comm',
+#           'life_strategy']
 
 # # # def plots(): simple plot with matplotlib
 # colors = ['g', 'r', 'b', 'm', 'y', 'k']
@@ -91,20 +137,22 @@ grd = f0(grda)
 # plt.ylabel(' Número de Estratégias de Vida')
 # plt.savefig("pls_surviving.png")
 
-# header = ['run', 'cleaf',
-#           'cawood_comm',
-#           'cfroot_comm',
-#           'c_litter1',
-#           'c_litter2',
-#           'c_soil1',
-#           'c_soil2',
-#           'wsoil_comm',
-#           'photo_comm',
-#           'aresp_comm',
-#           'npp_comm',
-#           'het_resp',
-#           'rm_comm',
-#           'rg_comm',
-#           'wue',
-#           'cue',
-#           'rcm_comm']
+# k + run &
+#                  & ,cleaf_cwm(k)&
+#                  & ,cawood_cwm(k)&
+#                  & ,cfroot_cwm(k)&
+#                  & ,csoil_in(1)&
+#                  & ,csoil_in(2)&
+#                  & ,csoil_in(3)&
+#                  & ,csoil_in(4)&
+#                  & ,wsoil_cwm(k)&
+#                  & ,photo_cwm(k)&
+#                  & ,aresp_cwm(k)&
+#                  & ,npp_cwm(k)&
+#                  & ,hr_cwm(k)&
+#                  & ,rm_cwm(k)&
+#                  & ,rg_cwm(k)&
+#                  & ,wue(k)&
+#                  & ,cue(k)&
+#                  & ,rcm_cwm(k)&
+#                  & ,ls

@@ -208,16 +208,17 @@ def run_dyn(grd, at=np.copy(d_at)):
     dcl = np.zeros(npls,)
     dca = np.zeros(npls,)
     dcf = np.zeros(npls,)
-    # model_funcs.spinup2(0.5, at)
-    grd.clin = np.zeros(npls,) + 0.1
-    grd.cfin = np.zeros(npls,) + 0.1
-    grd.cwin = np.zeros(npls,) + 0.1
 
-    grd.csoil = np.zeros(4,) + 0.01
+    grd.clin, grd.cfin, grd.cwin = model_funcs.spinup2(0.5, at)
+    # grd.clin = np.zeros(npls,) + 0.1
+    # grd.cfin = np.zeros(npls,) + 0.1
+    # grd.cwin = np.zeros(npls,) + 0.1
+
+    grd.csoil = np.zeros(4,) + 50.0
     grd.snr = np.zeros(8,) + 0.0001
     grd.inorg_p = 0.0
-    grd.inorg_n = 0.37
-    grd.avail_p = 0.2
+    grd.inorg_n = 1.0
+    grd.avail_p = 1.0
     grd.sorbed_p = 0.0
 
     # x, y, run, dt, w0, g0, s0, csoil_init, snr_init, in_p_init, in_n_init,&

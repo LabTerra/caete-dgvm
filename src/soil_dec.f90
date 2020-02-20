@@ -38,7 +38,7 @@ module soil_dec
 
 contains
 
-   subroutine carbon3(tsoil, water_sat, leaf_l, cwd, root_l, lnr, cl, cs, &
+   subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd, root_litter, lnr, cl, cs, &
                     &  snr_in, nupt, pupt, avail_p, inorg_n, inorg_p,&
                     & sorbed_p, cl_out, cs_out, snr, hr)
 
@@ -52,7 +52,9 @@ contains
       !     Inputs
       !     ------
       real(r_4),intent(in) :: tsoil, water_sat       ! soil temperature (°C); soil water relative content (dimensionless)
-      real(r_4),intent(in) :: leaf_l, cwd, root_l    ! Mass of C comming from living pools g(C)m⁻²
+      real(r_8),intent(in) :: leaf_litter
+      real(r_8),intent(in) :: coarse_wd
+      real(r_8),intent(in) :: root_litter            ! Mass of C comming from living pools g(C)m⁻²
       real(r_4),dimension(6),intent(in) :: lnr       ! g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
@@ -100,6 +102,13 @@ contains
 
       !Auxiliary variables
       real(r_4) :: aux1, aux2, aux3, aux4
+      real(r_4) :: leaf_l, cwd, root_l    ! Mass of C comming from living pools g(C)m⁻²
+
+
+      ! START
+      leaf_l = real(leaf_litter, r_4)
+      cwd    = real(coarse_wd, r_4)
+      root_l = real(root_litter, r_4)
 
       nutri_min_n = 0.0
       nutri_min_p = 0.0
@@ -204,8 +213,6 @@ contains
       nmass_org(4) = ps_nitrogen(2)
       pmass_org(4) = ps_phosphorus(2)
 
-      print *, pmass_org, 'orgP'
-      print *, nmass_org, 'orgN'
       ! THIS SECTION - Mineralized nutrients =====================================================
       ! The amounts of Minerilized nutrients are dependent on N:C and P:C mass ratios of soil pools
       ! NUTRIENT RATIOS in SOIL
