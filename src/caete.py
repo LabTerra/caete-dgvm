@@ -105,7 +105,6 @@ class gridcell_dyn:
         self.aresp = None
         self.npp = None
         self.lai = None
-        self.csoil = None
         self.hresp = None
 
         self.rcm = None
@@ -134,8 +133,6 @@ class gridcell_dyn:
         self.caf = None
         self.cff = None
 
-        self.nitro_min = None
-        self.phop_lab = None
         self.vcmax = None
         self.specific_la = None
         self.nupt = None
@@ -143,10 +140,10 @@ class gridcell_dyn:
         self.litter_l = None
         self.cwd = None
         self.litter_fr = None
-        self.snr = None
         self.lnr = None
         self.storage_pool = None
-        self.avail_n = None
+        self.csoil = None
+        self.snr = None
         self.avail_p = None
         self.inorg_n = None
         self.inorg_p = None
@@ -216,10 +213,19 @@ def run_dyn(grd, at=np.copy(d_at)):
     grd.cfin = np.zeros(npls,) + 0.1
     grd.cwin = np.zeros(npls,) + 0.1
 
-# x, y, run, dt, w0, g0, s0, dcl, dca, dcf, prec, temp, p0, par, rhs,&
-#         & cleaf_ini, cawood_ini, cfroot_ini,
+    grd.csoil = np.zeros(4,) + 0.01
+    grd.snr = np.zeros(8,) + 0.0001
+    grd.inorg_p = 0.0
+    grd.inorg_n = 0.37
+    grd.avail_p = 0.2
+    grd.sorbed_p = 0.0
 
-    outputs = model.caete_dyn(grd.x, grd.y, RUN, at, w0, g0, s0, dcl, dca, dcf, grd.pr,
+    # x, y, run, dt, w0, g0, s0, csoil_init, snr_init, in_p_init, in_n_init,&
+    # & av_p_init, so_p_init, dcl, dca, dcf, prec, temp, p0, par, rhs,&
+    # & cleaf_ini, cawood_ini, cfroot_ini
+
+    outputs = model.caete_dyn(grd.x, grd.y, RUN, at, w0, g0, s0, grd.csoil, grd.snr, grd.inorg_p,
+                              grd.inorg_n, grd.avail_p, grd.sorbed_p, dcl, dca, dcf, grd.pr,
                               grd.tas, grd.ps, grd.rsds, grd.rhs, grd.clin, grd.cwin, grd.cfin)
 
     grd.emaxm = outputs[0]
@@ -227,149 +233,136 @@ def run_dyn(grd, at=np.copy(d_at)):
     grd.photo = outputs[2]
     grd.aresp = outputs[3]
     grd.npp = outputs[4]
-
     grd.lai = outputs[5]
-    grd.csoil = outputs[6]
-    grd.hresp = outputs[7]
-    grd.rcm = outputs[8]
-    grd.f5 = outputs[9]
+    grd.hresp = outputs[6]
+    grd.rcm = outputs[7]
+    grd.f5 = outputs[8]
+    grd.runom = outputs[9]
+    grd.evapm = outputs[10]
+    grd.wsoil = outputs[11]
+    grd.rm = outputs[12]
+    grd.rg = outputs[13]
+    grd.cleaf = outputs[14]
+    grd.cawood = outputs[15]
+    grd.cfroot = outputs[16]
+    grd.area = outputs[17]
+    grd.wue = outputs[18]
+    grd.cue = outputs[19]
+    grd.cdef = outputs[20]
+    grd.wfim = outputs[21]
+    grd.gfim = outputs[22]
+    grd.sfim = outputs[23]
+    grd.dl_final = outputs[24]
+    grd.dw_final = outputs[25]
+    grd.dr_final = outputs[26]
+    grd.clf = outputs[27]
+    grd.caf = outputs[28]
+    grd.cff = outputs[29]
+    grd.vcmax = outputs[30]
+    grd.specific_la = outputs[31]
+    grd.nupt = outputs[32]
+    grd.pupt = outputs[33]
+    grd.litter_l = outputs[34]
+    grd.cwd = outputs[35]
+    grd.litter_fr = outputs[36]
 
-    grd.runom = outputs[10]
-    grd.evapm = outputs[11]
-    grd.wsoil = outputs[12]
-    grd.rm = outputs[13]
-    grd.rg = outputs[14]
+    grd.lnr = outputs[37]
+    grd.storage_pool = outputs[38]
 
-    grd.cleaf = outputs[15]
-    grd.cawood = outputs[16]
-    grd.cfroot = outputs[17]
-    grd.area = outputs[18]
-    grd.wue = outputs[19]
+    grd.csoil = outputs[39]
+    grd.snr = outputs[40]
+    grd.avail_p = outputs[41]
+    grd.inorg_n = outputs[42]
+    grd.inorg_p = outputs[43]
+    grd.sorbed_p = outputs[44]
 
-    grd.cue = outputs[20]
-    grd.cdef = outputs[21]
-    grd.wfim = outputs[22]
-    grd.gfim = outputs[23]
-    grd.sfim = outputs[24]
+    # def spin(grd1, r_number):
+    #     """ Continuation Runs """
 
-    grd.dl_final = outputs[25]
-    grd.dw_final = outputs[26]
-    grd.dr_final = outputs[27]
-    grd.clf = outputs[28]
-    grd.caf = outputs[29]
+    #     outputs = model.caete_dyn(grd.x, grd.y, r_number, at, grd1.wfim, grd1.gfim, grd1.sfim,
+    #                               grd1.dl_final, grd1.dw_final, grd1.dr_final, grd1.pr,
+    #                               grd1.tas, grd1.ps, grd1.rsds, grd1.rhs,
+    #                               grd1.clf, grd1.caf, grd1.cff)
 
-    grd.cff = outputs[30]
-    grd.vcmax = outputs[31]
-    grd.specific_la = outputs[32]
-    grd.nupt = outputs[33]
-    grd.pupt = outputs[34]
+    #     grd1.emaxm = np.hstack((grd1.emaxm, outputs[0]))
+    #     grd1.tsoil = np.hstack((grd1.tsoil, outputs[1]))
+    #     grd1.photo = np.hstack((grd1.photo, outputs[2]))
+    #     grd1.aresp = np.hstack((grd1.aresp, outputs[3]))
+    #     grd1.npp = np.hstack((grd1.npp, outputs[4]))
+    #     grd1.lai = np.hstack((grd1.lai, outputs[5]))
+    #     grd1.hresp = np.hstack((grd1.hresp, outputs[6]))
+    #     grd1.rcm = np.hstack((grd1.rcm, outputs[7]))
+    #     grd1.f5 = np.hstack((grd1.f5, outputs[8]))
+    #     grd1.runom = np.hstack((grd1.runom, outputs[9]))
+    #     grd1.evapm = np.hstack((grd1.evapm, outputs[10]))
+    #     grd1.wsoil = np.hstack((grd1.wsoil, outputs[11]))
+    #     grd1.rm = np.hstack((grd1.rm, outputs[12]))
+    #     grd1.rg = np.hstack((grd1.rg, outputs[13]))
+    #     grd1.cleaf = np.hstack((grd1.cleaf, outputs[14]))
+    #     grd1.cawood = np.hstack((grd1.cawood, outputs[15]))
+    #     grd1.cfroot = np.hstack((grd1.cfroot, outputs[16]))
+    #     grd1.area = np.vstack((grd1.area, outputs[17]))
+    #     grd1.wue = np.hstack((grd1.wue, outputs[18]))
+    #     grd1.cue = np.hstack((grd1.cue, outputs[19]))
+    #     grd1.cdef = np.hstack((grd1.cdef, outputs[20]))
+    #     grd1.wfim = outputs[21]
+    #     grd1.gfim = outputs[22]
+    #     grd1.sfim = outputs[23]
+    #     grd1.dl_final = outputs[24]
+    #     grd1.dw_final = outputs[25]
+    #     grd1.dr_final = outputs[26]
+    #     grd1.clf = outputs[27]
+    #     grd1.caf = outputs[28]
+    #     grd1.cff = outputs[29]
+    #     grd1.vcmax = np.hstack((grd1.vcmax, outputs[30]))
+    #     grd1.specific_la = np.hstack((grd1.specific_la, outputs[31]))
+    #     grd1.nupt = np.hstack((grd1.nupt, outputs[32]))
+    #     grd1.pupt = np.hstack((grd1.pupt, outputs[33]))
+    #     grd1.litter_l = np.hstack((grd1.litter_l, outputs[34]))
+    #     grd1.cwd = np.hstack((grd1.cwd, outputs[35]))
+    #     grd1.litter_fr = np.hstack((grd1.litter_fr, outputs[36]))
+    #     grd1.lnr = np.hstack((grd1.lnr, outputs[37]))
+    #     grd1.storage_pool = np.hstack((grd1.storage_pool, outputs[38]))
+    #     grd1.csoil = np.hstack((grd1.csoil, outputs[39]))
+    #     grd1.snr = np.hstack((grd1.snr, outputs[40]))
+    #     grd1.avail_p = np.hstack((grd1.avail_p, outputs[41]))
+    #     grd1.inorg_n = np.hstack((grd1.inorg_n, outputs[42]))
+    #     grd1.inorg_p = np.hstack((grd1.inorg_p, outputs[43]))
+    #     grd1.sorbed_p = np.hstack((grd1.sorbed_p, outputs[44]))
 
-    grd.litter_l = outputs[35]
-    grd.cwd = outputs[36]
-    grd.litter_fr = outputs[37]
-    grd.snr = outputs[38]
-    grd.lnr = outputs[39]
-    grd.storage_pool = outputs[40]
+# # # GAMBIARRA NERVOSA
 
-    grd.avail_n = outputs[41]
-    grd.avail_p = outputs[42]
-    grd.inorg_n = outputs[43]
-    grd.inorg_p = outputs[44]
-    grd.sorbed_p = outputs[45]
+#     print('\n--run 1\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-    def spin(grd1, r_number):
-        """ Continuation Runs """
+#     print('\n--run 2\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        outputs = model.caete_dyn(grd.x, grd.y, r_number, at, grd1.wfim, grd1.gfim, grd1.sfim,
-                                  grd1.dl_final, grd1.dw_final, grd1.dr_final, grd1.pr,
-                                  grd1.tas, grd1.ps, grd1.rsds, grd1.rhs,
-                                  grd1.clf, grd1.caf, grd1.cff)
+#     print('\n--run 3\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        grd1.emaxm = np.hstack((grd1.emaxm, outputs[0]))
-        grd1.tsoil = np.hstack((grd1.tsoil, outputs[1]))
-        grd1.photo = np.hstack((grd1.photo, outputs[2]))
-        grd1.aresp = np.hstack((grd1.aresp, outputs[3]))
-        grd1.npp = np.hstack((grd1.npp, outputs[4]))
+#     print('\n--run 4\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        grd1.lai = np.hstack((grd1.lai, outputs[5]))
-        grd1.csoil = np.hstack((grd1.csoil, outputs[6]))
-        grd1.hresp = np.hstack((grd1.hresp, outputs[7]))
-        grd1.rcm = np.hstack((grd1.rcm, outputs[8]))
-        grd1.f5 = np.hstack((grd1.f5, outputs[9]))
+#     print('\n--run 5\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        grd1.runom = np.hstack((grd1.runom, outputs[10]))
-        grd1.evapm = np.hstack((grd1.evapm, outputs[11]))
-        grd1.wsoil = np.hstack((grd1.wsoil, outputs[12]))
-        grd1.rm = np.hstack((grd1.rm, outputs[13]))
-        grd1.rg = np.hstack((grd1.rg, outputs[14]))
+#     print('run 6\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        grd1.cleaf = np.hstack((grd1.cleaf, outputs[15]))
-        grd1.cawood = np.hstack((grd1.cawood, outputs[16]))
-        grd1.cfroot = np.hstack((grd1.cfroot, outputs[17]))
-        grd1.area = np.vstack((grd1.area, outputs[18]))
-        grd1.wue = np.hstack((grd1.wue, outputs[19]))
-        grd1.cue = np.hstack((grd1.cue, outputs[20]))
-        grd1.cdef = np.hstack((grd1.cdef, outputs[21]))
+#     print('run 7\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
-        grd1.wfim = outputs[22]
-        grd1.gfim = outputs[23]
-        grd1.sfim = outputs[24]
-        grd1.dl_final = outputs[25]
-        grd1.dw_final = outputs[26]
-        grd1.dr_final = outputs[27]
-        grd1.clf = outputs[28]
-        grd1.caf = outputs[29]
-        grd1.cff = outputs[30]
-
-        grd1.vcmax = np.hstack((grd1.vcmax, outputs[31]))
-        grd1.specific_la = np.hstack((grd1.specific_la, outputs[32]))
-        grd1.nupt = np.hstack((grd1.nupt, outputs[33]))
-        grd1.pupt = np.hstack((grd1.pupt, outputs[34]))
-        grd1.litter_l = np.hstack((grd1.litter_l, outputs[35]))
-        grd1.cwd = np.hstack((grd1.cwd, outputs[36]))
-        grd1.litter_fr = np.hstack((grd1.litter_fr, outputs[37]))
-        grd1.snr = np.hstack((grd1.snr, outputs[38]))
-        grd1.lnr = np.hstack((grd1.lnr, outputs[39]))
-        grd1.storage_pool = np.hstack((grd1.storage_pool, outputs[40]))
-        grd1.avail_n = np.hstack((grd1.avail_n, outputs[41]))
-        grd1.avail_p = np.hstack((grd1.avail_p, outputs[42]))
-        grd1.inorg_n = np.hstack((grd1.inorg_n, outputs[43]))
-        grd1.inorg_p = np.hstack((grd1.inorg_p, outputs[44]))
-        grd1.sorbed_p = np.hstack((grd1.sorbed_p, outputs[45]))
-
-# # GAMBIARRA NERVOSA
-
-    print('\n--run 1\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('\n--run 2\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('\n--run 3\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('\n--run 4\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('\n--run 5\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('run 6\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('run 7\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
-
-    print('run 8\n')
-    RUN += int(gp.nt1)
-    spin(grd, RUN)
+#     print('run 8\n')
+#     RUN += int(gp.nt1)
+#     spin(grd, RUN)
 
     # print('run 9\n')
     # RUN += int(gp.nt1)

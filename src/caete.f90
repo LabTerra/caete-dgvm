@@ -22,21 +22,19 @@ module caete
 
    contains
 
-   subroutine caete_dyn(x, y, run, dt, w0, g0, s0, dcl, dca, dcf, prec, temp, p0, par, rhs,&
+   subroutine caete_dyn(x, y, run, dt, w0, g0, s0, csoil_init, snr_init, in_p_init, in_n_init,&
+        & av_p_init, so_p_init, dcl, dca, dcf, prec, temp, p0, par, rhs,&
         & cleaf_ini, cawood_ini, cfroot_ini, emaxm, tsoil, photo_cwm, aresp_cwm, npp_cwm, lai_cwm,&
-        & csoil, hr_cwm, rcm_cwm, f51, runom_cwm, evapm_cwm, wsoil_cwm, rm_cwm, rg_cwm, cleaf_cwm,&
+        & hr_cwm, rcm_cwm, f51, runom_cwm, evapm_cwm, wsoil_cwm, rm_cwm, rg_cwm, cleaf_cwm,&
         & cawood_cwm, cfroot_cwm, grid_area, wue, cue, cdef, wfim, gfim, sfim, dl_final, dw_final,&
-        & dr_final, clf, caf, cff, vcmax, specific_la, nupt, pupt,litter_l, cwd, litter_fr, snr,&
-        & lnr, storage_pool, avail_n ,avail_p  ,inorg_n  ,inorg_p  ,sorbed_p)
+        & dr_final, clf, caf, cff, vcmax, specific_la, nupt, pupt,litter_l, cwd, litter_fr,&
+        & lnr, storage_pool, soil_carbon, snr, avail_p, inorg_n, inorg_p, sorbed_p)
 
       use types
       use utils, only: gpid   => process_id
       use global_par
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
-      use soil_dec, only: available_n, available_p, available_n_init,&
-                        & available_p_init, soil_carbon, in_n, in_p, so_p,&
-                        & soc_soil_dec
 
       !     --------------------------I N P U T S----------------------------
 
@@ -48,10 +46,12 @@ module caete
       real(r_4),dimension(npls),intent(in) :: g0 ! Initial soil ice
       real(r_4),dimension(npls),intent(in) :: s0 ! Initial soil snow
 
-      ! podem deixar de ser inputs (chamada de fun ou como parametro global)
-      real(r_4),dimension(npls),intent(in) :: cleaf_ini    ! Initial carbon content in leaves (kg m-2)
-      real(r_4),dimension(npls),intent(in) :: cawood_ini   ! Initial carbon content in aboveground wood (kg m-2)
-      real(r_4),dimension(npls),intent(in) :: cfroot_ini   ! Initial carbon content in fineroots (kg m-2)
+      real(r_4),dimension(4),intent(in) :: csoil_init
+      real(r_4),dimension(8),intent(in) :: snr_init
+      real(r_4),intent(in) :: in_p_init
+      real(r_4),intent(in) :: in_n_init
+      real(r_4),intent(in) :: av_p_init
+      real(r_4),intent(in) :: so_p_init
 
       ! initial value for betaleaf (daily delta cmass) Gained C - Used to calculate Growth Respiration
       real(r_8),dimension(npls),intent(in) :: dcl ! Leaf - deltaC(day, day-1) kg m-2
@@ -64,15 +64,14 @@ module caete
       real(r_4),dimension(nt1),intent(in) :: temp       ! entry: K; convert - Temperature (oC)
       real(r_4),dimension(nt1),intent(in) :: par        ! entry: RSDS shortwave downward rad. -W m-2; convert - IPAR (Ein/m2/s) molþ m-2 s-1
       real(r_4),dimension(nt1),intent(in) :: rhs        ! entry: %; tranform to ratio (0-1) Relative humidity
+
+      real(r_4),dimension(npls),intent(in) :: cleaf_ini    ! Initial carbon content in leaves (kg m-2)
+      real(r_4),dimension(npls),intent(in) :: cawood_ini   ! Initial carbon content in aboveground wood (kg m-2)
+      real(r_4),dimension(npls),intent(in) :: cfroot_ini   ! Initial carbon content in fineroots (kg m-2)
+
       !     -----------------------------E N D-------------------------------
 
       !     -------------------------O U T P U T S---------------------------
-
-      ! emaxm, tsoil, photo_cwm, aresp_cwm, npp_cwm, lai_cwm,&
-      ! & csoil, hr_cwm, rcm_cwm, f51, runom_cwm, evapm_cwm, wsoil_cwm, rm_cwm, rg_cwm, cleaf_cwm,&
-      ! & cawood_cwm, cfroot_cwm, grid_area, wue, cue, cdef, wfim, gfim, sfim, dl_final, dw_final,&
-      ! & dr_final, clf, caf, cff, vcmax, specific_la, nupt, pupt,litter_l, cwd, litter_fr, snr,&
-      ! & lnr, storage_pool, avail_n ,avail_p  ,inorg_n  ,inorg_p  ,sorbed_p
 
       real(r_4),dimension(nt1),   intent(out) :: emaxm        ! 1   ! Max.evapotranspiration (kg m-2 day-1)
       real(r_4),dimension(nt1),   intent(out) :: tsoil        ! 2   ! soil temperature °C
@@ -80,46 +79,47 @@ module caete
       real(r_8),dimension(nt1),   intent(out) :: aresp_cwm    ! 4   ! daily autotrophic res  (kgC m-2 year-1)
       real(r_8),dimension(nt1),   intent(out) :: npp_cwm      ! 5   ! daily net primary produ (kgC m-2 year-1)
       real(r_8),dimension(nt1),   intent(out) :: lai_cwm      ! 6   ! daily leaf area index m2 m-2
-      real(r_4),dimension(4,nt1), intent(out) :: csoil        ! 7   ! CSOIL_POOL carbon gC m-2
-      real(r_4),dimension(nt1),   intent(out) :: hr_cwm       ! 8   ! daily het resp  (kgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: rcm_cwm      ! 9  ! leaf resistence s m-1
-      real(r_8),dimension(nt1),   intent(out) :: f51          ! 10  ! Water stress modifier (dimensionless)
-      real(r_8),dimension(nt1),   intent(out) :: runom_cwm    ! 11  ! Runoff kg m-2 day-1
-      real(r_8),dimension(nt1),   intent(out) :: evapm_cwm    ! 12  ! Actual evapotranspiration kg m-2 day-1
-      real(r_8),dimension(nt1),   intent(out) :: wsoil_cwm    ! 13  ! Soil moisture (kg m-2)
-      real(r_8),dimension(nt1),   intent(out) :: rm_cwm       ! 14  ! Plant (autotrophic) Maintenance respiration
-      real(r_8),dimension(nt1),   intent(out) :: rg_cwm       ! 15  ! Plant (autotrophic) Growth respiration
-      real(r_8),dimension(nt1),   intent(out) :: cleaf_cwm    ! 16  ! leaf biomass (KgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: cawood_cwm   ! 17  ! aboveground wood biomass (KgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: cfroot_cwm   ! 18  ! fine root biomass (KgC/m2)
-      real(r_8),dimension(npls),  intent(out) :: grid_area    ! 19  ! gridcell area fraction of pfts! ratio (0-1)
-      real(r_8),dimension(nt1),   intent(out) :: wue          ! 20  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
-      real(r_8),dimension(nt1),   intent(out) :: cue          ! 21  ! 2 - npp/gpp;
-      real(r_8),dimension(nt1),   intent(out) :: cdef         ! 22  ! 3 - kgC m-2
-      real(r_4),dimension(npls),  intent(out) :: wfim         ! 23  ! Kg m-2
-      real(r_4),dimension(npls),  intent(out) :: gfim         ! 24  ! Kg m-2
-      real(r_4),dimension(npls),  intent(out) :: sfim         ! 25  ! Kg m-2  final day water pools (snow; water; ice)
-      real(r_8),dimension(npls),  intent(out) :: dl_final     ! 26  ! delta(now, last day pool size)
-      real(r_8),dimension(npls),  intent(out) :: dw_final     ! 27  !
-      real(r_8),dimension(npls),  intent(out) :: dr_final     ! 28  ! KgC m-2
-      real(r_8),dimension(npls),  intent(out) :: clf          ! 29  ! final carbon pools (cveg) for each pft (not scaled to cell area)
-      real(r_8),dimension(npls),  intent(out) :: caf          ! 30  ! KgC m-2
-      real(r_8),dimension(npls),  intent(out) :: cff          ! 31
-      real(r_4),dimension(nt1),  intent(out) :: vcmax         ! 32  ! mol m⁻² s⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: specific_la   ! 33  ! m²g⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: nupt          ! 34  ! n plant uptake - CWM  TODO units
-      real(r_4),dimension(nt1),  intent(out) :: pupt          ! 35  ! p plant uptake - CWM
-      real(r_4),dimension(nt1),  intent(out) :: litter_l      ! 36  ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
-      real(r_4),dimension(nt1),  intent(out) :: cwd           ! 37  ! CWM
-      real(r_4),dimension(nt1),  intent(out) :: litter_fr     ! 38  ! CWM
-      real(r_8),dimension(8,nt1),intent(out) :: snr           ! 39  ! Soil nutrient ratios g/g
-      real(r_4),dimension(6,nt1),intent(out) :: lnr           ! 40  ! Litter nutrient ratios
-      real(r_4),dimension(3,nt1),intent(out) :: storage_pool  ! 41  ! Rapid Auxiliary daily storage pool for carbon and nutrients g m⁻²
-      real(r_8),dimension(nt1),  intent(out) :: avail_n       ! 42
-      real(r_8),dimension(nt1),  intent(out) :: avail_p       ! 43
-      real(r_8),dimension(nt1),  intent(out) :: inorg_n       ! 44
-      real(r_8),dimension(nt1),  intent(out) :: inorg_p       ! 45
-      real(r_8),dimension(nt1),  intent(out) :: sorbed_p      ! 46
+      real(r_4),dimension(nt1),   intent(out) :: hr_cwm       ! 7   ! daily het resp  (kgC/m2)
+      real(r_8),dimension(nt1),   intent(out) :: rcm_cwm      ! 8  ! leaf resistence s m-1
+      real(r_8),dimension(nt1),   intent(out) :: f51          ! 9  ! Water stress modifier (dimensionless)
+      real(r_8),dimension(nt1),   intent(out) :: runom_cwm    ! 10  ! Runoff kg m-2 day-1
+      real(r_8),dimension(nt1),   intent(out) :: evapm_cwm    ! 11  ! Actual evapotranspiration kg m-2 day-1
+      real(r_8),dimension(nt1),   intent(out) :: wsoil_cwm    ! 12  ! Soil moisture (kg m-2)
+      real(r_8),dimension(nt1),   intent(out) :: rm_cwm       ! 13  ! Plant (autotrophic) Maintenance respiration
+      real(r_8),dimension(nt1),   intent(out) :: rg_cwm       ! 14  ! Plant (autotrophic) Growth respiration
+      real(r_8),dimension(nt1),   intent(out) :: cleaf_cwm    ! 15  ! leaf biomass (KgC/m2)
+      real(r_8),dimension(nt1),   intent(out) :: cawood_cwm   ! 16  ! aboveground wood biomass (KgC/m2)
+      real(r_8),dimension(nt1),   intent(out) :: cfroot_cwm   ! 17  ! fine root biomass (KgC/m2)
+      real(r_8),dimension(npls),  intent(out) :: grid_area    ! 18  ! gridcell area fraction of pfts! ratio (0-1)
+      real(r_8),dimension(nt1),   intent(out) :: wue          ! 19  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
+      real(r_8),dimension(nt1),   intent(out) :: cue          ! 20  ! 2 - npp/gpp;
+      real(r_8),dimension(nt1),   intent(out) :: cdef         ! 21  ! 3 - kgC m-2
+      real(r_4),dimension(npls),  intent(out) :: wfim         ! 22  ! Kg m-2
+      real(r_4),dimension(npls),  intent(out) :: gfim         ! 23  ! Kg m-2
+      real(r_4),dimension(npls),  intent(out) :: sfim         ! 24  ! Kg m-2  final day water pools (snow; water; ice)
+      real(r_8),dimension(npls),  intent(out) :: dl_final     ! 25  ! delta(now, last day pool size)
+      real(r_8),dimension(npls),  intent(out) :: dw_final     ! 26  !
+      real(r_8),dimension(npls),  intent(out) :: dr_final     ! 27  ! KgC m-2
+      real(r_8),dimension(npls),  intent(out) :: clf          ! 28  ! final carbon pools (cveg) for each pft (not scaled to cell area)
+      real(r_8),dimension(npls),  intent(out) :: caf          ! 29  ! KgC m-2
+      real(r_8),dimension(npls),  intent(out) :: cff          ! 30
+      real(r_4),dimension(nt1),   intent(out) :: vcmax        ! 31  ! mol m⁻² s⁻¹
+      real(r_4),dimension(nt1),   intent(out) :: specific_la  ! 32  ! m²g⁻¹
+      real(r_4),dimension(nt1),   intent(out) :: nupt         ! 33  ! n plant uptake - CWM  TODO units
+      real(r_4),dimension(nt1),   intent(out) :: pupt         ! 34  ! p plant uptake - CWM
+      real(r_4),dimension(nt1),   intent(out) :: litter_l     ! 35  ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
+      real(r_4),dimension(nt1),   intent(out) :: cwd          ! 36  ! CWM
+      real(r_4),dimension(nt1),   intent(out) :: litter_fr    ! 37  ! CWM
+
+      real(r_4),dimension(6,nt1), intent(out) :: lnr          ! 38 ! Litter nutrient ratios
+      real(r_4),dimension(3,nt1), intent(out) :: storage_pool ! 39 ! Rapid Auxiliary daily storage pool for carbon and nutrients g m⁻²
+
+      real(r_4),dimension(4,nt1), intent(out) :: soil_carbon  ! 40 ! CSOIL_POOL carbon gC m-2
+      real(r_4),dimension(8,nt1), intent(out) :: snr          ! 41 ! Soil nutrient ratios g/g
+      real(r_4),dimension(nt1),   intent(out) :: avail_p      ! 42
+      real(r_4),dimension(nt1),   intent(out) :: inorg_n      ! 43
+      real(r_4),dimension(nt1),   intent(out) :: inorg_p      ! 44
+      real(r_4),dimension(nt1),   intent(out) :: sorbed_p     ! 45
 
       !  c     --------------------------------E N D----------------------------
 
@@ -172,19 +172,21 @@ module caete
       real(r_8),dimension(npls) :: gridocpcom
       real(r_8),dimension(npls) :: hr_com
       real(r_8),dimension(npls) :: wue_com
+
       real(r_4),dimension(4,npls) :: soilcarbon_com
-      real(r_4),dimension(4,npls) :: soc
+      real(r_4),dimension(8,npls) :: snr_com
+      real(r_4),dimension(npls)   :: in_p_com
+      real(r_4),dimension(npls)   :: in_n_com
+      real(r_4),dimension(npls)   :: av_p_com
+      real(r_4),dimension(npls)   :: so_p_com
+      real(r_4) :: csoil_in, snr_in, in_p_in, in_n_in, av_p_in, so_p_in ! Auxiliary variables
       real(r_8),dimension(npls) :: grd
-
       real(r_4) :: pr,spre,ta,td,ipar,ru
-
       integer(i_4) :: p
       real(r_4) :: t1ww
       real(r_4) :: t2ww
       real(r_4) :: t3ww
 
-      real(r_4) :: av_n = 0.0
-      real(r_4) :: av_p = 0.0
       real(r_4) :: aux1, aux2
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpcom_int
@@ -199,6 +201,7 @@ module caete
 
       ! ### MODEL INITIALIZATION ---------------------
 
+      ! Create a textfile for debug
       if(text_ts) then
          ! open log file
          mypid_int = gpid()
@@ -227,6 +230,14 @@ module caete
       gini  = g0  !Soil ice_initial condition (mm)
       sini  = s0  !Overland snow_initial condition (mm)
 
+      ! Soil organic matter pools
+      in_p_in  = in_p_init
+      in_n_in  = in_n_init
+      av_p_in  = av_p_init
+      so_p_in  = so_p_init
+      csoil_in = csoil_init
+      snr_in   = snr_init
+
       !82 columns-----------------------------------------------------------------
 
       ! Initialize variables
@@ -252,6 +263,12 @@ module caete
       rg_cwm             = 0.0     ! Growth respiration
       wue                = 0.0     ! Water use efficiency (Medlyn et al. 2011 Reconciling...)
       cue                = 0.0     ! Carbon Use efficiency (NPP/GPP)
+      soilcarbon_com     = 0.0
+      snr_com            = 0.0
+      in_p_com           = 0.0
+      in_n_com           = 0.0
+      av_p_com           = 0.0
+      so_p_com           = 0.0
 
       !  ### End model initialization -------------------------------------------------
 
@@ -304,28 +321,36 @@ module caete
          c_def_com               = 0.0
          hr_com                  = 0.0
 
-         soilcarbon_com(1,:) = soc_soil_dec(1)
-         soilcarbon_com(2,:) = soc_soil_dec(2)
-         soilcarbon_com(3,:) = soc_soil_dec(3)
-         soilcarbon_com(4,:) = soc_soil_dec(4)
 
-         ! AVAILABLE NUTRIENTS:
-         if (run .lt. 5000) then
-            av_n = available_n_init
-            av_p = available_p_init
-         else
-            av_n = available_n
-            av_p = available_p
-         endif
+         ! ! AVAILABLE NUTRIENTS:
+         ! if (run .lt. 5000) then
+         !    av_n = available_n_init
+         !    av_p = available_p_init
+         ! else
+         !    av_n = available_n
+         !    av_p = available_p
+         ! endif
+
+         ! subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
+         !    & inorg_p, inorg_n, avail_p, sorb_p, sto_budg,&
+         !    & cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
+         !    & csoil, snr_com, w2, g2, s2, smavg, ruavg, evavg, epavg,&
+         !    & phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
+         !    & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft,&
+         !    & ocpavg, wueavg, cueavg, c_defavg, vcmax, specific_la, soilc,&
+         !    & inorganic_p, inorganic_n, available_p, sorbed_p,&
+         !    & nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
+
 
          call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru&
-              &, av_n, av_p, storage_pool_com, cleaf1_pft, cawood1_pft, cfroot1_pft&
-              &, dl, dw, dr, soilcarbon_com(1:2,:), soilcarbon_com(3:4,:), wfim, gfim, sfim&
+              &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft&
+              &, cawood1_pft, cfroot1_pft, dl, dw, dr, csoil_in, snr_in, wfim, gfim, sfim&
               &, snowmelt_com, runoff_com, e_com, ep_daily, gpp_com, ar_com, npp_com&
               &, lai_com, canopy_res_com, f5_com, rm_com, rg_com, cleafcom, cawoodcom&
-              &, cfrootcom ,gridocpcom ,wue_com ,cue_com ,c_def_com, vcmax_com&
-              &, specific_la_com, soc, nupt_com, pupt_com, litter_l_com, cwd_com&
-              &, litter_fr_com, hr_com, lnr_com, snr)
+              &, cfrootcom, gridocpcom, wue_com, cue_com, c_def_com, vcmax_com&
+              &, specific_la_com, soilcarbon_com, in_p_com, in_n_com, av_p_com, so_p_com&
+              &, nupt_com, pupt_com, litter_l_com, cwd_com&
+              &, litter_fr_com, hr_com, lnr_com, snr_com)
 
               ! TO DO
               ! REZA A LENDA QUE TUDO QUE FOR MES VAI VIRAR DAILY
@@ -363,15 +388,27 @@ module caete
          cawood_cwm(k)  = cwm(cawoodcom, grd)
          cfroot_cwm(k)  = cwm(cfrootcom, grd)
          hr_cwm(k)      = cwm(hr_com, grd)
-         avail_n(k)     = available_n
-         avail_p(k)     = available_p
-         inorg_n(k)     = in_n
-         inorg_p(k)     = in_p
-         sorbed_p(k)    = so_p
 
-         do index = 1,4
-            csoil(index, k) = cwm(real(soc(index, :), r_8), grd)
-         enddo
+         ! SOIL CNP OUTPUTS
+         soil_carbon(1,k) = cwm_soil(soilcarbon_com(1,:), grd)
+         soil_carbon(2,k) = cwm_soil(soilcarbon_com(2,:), grd)
+         soil_carbon(3,k) = cwm_soil(soilcarbon_com(3,:), grd)
+         soil_carbon(4,k) = cwm_soil(soilcarbon_com(4,:), grd)
+
+         snr(1,k)         = cwm_soil(snr(1,:), grd)
+         snr(2,k)         = cwm_soil(snr(2,:), grd)
+         snr(3,k)         = cwm_soil(snr(3,:), grd)
+         snr(4,k)         = cwm_soil(snr(4,:), grd)
+         snr(5,k)         = cwm_soil(snr(5,:), grd)
+         snr(6,k)         = cwm_soil(snr(6,:), grd)
+         snr(7,k)         = cwm_soil(snr(7,:), grd)
+         snr(8,k)         = cwm_soil(snr(8,:), grd)
+
+         inorg_p(k)     = cwm_soil(in_p_com, grd)
+         inorg_n(k)     = cwm_soil(in_n_com, grd)
+         avail_p(k)     = cwm_soil(av_p_com, grd)
+         sorbed_p(k)    = cwm_soil(so_p_com, grd)
+
 
          do index = 1,6
             lnr(index,k) = cwm(lnr_com(index,:), grd)
@@ -381,6 +418,8 @@ module caete
             storage_pool(index,k)  = cwm(storage_pool_com(index,:), grd)
          enddo
 
+         ! UPDATE COMMUNITY WEIGHTED VARIABLES
+         ! WATER
          t1ww = real(wsoil_cwm(k),r_4)
          t2ww = real(gsoil(k),r_4)
          t3ww = real(ssoil(k),r_4)
@@ -391,7 +430,14 @@ module caete
             sini(p) = t3ww
          enddo
 
-         soc_soil_dec = real(csoil(:, k), r_8)
+         !CNP_SOIL
+         in_p_in  = inorg_p(k)
+         in_n_in  = inorg_n(k)
+         av_p_in  = avail_p(k)
+         so_p_in  = sorbed_p(k)
+         csoil_in = soil_carbon(:,k)
+         snr_in   = snr(:,k)
+
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
@@ -555,6 +601,17 @@ module caete
 
          end function cwm
 
+         function cwm_soil(var_arr, area_arr) result(retval)
+
+            use types
+            use global_par
+
+            real(kind=r_8), dimension(npls), intent(in) :: area_arr
+            real(kind=r_4), dimension(npls), intent(in) :: var_arr
+            real(kind=r_4) :: retval
+            retval = sum(var_arr * real(area_arr, r_4), mask = .not. isnan(var_arr))
+
+         end function cwm
 
    end subroutine caete_dyn
 

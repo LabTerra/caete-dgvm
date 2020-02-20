@@ -26,8 +26,8 @@ module soil_dec
    ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
    real(r_4), dimension(4) :: tr_c = (/2.0, 15.0, 150.0, 3000.0/)
    !litter I (1) litter II (2) soilI (3) soil II (4)
-   real(r_4) :: available_p = 0.204299955    ! g m-2 Yang et al., 2013
-   real(r_4) :: available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
+   real(r_4) :: sp_available_p = 0.204299955    ! g m-2 Yang et al., 2013
+   real(r_4) :: sp_available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
    !=========================================================================
    ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
    public :: carbon3         ! Subroutine that calculates the C:N:P decay dynamics
@@ -57,7 +57,7 @@ contains
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
-      real(r_4),dimension(8), intent(in) :: snr_in
+      real(r_4),dimension(8), intent(in) :: snr_in   ! Current soil nutrient ratios
       real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
 
       !     Outputs
@@ -68,7 +68,7 @@ contains
       real(r_4),intent(inout) :: sorbed_p                 ! Sorbed P - Secondary Mineral P
       real(r_4),dimension(pl),intent(out) :: cl_out       ! g(C)m⁻² State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(out) :: cs_out       ! State Variable -> The size of the carbon pools
-      real(r_4),dimension(8), intent(out) :: snr          ! Soil pools Nutrient to C ratios
+      real(r_4),dimension(8), intent(out) :: snr          ! Updated Soil pools Nutrient to C ratios
       real(r_4),intent(out) :: hr                         ! Heterotrophic (microbial) respiration (gC/m2/day)
 
       real(r_4),dimension(4) :: nmass_org = 0.0
@@ -111,8 +111,8 @@ contains
 
       ! Soil Nutrient Ratios structure:
       ! [ 1(l1n2c),2(l2n2c),3(c1dn2c),4(c2n2c),5(l1p2c),6(l2p2c),7(c1p2c),8(c2p2c)]
-      ! Soil Nutrient Ratios to output: Set to 0.0
 
+      ! Soil Nutrient Ratios to output: Set to 0.0
       snr = 0.0
 
       ! Soil Nutrient ratios and organic nutrients g m-2
@@ -265,7 +265,7 @@ contains
 
       if (inorg_p .lt. 0.0) inorg_p = 0.0
       if (inorg_n .lt. 0.0) inorg_n = 0.0
-      if (avail_p .lt. 0.0) available_p = 0.0
+      if (avail_p .lt. 0.0) avail_p = 0.0
 
       hr = sum(het_resp)
 

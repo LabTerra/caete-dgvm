@@ -13,6 +13,11 @@
 !     You should have received a copy of the GNU General Public License
 !     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+! TODO: these changes can improve performance (memory and speed)
+! CHECK the logic of THe inputs of soil water and organic matter
+! INCLUDE new variables in hell
+! check the logic of no_pls_run (important for performance)
+! check the logic of no_pls (idem)
 module budget
    implicit none
    private
@@ -22,10 +27,14 @@ module budget
 contains
 
    subroutine daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh,&
-        & mineral_n, labile_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
-        & clitter, csoil, w2, g2, s2, smavg, ruavg, evavg, epavg, phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
-        & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft, ocpavg, wueavg,&
-        & cueavg, c_defavg, vcmax, specific_la, soilc, nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
+        & inorg_p, inorg_n, avail_p, sorb_p, sto_budg,&
+        & cl1_pft, ca1_pft, cf1_pft, dleaf, dwood, droot,&
+        & csoil_com, snr_com, w2, g2, s2, smavg, ruavg, evavg, epavg,&
+        & phavg, aravg, nppavg, laiavg, rcavg, f5avg,&
+        & rmavg, rgavg, cleafavg_pft, cawoodavg_pft, cfrootavg_pft,&
+        & ocpavg, wueavg, cueavg, c_defavg, vcmax, specific_la, soilc,&
+        & inorganic_p, inorganic_n, available_p, sorbed_p,&
+        & nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
 
       use types
       use global_par
@@ -44,8 +53,12 @@ contains
       real(r_4),intent(in) :: p0                   ! Surface pressure (mb)
       real(r_4),intent(in) :: ipar                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4),intent(in) :: rh                   ! Relative humidity
-      real(r_4),intent(in) :: mineral_n
-      real(r_4),intent(in) :: labile_p
+      real(r_4),intent(in) :: inorg_p
+      real(r_4),intent(in) :: inorg_n
+      real(r_4),intent(in) :: avail_p
+      real(r_4),intent(in) :: sorb_p
+      real(r_4),dimension(4),intent(in) :: csoil_com      ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+      real(r_4),dimension(8),intent(in)  :: snr_com
 
       real(r_8),dimension(3,npls),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
@@ -54,8 +67,6 @@ contains
       real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
       real(r_8),dimension(npls),intent(inout) :: droot
       real(r_8),dimension(npls),intent(inout) :: dwood
-      real(r_4),dimension(2,npls),intent(inout) :: clitter       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
-      real(r_4),dimension(2,npls),intent(inout) :: csoil      ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
 
 
       !     ----------------------------OUTPUTS------------------------------
@@ -83,21 +94,25 @@ contains
       real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8),intent(out),dimension(npls) :: specific_la    ! m2 g(C)-1
       real(r_4),intent(out),dimension(4,npls) :: soilc        ! Soil carbon pools (gC m-2)
+      real(r_4),intent(out),dimension(npls) :: inorganic_p
+      real(r_4),intent(out),dimension(npls) :: inorganic_n
+      real(r_4),intent(out),dimension(npls) :: available_p
+      real(r_4),intent(out),dimension(npls) :: sorbed_p
       real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2 ! Nitrogen uptake
       real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2 ! Phosphoruns uptake
-      real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
-      real(r_8),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
-      real(r_8),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
-      real(r_8),intent(out),dimension(npls) :: het_resp       ! gC m-2
+      real(r_4),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
+      real(r_4),intent(out),dimension(npls) :: cwd            ! gC m-2 ! coarse wood debris
+      real(r_4),intent(out),dimension(npls) :: litter_fr      ! gC m-2 ! litter from fine roots
+      real(r_4),intent(out),dimension(npls) :: het_resp       ! gC m-2
       ! Litter Nutrient Ratisos :: variables(6)         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8),intent(out),dimension(6,npls) :: lnr         ! g(N) g(C)-1 Litter Nutrient to C ratios (Comming from cveg pools)
-      ! Soil Nutrient Ratios :: variables(8)         [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
-      real(r_8),intent(out),dimension(8,npls) :: snr         ! g(N) g(C)-1 Soil Nutrient to C ratios (IN soil C pools)
+      ! Soil Nutrient Ratios :: variables(8)            [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
+      real(r_4),intent(out),dimension(8,npls) :: snr         ! g(N) g(C)-1 Soil Nutrient to C ratios (IN soil C pools)
       !     -----------------------Internal Variables------------------------
 
-      integer(i_4) :: p
+      integer(i_4) :: p, index
       logical :: end_pls = .false.
-      logical :: no_cell = .false.
+      logical :: no_pls_run = .false.
       real(r_4),dimension(ntraits) :: dt1 ! Store pls attributes array (1D)
       !     RELATED WITH GRIDCELL OCUPATION
 
@@ -137,13 +152,16 @@ contains
       real(r_4),dimension(npls) ::  wue, cue, c_def
       real(r_8),dimension(npls) ::  cl1,cf1,ca1 ! carbon pre-allocation
       real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
-      real(r_4),dimension(2, npls) :: litter_carbon_bdg, soil_carbon_bdg
       real(r_8),dimension(3,npls) :: day_storage   ! g m-2
       real(r_8),dimension(npls) :: n_uptake           ! g m-2
       real(r_8),dimension(npls) :: p_uptake           ! g m-2
+      ! CNP CYCLE VARIABLES
+      real(r_4),dimension(2, npls) :: litter_carbon_bdg, soil_carbon_bdg, clitter, csoil
+      real(r_4),dimension(8, npls) :: snr_internal = 0.0
+      real(r_4),dimension(8, npls) :: snr_aux = 0.0
+      real(r_4),dimension(npls) :: in_p, in_n, av_p, so_p
 
-      disp_n = mineral_n
-      disp_p = labile_p
+
       !     Precipitation
       !     =============
       psnow = 0.0
@@ -156,16 +174,9 @@ contains
 
       !     Initialization
       !     --------------
+      !  plss vectors (outputs)
       epavg                 = 0.0
-      w                     = w1     ! hidrological pools state vars
-      g                     = g1
-      s                     = s1
-      cl1                   = cl1_pft ! daily initial carbonVEG pools
-      ca1                   = ca1_pft
-      cf1                   = cf1_pft
-      litter_carbon_bdg     = clitter
-      soil_carbon_bdg       = csoil
-      smavg                 = 0.0    !  plss vectors (outputs)
+      smavg                 = 0.0
       ruavg                 = 0.0
       evavg                 = 0.0
       rcavg                 = 0.0
@@ -204,6 +215,27 @@ contains
       ocp_coeffs            = 0.0D0
       light_limitation_bool = .false.
 
+      ! Persistent pools
+      w                     = w1     ! hidrological pools state vars
+      g                     = g1
+      s                     = s1
+      cl1                   = cl1_pft ! daily initial carbonVEG pools
+      ca1                   = ca1_pft
+      cf1                   = cf1_pft
+
+      do p = 1, npls
+         clitter(1,p)    = csoil_com(1)
+         clitter(2,p)    = csoil_com(2)
+         csoil(1,p)      = csoil_com(3)
+         csoil(2,p)      = csoil_com(4)
+         in_p(p)                   = inorg_p
+         in_n(p)                   = inorg_n
+         av_p(p)                   = avail_p
+         so_p(p)                   = sorb_p
+         do index = 1, 8
+            snr_internal(index,p)  = snr_com(index)
+         enddo
+      enddo
       !     Grid cell area fraction (%) ocp_coeffs(pft(1), pft(2), ...,pft(p))
       !     =================================================================
       call pft_area_frac(cl1, cf1, ca1, ocp_coeffs, light_limitation_bool) ! def in funcs.f90
@@ -230,7 +262,7 @@ contains
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
 
-         call allocation (dt1, nppa(p), disp_n, disp_p, cl1(p), ca1(p)&
+         call allocation (dt1, nppa(p), in_n(p), av_p(p), cl1(p), ca1(p)&
               &,cf1(p), sto_budg(:,p), day_storage(:,p), cl2(p), ca2(p)&
               &,cf2(p),litter_l(p),cwd(p),litter_fr(p),n_uptake(p), p_uptake(p)&
               &,lnr(:,p),end_pls)
@@ -239,7 +271,7 @@ contains
 
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
          if(end_pls) then
-            no_cell = .true.
+            no_pls_run = .true.
             dleaf(p) = 0.0
             dwood(p) = 0.0
             droot(p) = 0.0
@@ -279,7 +311,6 @@ contains
             rc2(p) = rcmin
             rm(p) = 0.0
             rg(p) = 0.0
-            ! colocar as outras vars da prod aqui??
 
          else                !Non-frozen soil
             w(p) = w(p) + g(p)
@@ -304,14 +335,21 @@ contains
          endif
 !!!!====================================================
 
-         call carb3(p, ocp_coeffs(p), ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p),&
-                  & real(n_uptake(p), r_4), real(p_uptake(p), r_4), litter_carbon_bdg(:,p),&
-                  & soil_carbon_bdg(:,p), snr(:,p), het_resp(p))
+         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), lnr(:,p), clitter(:,p),&
+                  & csoil(:, p), snr_internal(:,p), real(n_uptake(p), r_4), real(p_uptake(p), r_4),&
+                  & av_p(p), in_n(p), in_p(p), so_p(p), litter_carbon_bdg(:,p),&
+                  & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
 
 
-         clitter(:, p) = litter_carbon_bdg(:, p)
-         csoil(:, p) = soil_carbon_bdg(:,p)
 
+         !clitter(:, p) = litter_carbon_bdg(:, p)
+         !csoil(:, p) = soil_carbon_bdg(:,p)
+
+         do index = 1,8
+            snr_internal(index,p) = snr_aux(index,p)
+         enddo
+
+         ! FILL OUTPUT VARIABLES
          if (p .eq. 1) epavg = emax !mm/day
          w2(p)            = real(w(p),r_4)
          g2(p)            = real(g(p),r_4)
@@ -327,10 +365,8 @@ contains
          f5avg(p)         = f5(p)
          rmavg(p)         = rm(p)
          rgavg(p)         = rg(p)
-         soilc(1:2,p)     = litter_carbon_bdg(:, p)
-         soilc(3:4,p)     = soil_carbon_bdg(:, p)
-         nupt(p)          = n_uptake(p)
-         pupt(p)          = p_uptake(p)
+
+         ! CVEG POOLS
          cleafavg_pft(p)  = cl2(p)
          cawoodavg_pft(p) = ca2(p)
          cfrootavg_pft(p) = cf2(p)
@@ -339,6 +375,21 @@ contains
          c_defavg(p)      = c_def(p)
          ocpavg(p)        = ocp_coeffs(p)
 
+         ! CSOIL POOLS
+         soilc(1:2,p)     = litter_carbon_bdg(:, p)
+         soilc(3:4,p)     = soil_carbon_bdg(:, p)
+         nupt(p)          = n_uptake(p)
+         pupt(p)          = p_uptake(p)
+         inorganic_p(p)   = in_p(p)
+         inorganic_n(p)   = in_n(p)
+         available_p(p)   = av_p(p)
+         sorbed_p(p)         = so_p(p)
+
+         do index = 1,8
+            snr(index,p)  = snr_internal(index,p)
+         enddo
+
+         ! SIMULATE LOSS OF BIOMASS FROM POPULATION P DUE TO NEGATIVE NPP
          if(c_def(p) .gt. 0.0) then
             if(dt1(7) .gt. 0.0) then
                cl1_pft(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
@@ -361,9 +412,9 @@ contains
             endif
          endif
 
-         no_cell = .false.
+         no_pls_run = .false.
 666      continue
-         if(no_cell) then
+         if(no_pls_run) then
             ! All*** outputs are set to zero except epavg
             if(p .eq. 1) epavg = emax
             smavg(p) = 0.0
