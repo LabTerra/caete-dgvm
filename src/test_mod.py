@@ -90,9 +90,7 @@ def wcsv(li, mon=True):
         wt.writerows(li)
 
 
-s
 wcsv(l, False)
-
 data = pd.read_csv('pools.csv')
 
 

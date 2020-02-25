@@ -62,12 +62,12 @@ contains
 
       real(r_8),dimension(3,npls),intent(inout)  :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
-      real(r_8),dimension(npls),intent(inout) :: cf1_pft  !                 froot
       real(r_8),dimension(npls),intent(inout) :: ca1_pft  !                 cawood
-      real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
-      real(r_8),dimension(npls),intent(inout) :: droot
-      real(r_8),dimension(npls),intent(inout) :: dwood
+      real(r_8),dimension(npls),intent(inout) :: cf1_pft  !                 froot
 
+      real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+      real(r_8),dimension(npls),intent(inout) :: dwood
+      real(r_8),dimension(npls),intent(inout) :: droot
 
       !     ----------------------------OUTPUTS------------------------------
       real(r_4),intent(out) :: epavg                          !Maximum evapotranspiration (mm/day)
@@ -344,46 +344,6 @@ contains
             snr_internal(index,p) = snr_aux(index,p)
          enddo
 
-         ! FILL OUTPUT VARIABLES
-         if (p .eq. 1) epavg = emax !mm/day
-         w2(p)            = real(w(p),r_4)
-         g2(p)            = real(g(p),r_4)
-         s2(p)            = real(s(p),r_4)
-         smavg(p)         = smelt(p)
-         ruavg(p)         = roff(p)    ! mm day-1
-         evavg(p)         = evap(p)    ! mm day-1
-         phavg(p)         = ph(p)      !kgC/m2/day
-         aravg(p)         = ar(p)      !kgC/m2/year
-         nppavg(p)        = nppa(p)    !kgC/m2/day
-         laiavg(p)        = laia(p)
-         rcavg(p)         = rc2(p)     ! s m -1
-         f5avg(p)         = f5(p)
-         rmavg(p)         = rm(p)
-         rgavg(p)         = rg(p)
-
-         ! CVEG POOLS
-         cleafavg_pft(p)  = cl2(p)
-         cawoodavg_pft(p) = ca2(p)
-         cfrootavg_pft(p) = cf2(p)
-         wueavg(p)        = wue(p)
-         cueavg(p)        = cue(p)
-         c_defavg(p)      = c_def(p)
-         ocpavg(p)        = ocp_coeffs(p)
-
-         ! CSOIL POOLS
-         soilc(1:2,p)     = litter_carbon_bdg(:, p)
-         soilc(3:4,p)     = soil_carbon_bdg(:, p)
-         nupt(p)          = n_uptake(p)
-         pupt(p)          = p_uptake(p)
-         inorganic_p(p)   = in_p(p)
-         inorganic_n(p)   = in_n(p)
-         available_p(p)   = av_p(p)
-         sorbed_p(p)      = so_p(p)
-
-         do index = 1,8
-            snr(index,p)  = snr_internal(index,p)
-         enddo
-
          ! SIMULATE LOSS OF BIOMASS FROM POPULATION P DUE TO NEGATIVE NPP
          if(c_def(p) .gt. 0.0) then
             if(dt1(7) .gt. 0.0) then
@@ -406,6 +366,46 @@ contains
                cf1_pft(p) = cf2(p)
             endif
          endif
+
+         ! FILL OUTPUT VARIABLES
+         if (p .eq. 1) epavg = emax !mm/day
+         w2(p)            = real(w(p),r_4)
+         g2(p)            = real(g(p),r_4)
+         s2(p)            = real(s(p),r_4)
+         smavg(p)         = smelt(p)
+         ruavg(p)         = roff(p)    ! mm day-1
+         evavg(p)         = evap(p)    ! mm day-1
+         phavg(p)         = ph(p)      !kgC/m2/day
+         aravg(p)         = ar(p)      !kgC/m2/year
+         nppavg(p)        = nppa(p)    !kgC/m2/day
+         laiavg(p)        = laia(p)
+         rcavg(p)         = rc2(p)     ! s m -1
+         f5avg(p)         = f5(p)
+         rmavg(p)         = rm(p)
+         rgavg(p)         = rg(p)
+
+         ! CVEG POOLS
+         cleafavg_pft(p)  = cl1_pft(p)
+         cawoodavg_pft(p) = ca1_pft(p)
+         cfrootavg_pft(p) = cf1_pft(p)
+         wueavg(p)        = wue(p)
+         cueavg(p)        = cue(p)
+         c_defavg(p)      = c_def(p)
+         ocpavg(p)        = ocp_coeffs(p)
+
+         ! CSOIL POOLS
+         soilc(1:2,p)     = litter_carbon_bdg(:, p)
+         soilc(3:4,p)     = soil_carbon_bdg(:, p)
+         nupt(p)          = n_uptake(p)
+         pupt(p)          = p_uptake(p)
+         inorganic_p(p)   = in_p(p)
+         inorganic_n(p)   = in_n(p)
+         available_p(p)   = av_p(p)
+         sorbed_p(p)      = so_p(p)
+
+         do index = 1,8
+            snr(index,p)  = snr_internal(index,p)
+         enddo
 
          no_pls_run = .false.
 666      continue
@@ -457,6 +457,9 @@ contains
          if(isnan(cleafavg_pft(p))) cleafavg_pft(p) = 0.0
          if(isnan(cawoodavg_pft(p))) cawoodavg_pft(p) = 0.0
          if(isnan(cfrootavg_pft(p))) cfrootavg_pft(p) = 0.0
+         if(cleafavg_pft(p) + 1 .eq. cleafavg_pft(p)) cleafavg_pft(p) = 0.0
+         if(cawoodavg_pft(p) + 1 .eq. cawoodavg_pft(p)) cawoodavg_pft(p) = 0.0
+         if(cfrootavg_pft(p) + 1 .eq. cfrootavg_pft(p)) cfrootavg_pft(p) = 0.0
       end do
 
       return

@@ -33,6 +33,7 @@ module caete
       use types
       use utils, only: gpid   => process_id
       use global_par
+      use photo, only: cwm4, cwm8, cwm_soil
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
 
@@ -75,34 +76,36 @@ module caete
 
       real(r_4),dimension(nt1),   intent(out) :: emaxm        ! 1   ! Max.evapotranspiration (kg m-2 day-1)
       real(r_4),dimension(nt1),   intent(out) :: tsoil        ! 2   ! soil temperature °C
-      real(r_8),dimension(nt1),   intent(out) :: photo_cwm    ! 3   ! daily photosynthesis   (kgC m-2 year-1)
-      real(r_8),dimension(nt1),   intent(out) :: aresp_cwm    ! 4   ! daily autotrophic res  (kgC m-2 year-1)
-      real(r_8),dimension(nt1),   intent(out) :: npp_cwm      ! 5   ! daily net primary produ (kgC m-2 year-1)
-      real(r_8),dimension(nt1),   intent(out) :: lai_cwm      ! 6   ! daily leaf area index m2 m-2
+      real(r_4),dimension(nt1),   intent(out) :: photo_cwm    ! 3   ! daily photosynthesis   (kgC m-2 year-1)
+      real(r_4),dimension(nt1),   intent(out) :: aresp_cwm    ! 4   ! daily autotrophic res  (kgC m-2 year-1)
+      real(r_4),dimension(nt1),   intent(out) :: npp_cwm      ! 5   ! daily net primary produ (kgC m-2 year-1)
+      real(r_4),dimension(nt1),   intent(out) :: lai_cwm      ! 6   ! daily leaf area index m2 m-2
       real(r_4),dimension(nt1),   intent(out) :: hr_cwm       ! 7   ! daily het resp  (kgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: rcm_cwm      ! 8  ! leaf resistence s m-1
-      real(r_8),dimension(nt1),   intent(out) :: f51          ! 9  ! Water stress modifier (dimensionless)
-      real(r_8),dimension(nt1),   intent(out) :: runom_cwm    ! 10  ! Runoff kg m-2 day-1
-      real(r_8),dimension(nt1),   intent(out) :: evapm_cwm    ! 11  ! Actual evapotranspiration kg m-2 day-1
-      real(r_8),dimension(nt1),   intent(out) :: wsoil_cwm    ! 12  ! Soil moisture (kg m-2)
-      real(r_8),dimension(nt1),   intent(out) :: rm_cwm       ! 13  ! Plant (autotrophic) Maintenance respiration
-      real(r_8),dimension(nt1),   intent(out) :: rg_cwm       ! 14  ! Plant (autotrophic) Growth respiration
-      real(r_8),dimension(nt1),   intent(out) :: cleaf_cwm    ! 15  ! leaf biomass (KgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: cawood_cwm   ! 16  ! aboveground wood biomass (KgC/m2)
-      real(r_8),dimension(nt1),   intent(out) :: cfroot_cwm   ! 17  ! fine root biomass (KgC/m2)
-      real(r_8),dimension(npls),  intent(out) :: grid_area    ! 18  ! gridcell area fraction of pfts! ratio (0-1)
-      real(r_8),dimension(nt1),   intent(out) :: wue          ! 19  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
-      real(r_8),dimension(nt1),   intent(out) :: cue          ! 20  ! 2 - npp/gpp;
-      real(r_8),dimension(nt1),   intent(out) :: cdef         ! 21  ! 3 - kgC m-2
+      real(r_4),dimension(nt1),   intent(out) :: rcm_cwm      ! 8  ! leaf resistence s m-1
+      real(r_4),dimension(nt1),   intent(out) :: f51          ! 9  ! Water stress modifier (dimensionless)
+      real(r_4),dimension(nt1),   intent(out) :: runom_cwm    ! 10  ! Runoff kg m-2 day-1
+      real(r_4),dimension(nt1),   intent(out) :: evapm_cwm    ! 11  ! Actual evapotranspiration kg m-2 day-1
+      real(r_4),dimension(nt1),   intent(out) :: wsoil_cwm    ! 12  ! Soil moisture (kg m-2)
+      real(r_4),dimension(nt1),   intent(out) :: rm_cwm       ! 13  ! Plant (autotrophic) Maintenance respiration
+      real(r_4),dimension(nt1),   intent(out) :: rg_cwm       ! 14  ! Plant (autotrophic) Growth respiration
+      real(r_4),dimension(nt1),   intent(out) :: cleaf_cwm    ! 15  ! leaf biomass (KgC/m2)
+      real(r_4),dimension(nt1),   intent(out) :: cawood_cwm   ! 16  ! aboveground wood biomass (KgC/m2)
+      real(r_4),dimension(nt1),   intent(out) :: cfroot_cwm   ! 17  ! fine root biomass (KgC/m2)
+      real(r_4),dimension(npls),  intent(out) :: grid_area    ! 18  ! gridcell area fraction of pfts! ratio (0-1)
+      real(r_4),dimension(nt1),   intent(out) :: wue          ! 19  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
+      real(r_4),dimension(nt1),   intent(out) :: cue          ! 20  ! 2 - npp/gpp;
+      real(r_4),dimension(nt1),   intent(out) :: cdef         ! 21  ! 3 - kgC m-2
       real(r_4),dimension(npls),  intent(out) :: wfim         ! 22  ! Kg m-2
       real(r_4),dimension(npls),  intent(out) :: gfim         ! 23  ! Kg m-2
       real(r_4),dimension(npls),  intent(out) :: sfim         ! 24  ! Kg m-2  final day water pools (snow; water; ice)
+
       real(r_8),dimension(npls),  intent(out) :: dl_final     ! 25  ! delta(now, last day pool size)
       real(r_8),dimension(npls),  intent(out) :: dw_final     ! 26  !
       real(r_8),dimension(npls),  intent(out) :: dr_final     ! 27  ! KgC m-2
       real(r_8),dimension(npls),  intent(out) :: clf          ! 28  ! final carbon pools (cveg) for each pft (not scaled to cell area)
       real(r_8),dimension(npls),  intent(out) :: caf          ! 29  ! KgC m-2
       real(r_8),dimension(npls),  intent(out) :: cff          ! 30
+
       real(r_4),dimension(nt1),   intent(out) :: vcmax        ! 31  ! mol m⁻² s⁻¹
       real(r_4),dimension(nt1),   intent(out) :: specific_la  ! 32  ! m²g⁻¹
       real(r_4),dimension(nt1),   intent(out) :: nupt         ! 33  ! n plant uptake - CWM  TODO units
@@ -281,20 +284,17 @@ module caete
       do k = 1,nt1
          if (k .gt. 1) then
             tsoil(k) = soil_temp(tsoil(k-1), temp(k) - 273.15)
-            if(debug) write(1234,*) 'tsoil',tsoil(k), 'loop:', k
          else
             call soil_temp_sub(temp(1:1095) - 273.15,tsoil(k))
-            !tsoil(k) = t0
-            if(debug) write(1234,*) 'tsoil',tsoil(k), 'loop:', k
          endif
 
          ! Setting input variables and Converting units
          td   = tsoil(k)
-         spre = p0(k) * 0.01 ! transforamando de Pascal pra mbar (hPa)
-         ta   = temp(k) - 273.15 ! K to °C
-         pr   = prec(k) * 86400!2.62974e+06 ! kg m-2 s-1 to mm month-1
+         spre = p0(k) * 0.01            ! transforamando de Pascal pra mbar (hPa)
+         ta   = temp(k) - 273.15        ! K to °C
+         pr   = prec(k) * 86400.0         !2.62974e+06 ! kg m-2 s-1 to mm month-1
          ipar = (0.5 * par(k)) / 2.18e5 ! W m-2 to mol m-2 s-1 ! 0.5 converts RSDS to PAR
-         ru   = rhs(k) / 100.0
+         ru   = rhs(k) / 100.0          ! Relative humidity
 
          ! Daily budget
          ! ====================
@@ -323,76 +323,99 @@ module caete
          c_def_com               = 0.0
          hr_com                  = 0.0
 
-         call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru&
-              &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft&
-              &, cawood1_pft, cfroot1_pft, dl, dw, dr, csoil_in, snr_in, wfim, gfim, sfim&
-              &, snowmelt_com, runoff_com, e_com, ep_daily, gpp_com, ar_com, npp_com&
-              &, lai_com, canopy_res_com, f5_com, rm_com, rg_com, cleafcom, cawoodcom&
-              &, cfrootcom, gridocpcom, wue_com, cue_com, c_def_com, vcmax_com&
-              &, specific_la_com, soilcarbon_com, in_p_com, in_n_com, av_p_com, so_p_com&
-              &, nupt_com, pupt_com, litter_l_com, cwd_com&
+         call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru &
+              &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft &
+              &, cawood1_pft, cfroot1_pft, dl, dw, dr, csoil_in, snr_in, wfim, gfim, sfim &
+              &, snowmelt_com, runoff_com, e_com, ep_daily, gpp_com, ar_com, npp_com &
+              &, lai_com, canopy_res_com, f5_com, rm_com, rg_com, cleafcom, cawoodcom &
+              &, cfrootcom, gridocpcom, wue_com, cue_com, c_def_com, vcmax_com &
+              &, specific_la_com, soilcarbon_com, in_p_com, in_n_com, av_p_com, so_p_com &
+              &, nupt_com, pupt_com, litter_l_com, cwd_com &
               &, litter_fr_com, hr_com, lnr_com, snr_com)
 
          !82 columns-------------------------------------------------------------
+         !print *, cawoodcom, 'cw'
+         !print *, gridocpcom, 'grd'
          grd            = gridocpcom
          emaxm(k)       = ep_daily
-         gsoil(k)       = cwm(real(gfim, r_8), grd)
-         ssoil(k)       = cwm(real(sfim, r_8), grd)
-         wsoil_cwm(k)   = cwm(real(wfim, r_8), grd)
-         snowm(k)       = cwm(snowmelt_com, grd)
-         runom_cwm(k)   = cwm(runoff_com, grd)
-         evapm_cwm(k)   = cwm(e_com, grd)
-         f51(k)         = cwm(f5_com, grd)
-         rcm_cwm(k)     = cwm(canopy_res_com, grd)
-         lai_cwm(k)     = cwm(lai_com, grd)
-         photo_cwm(k)   = cwm(gpp_com, grd)
-         aresp_cwm(k)   = cwm(ar_com, grd)
-         npp_cwm(k)     = cwm(npp_com, grd)
-         rm_cwm(k)      = cwm(rm_com, grd)
-         rg_cwm(k)      = cwm(rg_com, grd)
-         wue(k)         = cwm(wue_com, grd)
-         cue(k)         = cwm(cue_com, grd)
-         cdef(k)        = cwm(c_def_com, grd)
-         vcmax(k)       = cwm(vcmax_com, grd)
-         specific_la(k) = cwm(specific_la_com, grd)
-         nupt(k)        = cwm(nupt_com, grd)
-         pupt(k)        = cwm(pupt_com, grd)
-         litter_l(k)    = cwm(litter_l_com, grd)
-         cwd(k)         = cwm(cwd_com, grd)
-         litter_fr(k)   = cwm(litter_fr_com, grd)
-         cleaf_cwm(k)   = cwm(cleafcom, grd)
-         cawood_cwm(k)  = cwm(cawoodcom, grd)
-         cfroot_cwm(k)  = cwm(cfrootcom, grd)
+         gsoil(k)     = sum(gfim * grd,    mask= .not. isnan(gfim))
+         ssoil(k)     = sum(sfim * grd,    mask= .not. isnan(sfim))
+         snowm(k)     = sum(snowmelt_com * grd,    mask= .not. isnan(snowmelt_com))
 
-         ! SOIL CNP OUTPUTS
-         hr_cwm(k)        = cwm_soil(hr_com, grd)
-         soil_carbon(1,k) = cwm_soil(soilcarbon_com(1,:), grd)
-         soil_carbon(2,k) = cwm_soil(soilcarbon_com(2,:), grd)
-         soil_carbon(3,k) = cwm_soil(soilcarbon_com(3,:), grd)
-         soil_carbon(4,k) = cwm_soil(soilcarbon_com(4,:), grd)
+         wsoil_cwm(k) = real(sum(wfim * grd,    mask= .not.  isnan(wfim)),r_4)
+         runom_cwm(k) = real(sum(runoff_com * grd,    mask= .not.  isnan(runoff_com)),r_4)
+         evapm_cwm(k) = real(sum(e_com * grd,    mask= .not.  isnan(e_com)),r_4)
+         f51(k)       = real(sum(f5_com* grd,    mask= .not. isnan(f5_com)),r_4)
 
-         snr(1,k)         = cwm_soil(snr(1,:), grd)
-         snr(2,k)         = cwm_soil(snr(2,:), grd)
-         snr(3,k)         = cwm_soil(snr(3,:), grd)
-         snr(4,k)         = cwm_soil(snr(4,:), grd)
-         snr(5,k)         = cwm_soil(snr(5,:), grd)
-         snr(6,k)         = cwm_soil(snr(6,:), grd)
-         snr(7,k)         = cwm_soil(snr(7,:), grd)
-         snr(8,k)         = cwm_soil(snr(8,:), grd)
+         rcm_cwm(k)   = real(sum(canopy_res_com * grd,   mask= .not. isnan(canopy_res_com)),r_4)
+         lai_cwm(k)   = real(sum(lai_com* grd,   mask= .not. isnan(lai_com)),r_4)
+         photo_cwm(k) = real(sum(gpp_com * grd,   mask= .not. isnan(gpp_com)),r_4)
+         aresp_cwm(k) = real(sum(ar_com * grd,   mask= .not. isnan(ar_com)),r_4)
+         npp_cwm(k)   = real(sum(npp_com* grd,   mask= .not. isnan(npp_com)),r_4)
+         rm_cwm(k)    = real(sum(rm_com * grd,   mask= .not. isnan(rm_com)),r_4)
+         rg_cwm(k)    = real(sum(rg_com * grd,   mask= .not. isnan(rg_com)),r_4)
+         wue(k)       = real(sum(wue_com* grd,   mask= .not. isnan(wue_com)),r_4)
+         cue(k)       = real(sum(cue_com* grd,   mask= .not. isnan(cue_com)),r_4)
+         cdef(k)      = real(sum(c_def_com* grd, mask= .not. isnan(c_def_com)),r_4)
 
-         inorg_p(k)     = cwm_soil(in_p_com, grd)
-         inorg_n(k)     = cwm_soil(in_n_com, grd)
-         avail_p(k)     = cwm_soil(av_p_com, grd)
-         sorbed_p(k)    = cwm_soil(so_p_com, grd)
+         vcmax(k)  = real(sum(vcmax_com * grd,  mask= .not. isnan(vcmax_com)),r_4)
 
+         specific_la(k) = real(sum(specific_la_com  * grd,&
+              & mask=.not. isnan(specific_la_com)),r_4)
+
+         nupt(k) = real(sum(nupt_com * grd, mask= .not. isnan(nupt_com)),r_4)
+         pupt(k) = real(sum(pupt_com * grd, mask= .not. isnan(pupt_com)),r_4)
+
+         litter_l(k) = real(sum(litter_l_com * grd,&
+              & mask=.not. isnan(litter_l_com)),r_4)
+         cwd(k) = real(sum(cwd_com * grd, mask= .not. isnan(cwd_com)),r_4)
+         litter_fr(k) = real(sum(litter_fr_com * grd,&
+               & mask=.not.isnan(litter_fr_com)),r_4)
+
+         cleaf_cwm(k) = real(sum(cleafcom * grd,&
+               &mask=.not. isnan(cleafcom)),r_4)
+         cawood_cwm(k) = real(sum(cawoodcom * grd,&
+               &mask=.not. isnan(cawoodcom)),r_4)
+         cfroot_cwm(k) = real(sum(cfrootcom * grd,&
+               &mask=.not. isnan(cfrootcom)),r_4)
 
          do index = 1,6
-            lnr(index,k) = cwm(lnr_com(index,:), grd)
+             lnr(index,k) =  real(sum(lnr_com(index,:) * grd, &
+                  & mask=.not. isnan(lnr_com(index,:))),r_4) !sdsdf
          enddo
 
          do index = 1,3
-            storage_pool(index,k)  = cwm(storage_pool_com(index,:), grd)
+             storage_pool(index,k)  = real(sum(storage_pool_com(index,:) * grd,&
+                  & mask=.not. isnan(storage_pool_com(index,:))),r_4) ! sdfsdf
          enddo
+
+
+         ! SOIL CNP OUTPUTS
+         hr_cwm(k) = real(sum(hr_com * grd, mask= .not. isnan(hr_com)),r_4)
+
+         soil_carbon(1,k) = real(sum(soilcarbon_com(1,:) *&
+                              & grd, mask= .not. isnan(soilcarbon_com(1,:))), r_4)
+         soil_carbon(2,k) = real(sum(soilcarbon_com(2,:) *&
+                              & grd, mask= .not. isnan(soilcarbon_com(2,:))), r_4)
+         soil_carbon(3,k) = real(sum(soilcarbon_com(3,:) *&
+                              & grd, mask= .not. isnan(soilcarbon_com(3,:))), r_4)
+         soil_carbon(4,k) = real(sum(soilcarbon_com(4,:) *&
+                              & grd, mask= .not. isnan(soilcarbon_com(4,:))), r_4)
+
+         snr(1,k) = real(sum(snr_com(1,:) * grd, mask= .not. isnan(snr_com(1,:))), r_4)         != cwm_soil(snr(1,:), grd)
+         snr(2,k) = real(sum(snr_com(2,:) * grd, mask= .not. isnan(snr_com(2,:))), r_4)         != cwm_soil(snr(2,:), grd)
+         snr(3,k) = real(sum(snr_com(3,:) * grd, mask= .not. isnan(snr_com(3,:))), r_4)         != cwm_soil(snr(3,:), grd)
+         snr(4,k) = real(sum(snr_com(4,:) * grd, mask= .not. isnan(snr_com(4,:))), r_4)         != cwm_soil(snr(4,:), grd)
+         snr(5,k) = real(sum(snr_com(5,:) * grd, mask= .not. isnan(snr_com(5,:))), r_4)         != cwm_soil(snr(5,:), grd)
+         snr(6,k) = real(sum(snr_com(6,:) * grd, mask= .not. isnan(snr_com(6,:))), r_4)         != cwm_soil(snr(6,:), grd)
+         snr(7,k) = real(sum(snr_com(7,:) * grd, mask= .not. isnan(snr_com(7,:))), r_4)         != cwm_soil(snr(7,:), grd)
+         snr(8,k) = real(sum(snr_com(8,:) * grd, mask= .not. isnan(snr_com(8,:))), r_4)         != cwm_soil(snr(8,:), grd)
+
+         inorg_p(k) = real(sum(in_p_com * grd, mask=.not. isnan(in_p_com)), r_4)     != cwm_soil(in_p_com, grd)
+         inorg_n(k) = real(sum(in_n_com * grd, mask=.not. isnan(in_n_com)), r_4)     != cwm_soil(in_n_com, grd)
+         avail_p(k) = real(sum(av_p_com * grd, mask=.not. isnan(av_p_com)), r_4)     != cwm_soil(av_p_com, grd)
+         sorbed_p(k) = real(sum(so_p_com * grd, mask=.not. isnan(so_p_com)), r_4)    != cwm_soil(so_p_com, grd)
+
 
          ! UPDATE COMMUNITY WEIGHTED VARIABLES
          ! WATER
@@ -423,9 +446,9 @@ module caete
 
          ! UPDATE CVEG POOLS FOR NEXT
          ! CLEAN NANs to prevent failure between cont_runs (pass only numbers to cff, clf, caf)
-         cleaf1_pft  = cleafcom
-         cawood1_pft = cawoodcom
-         cfroot1_pft = cfrootcom
+         !cleaf1_pft  = cleafcom
+         !cawood1_pft = cawoodcom
+         !cfroot1_pft = cfrootcom
 
          if(text_ts) then
             do npq = 1,npls
@@ -467,7 +490,12 @@ module caete
                return
             endif
          endif
+
+
       enddo ! day_loop(nt1)
+
+!!!!!!######/END MODEL INTEGRATION
+
 
       ! Change this section to prevent NANs
 
@@ -539,55 +567,32 @@ module caete
          print *, in_n_in, ' => mineral_n_glob'
       endif
 
-   contains
-         subroutine fill_no_data_4b(arr, nd)
+   ! contains
+   !       subroutine fill_no_data_4b(arr, nd)
 
-            use types
-            use global_par
+   !          use types
+   !          use global_par
 
-            real(kind=r_4), dimension(nt1), intent(inout) :: arr
-            integer(kind=i_4), intent(in) :: nd
+   !          real(kind=r_4), dimension(nt1), intent(inout) :: arr
+   !          integer(kind=i_4), intent(in) :: nd
 
-            arr(nd + 1: nt1) = -9999.0
+   !          arr(nd + 1: nt1) = -9999.0
 
-         end subroutine fill_no_data_4b
-
-
-         subroutine fill_no_data_8b(arr, nd)
-
-            use types
-            use global_par
-
-            real(kind=r_8), dimension(nt1), intent(inout) :: arr
-            integer(kind=i_4), intent(in) :: nd
-
-            arr(nd + 1: nt1) = -9999.0D0
-
-         end subroutine fill_no_data_8b
+   !       end subroutine fill_no_data_4b
 
 
-         function cwm(var_arr, area_arr) result(retval)
+   !       subroutine fill_no_data_8b(arr, nd)
 
-            use types
-            use global_par
+   !          use types
+   !          use global_par
 
-            real(kind=r_8), dimension(npls), intent(in) :: var_arr, area_arr
-            real(kind=r_4) :: retval
-            retval = real(sum(var_arr * area_arr, mask = .not. isnan(var_arr)), r_4)
+   !          real(kind=r_8), dimension(nt1), intent(inout) :: arr
+   !          integer(kind=i_4), intent(in) :: nd
 
-         end function cwm
+   !          arr(nd + 1: nt1) = -9999.0D0
 
-         function cwm_soil(var_arr, area_arr) result(retval)
+   !       end subroutine fill_no_data_8b
 
-            use types
-            use global_par
-
-            real(kind=r_8), dimension(npls), intent(in) :: area_arr
-            real(kind=r_4), dimension(npls), intent(in) :: var_arr
-            real(kind=r_4) :: retval
-            retval = sum(var_arr * real(area_arr, r_4), mask = .not. isnan(var_arr))
-
-         end function cwm_soil
 
    end subroutine caete_dyn
 

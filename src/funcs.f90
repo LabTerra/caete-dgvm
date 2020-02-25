@@ -42,10 +42,49 @@ module photo
         pft_area_frac          ,& ! (s), area fraction by biomass
         allocation             ,& ! (s), daily npp allocation subroutine
         water_ue               ,& ! (f), water use efficiency
-        rc_canopy_scaling         ! (f), Try it!
+        rc_canopy_scaling      ,& ! (f), Try it!
+        cwm4                    ,&
+        cwm8                    ,&
+        cwm_soil
 
 contains
 
+   subroutine cwm4(var_arr, area_arr, retval)
+
+      use types
+      use global_par
+
+      real(kind=r_8), dimension(npls), intent(in) :: var_arr, area_arr
+      real(kind=r_4), intent(out) :: retval
+
+      retval = real(sum(var_arr * area_arr, mask = .not. isnan(var_arr)), r_4)
+
+   end subroutine cwm4
+
+
+   subroutine cwm8(var_arr, area_arr, retval)
+
+      use types
+      use global_par
+
+      real(kind=r_8), dimension(npls), intent(in) :: var_arr, area_arr
+      real(kind=r_8), intent(out) :: retval
+
+      retval = sum(var_arr * area_arr, mask = .not. isnan(var_arr))
+
+   end subroutine cwm8
+
+   subroutine cwm_soil(var_arr, area_arr, retval)
+
+      use types
+      use global_par
+
+      real(kind=r_8), dimension(npls), intent(in) :: area_arr
+      real(kind=r_4), dimension(npls), intent(in) :: var_arr
+      real(kind=r_4),intent(out) :: retval
+      retval = sum(var_arr * real(area_arr, r_4), mask = .not. isnan(var_arr))
+
+   end subroutine cwm_soil
    !=================================================================
    !=================================================================
 
@@ -762,6 +801,7 @@ contains
       ! If there is not NPP then no allocation process! only deallocation label 294
       if(npp .le. 0.0 .and. storage(1) .le. 0.0) then
          no_allocation = .true.
+         no_limit = .false.
          npp_awood = 0.0
          npp_froot = 0.0
          npp_leaf = 0.0
@@ -1003,22 +1043,32 @@ contains
          storage_out(1) = 0.0D0
       endif
 
-      root_litter = ((1D3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2
-      leaf_litter = ((1D3 * scl1) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
+      if (scf1 .le. 0.0D0) then
+         root_litter = 0.0D0
 
-      ! calculate the C content of each compartment
+      else
+         root_litter = ((1D3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2
+      endif
+
+      if(scl1 .le. 0.0D0) then
+         leaf_litter = 0.0
+      else
+         leaf_litter = ((1D3 * scl1) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
+      endif
+
+      ! calculate the C content of each compartment in g m-2
       scl2_tmp = (1D3 * scl1) + npp_leaf - leaf_litter
-      scf2_tmp = (1D3 * scf1) + npp_froot - root_litter
-
-      scf2 = real(scf2_tmp,r_4) ! g(C) m-2 day-1
       scl2 = real(scl2_tmp,r_4) ! g(C) m-2 day-1
+
+      scf2_tmp = (1D3 * scf1) + npp_froot - root_litter
+      scf2 = real(scf2_tmp,r_4) ! g(C) m-2 day-1
+
       ! ## if it's a woody strategy:
       if(tawood .gt. 0.0 .and. aawood .gt. 0.0 .and. sca1 .gt. 0.0) then
          cwd = ((1D3 * sca1) * (tawood * 365.242)**(-1)) !/ tawood! g(C) m-2
          sca2_tmp = (1D3 * sca1) + npp_awood - cwd  ! g(C) m-2
          sca2 = real(sca2_tmp,r_4) ! results in g(C) m-2 day-1
       else
-         sca2 = 0.0
          cwd = 0.0
       endif
 
