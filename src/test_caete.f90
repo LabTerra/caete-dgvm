@@ -18,11 +18,11 @@ program test_carbon3
    ! call test_water_function()
 
 
-   print *,
-   print *,
-   print *, "Testing/debugging CARBON3"
+   ! print *,
+   ! print *,
+   ! print *, "Testing/debugging CARBON3"
 
-    call test_c3()
+   !  call test_c3()
 
    ! print *,
    ! print *,
@@ -31,10 +31,10 @@ program test_carbon3
    ! call test_alloc()
 
 
-   ! print *,
-   ! print *,
-   ! print *, "Testing/debugging /Budget/Prod/Allocation"
-   ! call test_dbudget
+   print *,
+   print *,
+   print *, "Testing/debugging /Budget/Prod/Allocation"
+   call test_dbudget
 
 
    contains
@@ -108,36 +108,32 @@ program test_carbon3
    !---------------------------------------------------------------------
    ! TEST CARBON3
 
-   subroutine test_c3()
+   ! subroutine test_c3()
 
-      integer(i_4) :: index, j
-      real(r_4) :: soilt=23.0, water_s=0.9, ll=1.0, lf=1.0, lw=1.0
-      real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
-      real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
-      real(r_4), dimension(8) :: snr = 0.0
-      real(r_4) :: hr, nupt, pupt
+   !    integer(i_4) :: index, j
+   !    real(r_4) :: soilt=23.0, water_s=0.9, ll=1.0, lf=1.0, lw=1.0
+   !    real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
+   !    real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
+   !    real(r_4), dimension(8) :: snr = 0.0
+   !    real(r_4) :: hr, nupt, pupt
 
-      pupt = 0.2
-      nupt = 0.1
+   !    pupt = 0.2
+   !    nupt = 0.1
 
-      do index = 1,100000
-         call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
-         do j = 1,2
-            cs(j) = cs_out(j)
-            cl(j) = cl_out(j)
-         end do
-      end do
+   !    do index = 1,100000
+   !       call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
+   !       do j = 1,2
+   !          cs(j) = cs_out(j)
+   !          cl(j) = cl_out(j)
+   !       end do
+   !    end do
 
-      print *, snr,"<- snr"
-      print *, hr,"<- hr"
-      print *, cl,"<- cl"
-      print *, cs,"<- cs"
-      print *, available_n, 'aN'
-      print *, available_p, 'aP'
-      print *, inorg_n, 'iN'
-      print *, inorg_p, 'iP'
+   !    print *, snr,"<- snr"
+   !    print *, hr,"<- hr"
+   !    print *, cl,"<- cl"
+   !    print *, cs,"<- cs"
 
-   end subroutine test_c3
+   ! end subroutine test_c3
 
 
    subroutine test_alloc()
@@ -205,6 +201,12 @@ program test_carbon3
       real(r_4) :: p0 = 1000.3                   ! Surface pressure (mb)
       real(r_4) :: ipar = 0.0                 ! Incident photosynthetic active radiation mol Photons m-2 s-1
       real(r_4) :: rh = 0.9                   ! Relative humidity
+      real(r_4) :: inorg_p = 0.5
+      real(r_4) :: inorg_n = 0.5
+      real(r_4) :: avail_p = 0.5
+      real(r_4) :: sorb_p  = 0.5
+      real(r_4),dimension(4) :: csoil_com  = 0.0      ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+      real(r_4),dimension(8)  :: snr_com   = 0.0
       ! inouts
       real(r_8),dimension(3,npls) :: sto_budg ! Rapid Storage Pool (C,N,P)
       real(r_8),dimension(npls) :: cl1_pft ! initial BIOMASS cleaf compartment
@@ -238,22 +240,29 @@ program test_carbon3
       real(r_8), dimension(npls) :: c_defavg       ! kg(C) m-2
       real(r_8), dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8), dimension(npls) :: specific_la    ! m2 g(C)-1
+      real(r_4), dimension(4,npls) :: soilc        ! Soil carbon pools (gC m-2)
+      real(r_4), dimension(npls) :: inorganic_p
+      real(r_4), dimension(npls) :: inorganic_n
+      real(r_4), dimension(npls) :: available_p
+      real(r_4), dimension(npls) :: sorbed_p
       real(r_8), dimension(npls) :: nupt           ! g m-2
       real(r_8), dimension(npls) :: pupt           ! g m-2
       real(r_8), dimension(npls) :: litter_l       ! g m-2
       real(r_8), dimension(npls) :: cwd            ! g m-2
       real(r_8), dimension(npls) :: litter_fr      ! g m-2
+      real(r_4), dimension(npls) :: het_resp       ! gC m-2
   ! Lnr variables         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_8), dimension(6,npls) :: lnr         ! g(N) g(C)-1
+      real(r_4), dimension(8,npls) :: snr         ! g(N) g(C)-1 Soil Nutrient to C ratios (IN soil C pools)
+      !     -----------------------Internal Variables------------------------
 
       real(r_4),dimension(npls) :: cl_ ! initial BIOMASS cleaf compartment
       real(r_4),dimension(npls) :: cf_!                 froot
-      real(r_4),dimension(npls) :: ca_!                 cawood
+      real(r_4),dimension(npls) :: ca_, ocp!,                 cawoodintent(out),
+
 
       ! HELPER VARIABLES
-      integer(i_4) :: index
-      real(r_4) :: n_av
-      real(r_4) :: p_av
+      integer(i_4) :: index,i
 
       open(45,file='/home/jdarela/Desktop/caete/caete-dgvm/src/pls_ex.txt',&
         &   status='old',form='formatted',access='sequential')
@@ -290,18 +299,16 @@ program test_carbon3
          print *,
          print *, 'rodada: ', index
          print *,
-         n_av = available_n
-         p_av = available_p
 
          call daily_budget(dt, w1, g1, s1, ts, temp, prec, p0, ipar, rh&
-         &, n_av, p_av, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
-         &, droot, w2, g2, s2, smavg, ruavg, evavg, epavg&
+         &, inorg_p, inorg_n, avail_p, sorb_p, sto_budg, cl1_pft, ca1_pft, cf1_pft, dleaf, dwood&
+         &, droot, csoil_com, snr_com, w2, g2, s2, smavg, ruavg, evavg, epavg&
 !c OUT
          &, phavg, aravg, nppavg, laiavg, rcavg, f5avg&
          &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
          &, cfrootavg_pft, ocpavg, wueavg&
-         &, cueavg, c_defavg, vcmax, specific_la&
-         &, nupt, pupt, litter_l, cwd, litter_fr, lnr)
+         &, cueavg, c_defavg, vcmax, specific_la, soilc, inorganic_p, inorganic_n, available_p&
+         &, sorbed_p, nupt, pupt, litter_l, cwd, litter_fr, het_resp,lnr, snr)
 
          ! print *, ""
 
@@ -322,12 +329,27 @@ program test_carbon3
          ! ! print *,"CF ->",cf1_pft
          ! print *,"ocp->", ocpavg
          print *, "nupt/pupt->", nupt, pupt
+
          ! print *,
+         w1 = w2
+         s1 = s2
+         g1 = g2
+         ocp = real(ocpavg, kind=r_4)
+         inorg_p = sum(inorganic_p * ocp)
+         inorg_n = sum(inorganic_n * ocp)
+         avail_p = sum(available_p * ocp)
+
+         sorb_p  = sum(sorbed_p *    ocp)
+         do i = 1,4
+            csoil_com(i) = sum(soilc(i,:) * ocp)
+         enddo
+         do i = 1,8
+            snr_com(i) = sum(snr(i,:) * ocp)
+         enddo
+
       enddo
 
-      w1 = w2
-      s1 = s2
-      g1 = g2
+
 
    end subroutine test_dbudget
 
