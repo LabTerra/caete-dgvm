@@ -271,7 +271,7 @@ program test_carbon3
       read(45,12) dt
       !print *, dt(:,1)
 
-      ipar = 0.5 * 800 / 2.18e5
+      ipar = 0.5 * 400 / 2.18e5
       w1 = 0.1
       g1 = 0.01
       s1 = 0.01
@@ -286,7 +286,7 @@ program test_carbon3
 
       !call spinup2(npp_pot, dt, cl, cf, ca)
 
-      cl_ = 1.0
+      cl_ = 0.1
       cf_ = 0.2
       ca_ = 0.1
       cl1_pft = real(cl_, kind=r_8)
@@ -308,7 +308,7 @@ program test_carbon3
          &, rmavg, rgavg, cleafavg_pft, cawoodavg_pft&
          &, cfrootavg_pft, ocpavg, wueavg&
          &, cueavg, c_defavg, vcmax, specific_la, soilc, inorganic_p, inorganic_n, available_p&
-         &, sorbed_p, nupt, pupt, litter_l, cwd, litter_fr, het_resp,lnr, snr)
+         &, sorbed_p, nupt, pupt, litter_l, cwd, litter_fr, het_resp, lnr, snr)
 
          ! print *, ""
 

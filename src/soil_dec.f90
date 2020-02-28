@@ -26,8 +26,8 @@ module soil_dec
    ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
    real(r_4), dimension(4) :: tr_c = (/2.0, 15.0, 150.0, 3000.0/)
    !litter I (1) litter II (2) soilI (3) soil II (4)
-   real(r_4) :: sp_available_p = 0.204299955    ! g m-2 Yang et al., 2013
-   real(r_4) :: sp_available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
+   real(r_4), public :: sp_available_p = 0.204299955    ! g m-2 Yang et al., 2013
+   real(r_4), public :: sp_available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
    !=========================================================================
    ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
    public :: carbon3         ! Subroutine that calculates the C:N:P decay dynamics

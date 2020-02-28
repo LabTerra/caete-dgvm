@@ -80,8 +80,9 @@ contains
       real(r_4) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
       real(r_4) :: f1a      !auxiliar_f1
       logical :: no_cell = .false.
-
+      real(r_4) :: cl1_internal, cf1_internal
       !getting pls parameters
+
 
       if(((cl1_prod .lt. cmin) .and. (cf1_prod .lt. cmin))) then !
          ! Then PLS 'Die'
@@ -105,9 +106,11 @@ contains
       ! write (12324,*) dt
 
       ! close(12324)
+      cl1_internal = real(cl1_prod, kind=r_4)
+      cf1_internal = real(cf1_prod, kind=r_4)
 
-      n2cl = real(n2cl * (cl1_prod * 1e3), r_4) ! N in leaf g m-2
-      p2cl = real(p2cl * (cl1_prod * 1e3), r_4) ! P in leaf g m-2
+      n2cl = n2cl * cl1_internal ! N in leaf g m-2
+      p2cl = p2cl * cl1_internal ! P in leaf g m-2
       c4_int = nint(c4)
 
       if(n2cl .lt. 0.0) n2cl = 0.0
@@ -127,26 +130,15 @@ contains
            & p2cl,tleaf,sto1,f1a,vm_out,sto2)
 
 
-      if(debug) then
-         write(1234,*) 'f1a -->',f1a
-         if(f1a < 0.0) then
-            print *, 'f1a less than 0 aborting'
-            call abort()
-         endif
-      endif
-
-      if(debug) then
-         write(1234,*)
+      if(f1a < 0.0) then
+         print *, 'f1a less than 0 in produuctivity --- aborting'
+         call abort()
       endif
 
       ! TODO - insert variables units in coments
       ! VPD
       !========
       vpd = vapor_p_defcit(temp,rh)
-
-      if(debug) then
-         write(1234,*) 'VPD -->', vpd
-      endif
 
       !Stomatal resistence
       !===================
@@ -160,13 +152,8 @@ contains
       !     ----------------------------------------------
       f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
 
-      if(debug) then
-         write(1234,*) 'f5c ->', f5
-      endif
-
       !     Photosysthesis minimum and maximum temperature
       !     ----------------------------------------------
-
       if ((temp.ge.-10.0).and.(temp.le.50.0)) then
          f1 = f1a * f5 ! :water stress factor ! Ancient floating-point underflow spring (from CPTEC-PVM2)
       else

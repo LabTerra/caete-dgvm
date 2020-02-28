@@ -36,6 +36,7 @@ module caete
       use photo, only: cwm4, cwm8, cwm_soil
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
+      use soil_dec, only: sp_available_p, sp_available_n
 
       !     --------------------------I N P U T S----------------------------
 
@@ -323,6 +324,10 @@ module caete
          c_def_com               = 0.0
          hr_com                  = 0.0
 
+         if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
+         if (av_p_in .gt. sp_available_p) av_p_in = sp_available_p
+
+
          call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru &
               &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft &
               &, cawood1_pft, cfroot1_pft, dl, dw, dr, csoil_in, snr_in, wfim, gfim, sfim &
@@ -332,6 +337,7 @@ module caete
               &, specific_la_com, soilcarbon_com, in_p_com, in_n_com, av_p_com, so_p_com &
               &, nupt_com, pupt_com, litter_l_com, cwd_com &
               &, litter_fr_com, hr_com, lnr_com, snr_com)
+
 
          !82 columns-------------------------------------------------------------
          !print *, cawoodcom, 'cw'
@@ -437,7 +443,20 @@ module caete
          csoil_in = soil_carbon(:,k)
          snr_in   = snr(:,k)
 
+         if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
+         if (av_p_in .gt. sp_available_p) then
+             av_p_in = sp_available_p
+             so_p_in = 0.0
+             in_p_in = 0.0
+         endif
 
+         if (avail_p(k) .gt. sp_available_p)then
+             avail_p(k) = sp_available_p
+             inorg_p(k) = 0.0
+             sorbed_p(k) = 0.0
+         endif
+
+         if (inorg_n(k) .gt. sp_available_n) inorg_n(k) = sp_available_n
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
          dl_final = dl
@@ -495,10 +514,6 @@ module caete
       enddo ! day_loop(nt1)
 
 !!!!!!######/END MODEL INTEGRATION
-
-
-      ! Change this section to prevent NANs
-
       clf = cleaf1_pft
       caf = cawood1_pft
       cff = cfroot1_pft
@@ -507,53 +522,6 @@ module caete
 
       if(text_ts) close(12345)
 
-      !  ! FINAL details
-      !  ! Fill no_data in the tail of thr array (nday+1 : nt1)
-      ! if(ndays < nt1) then
-      !    call fill_no_data_4b(tsoil, ndays)
-      !    call fill_no_data_4b(emaxm, ndays)
-      !    call fill_no_data_8b(photo_cwm, ndays)
-      !    call fill_no_data_8b(aresp_cwm, ndays)
-      !    call fill_no_data_8b(npp_cwm, ndays)
-      !    call fill_no_data_8b(lai_cwm, ndays)
-
-      !    !# loop
-      !    ! c_litter has 2 pools
-      !    ! c_soil has 3 pools but the 3rd one is empty (full of zeroes)
-
-      !    do nindex = 1, 3
-      !       if(nindex < 3) call fill_no_data_4b(c_litter(nindex, :), ndays)
-      !       call fill_no_data_4b(c_soil(nindex, :), ndays)
-      !    enddo
-
-      !    call fill_no_data_4b(hr_cwm, ndays)
-      !    call fill_no_data_8b(rcm_cwm, ndays)
-      !    call fill_no_data_8b(f51, ndays)
-      !    call fill_no_data_8b(runom_cwm, ndays)
-      !    call fill_no_data_8b(evapm_cwm, ndays)
-      !    call fill_no_data_8b(wsoil_cwm, ndays)
-      !    call fill_no_data_8b(wue, ndays)
-      !    call fill_no_data_8b(rm_cwm, ndays)
-      !    call fill_no_data_8b(rg_cwm, ndays)
-      !    call fill_no_data_8b(cleaf_cwm, ndays)
-      !    call fill_no_data_8b(cawood_cwm, ndays)
-      !    call fill_no_data_8b(cfroot_cwm, ndays)
-      !    call fill_no_data_4b(nitro_min, ndays)
-      !    call fill_no_data_4b(phop_lab, ndays)
-      !    call fill_no_data_4b(vcmax, ndays)
-      !    call fill_no_data_4b(specific_la, ndays)
-      !    call fill_no_data_4b(nupt, ndays)
-      !    call fill_no_data_4b(pupt, ndays)
-      !    call fill_no_data_4b(litter_l, ndays)
-      !    call fill_no_data_4b(cwd, ndays)
-      !    call fill_no_data_4b(litter_fr, ndays)
-
-      !    ! Loop over sdditional dimension (lnr 6,nt1) (storage_pool 3,nt1)
-      !    do nindex = 1,6
-      !       if(nindex < 4) call fill_no_data_4b(storage_pool(nindex,:), ndays)
-      !       call fill_no_data_4b(lnr(nindex,:), ndays)
-      !    enddo
-      ! endif
       ! IDENTIFYING PROCESS
       if (text_ts) then
          print *, ''
@@ -566,33 +534,6 @@ module caete
          print *, av_p_in, ' => labile_p_glob'
          print *, in_n_in, ' => mineral_n_glob'
       endif
-
-   ! contains
-   !       subroutine fill_no_data_4b(arr, nd)
-
-   !          use types
-   !          use global_par
-
-   !          real(kind=r_4), dimension(nt1), intent(inout) :: arr
-   !          integer(kind=i_4), intent(in) :: nd
-
-   !          arr(nd + 1: nt1) = -9999.0
-
-   !       end subroutine fill_no_data_4b
-
-
-   !       subroutine fill_no_data_8b(arr, nd)
-
-   !          use types
-   !          use global_par
-
-   !          real(kind=r_8), dimension(nt1), intent(inout) :: arr
-   !          integer(kind=i_4), intent(in) :: nd
-
-   !          arr(nd + 1: nt1) = -9999.0D0
-
-   !       end subroutine fill_no_data_8b
-
 
    end subroutine caete_dyn
 

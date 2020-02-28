@@ -98,13 +98,14 @@ contains
       real(r_8),intent(in) :: sla   !m2 gC-1
       real(r_4) :: ph
 
-      real(r_4) :: f4sun
-      real(r_4) :: f4shade
+      real(r_8) :: f4sun, f1in
+      real(r_8) :: f4shade
 
+      f1in = real(f1, kind=r_8)
       f4sun = f_four(1,cleaf,sla)
       f4shade = f_four(2,cleaf,sla)
 
-      ph = 0.012*31557600.0*f1*f4sun*f4shade
+      ph = real((0.012D0*31557600.0D0*f1in*f4sun*f4shade), r_4)
 
    end function gross_ph
 
@@ -143,10 +144,10 @@ contains
       real(r_4) :: leaf_turnover
 
       leaf_t_months = tau_leaf*12. ! turnover time in months
-      leaf_t_coeff = leaf_t_months/100. !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012)
+      leaf_t_coeff = leaf_t_months/100.0 !1 - 100 months == ~ 1/12 to 8.3 years (TRY-kattge et al. 2011; Jedi-Pavlick 2012)
 
       ! leaf_turnover =  (365.0/12.0) * exp(2.6*leaf_t_coeff)
-      leaf_turnover =  (365.0/12.0) * (10 ** (2.0*leaf_t_coeff))
+      leaf_turnover =  (365.0/12.0) * (10.0 ** (2.0*leaf_t_coeff))
 
       ! sla = (3e-2 * (365.0/leaf_turnover)**(-1.02))
       sla = (3e-2 * (365.0/leaf_turnover)**(-0.46))
@@ -171,7 +172,7 @@ contains
 
       real(r_8),intent(in) :: cleaf ! carbon in leaf (kg m-2)
       real(r_8),intent(in) :: sla   ! specific leaf area (m2 gC-1)
-      real(r_4) :: lai_ss           ! leaf area index (m2 m-2)
+      real(r_8) :: lai_ss           ! leaf area index (m2 m-2)
 
       real(r_8) :: lai
       real(r_8) :: sunlai
@@ -182,13 +183,13 @@ contains
       sunlai = (1.0D0-(dexp(-p26*lai)))/p26
       shadelai = lai - sunlai
 
-      lai_ss = real(sunlai,r_4)
+      lai_ss = sunlai
 
       if (fs .eq. 90) then
          return
       endif
       if (fs .eq. 20) then
-         lai_ss = real(shadelai, r_4)
+         lai_ss = shadelai
          return
       endif
 
@@ -198,13 +199,13 @@ contains
       !------------------------------------------------------------------------
       if(fs .eq. 1) then
          ! f4sun
-         lai_ss = real((1.0-(dexp(-p26*sunlai)))/p26,r_4) !sun decl 90 degrees
+         lai_ss = (1.0-(dexp(-p26*sunlai)))/p26 !sun decl 90 degrees
          return
       endif
 
       if(fs .eq. 2) then
          !f4shade
-         lai_ss = real((1.0-(dexp(-p27*shadelai)))/p27,r_4) !sun decl ~20 degrees
+         lai_ss = (1.0-(dexp(-p27*shadelai)))/p27 !sun decl ~20 degrees
          return
       endif
    end function f_four
@@ -243,32 +244,35 @@ contains
       real(r_4) :: f5
 
 
-      real(r_8) :: pt
+      real(r_8) :: pt, rc_aux, rcmin_aux, ep_aux
       real(r_8) :: gc
       real(r_8) :: wa
       real(r_8) :: d
       real(r_8) :: f5_64
 
-      wa = w/wmax
+      wa = real((w/wmax), kind=r_8)
+      rc_aux = real(rc, kind=r_8)
+      rcmin_aux = real(rcmin, kind=r_8)
+      ep_aux = real(ep, kind=r_8)
 
-      pt = csru*(cfroot*1000.) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
-      if(rc .gt. 0.0) then
-         gc = (1.0/(rc * 1.15741e-08))  ! s/m
+      pt = csru*(cfroot*1000.0D0) * wa  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
+      if(rc_aux .gt. 0.0D0) then
+         gc = (1.0D0/(rc_aux * 1.15741D-08))  ! s/m
       else
-         gc =  1.0/(rcmin * 1.15741e-08) ! BIANCA E HELENA - Mudei este esquema..
+         gc =  1.0D0/(rcmin_aux * 1.15741D-8) ! BIANCA E HELENA - Mudei este esquema..
       endif
 
       !d =(ep * alfm) / (1. + gm/gc) !(based in Gerten et al. 2004)
-      d = (ep * alfm) / (1. + (gm/gc))
-      if(d .gt. 0.0) then
+      d = (ep_aux * alfm) / (1.0D0 + (gm/gc))
+      if(d .gt. 0.0D0) then
          f5_64 = pt/d
-         f5_64 = exp(-0.1 * f5_64)
-         f5_64 = 1.0 - f5_64
+         f5_64 = exp(-0.1D0 * f5_64)
+         f5_64 = 1.0D0 - f5_64
       else
          f5_64 = wa
       endif
 
-      f5 = real(f5_64,4)
+      f5 = real(f5_64,kind=r_4)
       if (f5 .lt. 0.0) f5 = 0.0
    end function water_stress_modifier
 
@@ -735,18 +739,18 @@ contains
       real(r_8) :: psca = 0.0D0  ! g(P) m-2
       real(r_8) :: pscf = 0.0D0  ! g(P) m-2
       ! traits
-      real(r_8) :: aleaf = 0.0     ! allocatation to plant compartments
-      real(r_8) :: aawood = 0.0
-      real(r_8) :: afroot = 0.0
-      real(r_8) :: tleaf = 0.0     ! Residence time(yr)
-      real(r_8) :: tawood = 0.0
-      real(r_8) :: tfroot = 0.0
-      real(r_8) :: leaf_n2c = 0.0  ! N:C ratios
-      real(r_8) :: awood_n2c = 0.0
-      real(r_8) :: froot_n2c = 0.0
-      real(r_8) :: leaf_p2c = 0.0  ! P:C ratios
-      real(r_8) :: awood_p2c = 0.0
-      real(r_8) :: froot_p2c = 0.0
+      real(r_8) :: aleaf = 0.0D0     ! allocatation to plant compartments
+      real(r_8) :: aawood = 0.0D0
+      real(r_8) :: afroot = 0.0D0
+      real(r_8) :: tleaf = 0.0D0  ! Residence time(yr)
+      real(r_8) :: tawood = 0.0D0
+      real(r_8) :: tfroot = 0.0D0
+      real(r_8) :: leaf_n2c = 0.0D0  ! N:C ratios
+      real(r_8) :: awood_n2c = 0.0D0
+      real(r_8) :: froot_n2c = 0.0D0
+      real(r_8) :: leaf_p2c = 0.0D0  ! P:C ratios
+      real(r_8) :: awood_p2c = 0.0D0
+      real(r_8) :: froot_p2c = 0.0D0
 
       real(r_8) :: avail_n = 0.0D0
       real(r_8) :: avail_p = 0.0D0
@@ -760,22 +764,34 @@ contains
       logical(l_1) :: p_limited = .false.
       logical(l_1) :: no_allocation = .false.
 
-      real(r_4) :: mult_factor = 1.0
+      real(r_8) :: mult_factor
       real(r_8) :: test_n_limitation
       real(r_8) :: test_p_limitation
 
       ! initialize some outputs
       ! If end_pls_day then PLS in not in the gridcell
-      end_pls_day = .false.
-      storage_out = (/0.0D0, 0.0D0, 0.0D0/)
+      end_pls_day            = .false.
+      storage_out            = (/0.0D0, 0.0D0, 0.0D0/)
+      litter_nutrient_ratios = (/0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0, 0.0D0/)
+      scl2                   = 0.0D0
+      scf2                   = 0.0D0
+      sca2                   = 0.0D0
+      cwd                    = 0.0D0
+      root_litter            = 0.0D0
+      leaf_litter            = 0.0D0
+      nuptk                  = 0.0D0
+      puptk                  = 0.0D0
 
+      mult_factor  = 1.0D0
+      test_n_limitation = 1.0D0
+      test_p_limitation = 1.0D0
       ! First check for the carbon content in leafs and fine roots (scl1 & scf1).
       ! A little C content in these pools means a rare strategy that remains in the system
       ! During the spinup we need to check if these pools are r(n)ea(r)ly in 'steady state'
 
       ! If there are no carbon in fine roots AND leafs:
       ! Then PLS 'Die' Label 10 to zero outputs and next pls. Means that the rest of this sub isn't executed
-      if(((scf1 .lt. cmin) .and. (scl1 .lt. cmin))) then !
+      if((scf1 .lt. cmin) .and. (scl1 .lt. cmin)) then !
          no_cell = .true.
          end_pls_day = .true.
          goto 10
@@ -799,14 +815,14 @@ contains
       ! Potential NPP.
       ! transform Kg m-2 yr-1 in g m-2 day-1 plus the C in storage pool.
       ! If there is not NPP then no allocation process! only deallocation label 294
-      if(npp .le. 0.0 .and. storage(1) .le. 0.0) then
+      if(npp .le. 0.0 .and. storage(1) .le. 0.0D0) then
          no_allocation = .true.
          no_limit = .false.
-         npp_awood = 0.0
-         npp_froot = 0.0
-         npp_leaf = 0.0
-         nuptk = 0.0
-         puptk = 0.0
+         npp_awood = 0.0D0
+         npp_froot = 0.0D0
+         npp_leaf = 0.0D0
+         nuptk = 0.0D0
+         puptk = 0.0D0
          goto 294
       endif
 
@@ -818,8 +834,8 @@ contains
       ! You have: kg m-2 year-1
       ! You want: g m-2 day-1
       npp_pot = (real(npp,kind=r_8) * 2.73791D0) ! Transform Kg m-2 Year-1 to g m-2 day
-      if (npp_pot .lt. 0.0) npp_pot = 0.0D0
-      if(storage(1) .gt. 0.0) then
+      if (npp_pot .lt. 0.0D0) npp_pot = 0.0D0
+      if(storage(1) .gt. 0.0D0) then
          npp_pot = npp_pot + storage(1)
          storage_out(1) = 0.0D0
       endif
@@ -850,20 +866,21 @@ contains
       potential_uptake_n = nscl + nsca + nscf !g m⁻²
       potential_uptake_p = pscl + psca + pscf !g m⁻²
 
-      if(potential_uptake_n .eq. -0.00000000) potential_uptake_n = 0.0
-      if(potential_uptake_p .eq. -0.00000000) potential_uptake_p = 0.0
+      ! if(potential_uptake_n .eq. -0.0D0) potential_uptake_n = 0.0D0
+      ! if(potential_uptake_p .eq. -0.0D0) potential_uptake_p = 0.0D0
 
       ! Compare disponible nutrients with potential uptake
       ! Calculate available pools
       ! TODO - the influence of AM and Ptase are calculated before
-      if(storage(2) .gt. 0.0) then
+      ! Mult_Factor modifies nmin zccording to root uptake
+      if(storage(2) .gt. 0.0D0) then
          avail_n = (mult_factor * nmin) + storage(2) !g m⁻²
          storage_out(2) = 0.0D0
       else
          avail_n = mult_factor * nmin
       endif
 
-      if(storage(3) .gt. 0.0) then
+      if(storage(3) .gt. 0.0D0) then
          avail_p = (mult_factor * plab) + storage(3) !g m⁻²
          storage_out(3) = 0.0D0
       else
@@ -873,13 +890,13 @@ contains
       test_n_limitation = avail_n - potential_uptake_n ! g(N) m-2
       test_p_limitation = avail_p - potential_uptake_p ! g(P) m-2
 
-      if(test_n_limitation .lt. 0.0) then
+      if(test_n_limitation .lt. 0.0D0) then
          n_limited = .true.
       else
          n_limited = .false.
       endif
 
-      if(test_p_limitation .lt. 0.0)then
+      if(test_p_limitation .lt. 0.0D0)then
          p_limited = .true.
       else
          p_limited = .false.
@@ -906,13 +923,13 @@ contains
          aux1 = abs(test_n_limitation) * aleaf     ! g(N) m-2 - Nitrogen amount
          aux2 = abs(test_n_limitation) * aawood
          aux3 = abs(test_n_limitation) * afroot
-         if(isnan(aux1)) aux1 = 0.0
-         if(isnan(aux2)) aux2 = 0.0
-         if(isnan(aux3)) aux3 = 0.0
+         if(isnan(aux1)) aux1 = 0.0D0
+         if(isnan(aux2)) aux2 = 0.0D0
+         if(isnan(aux3)) aux3 = 0.0D0
          ! ! Check if it's inf
-         if(aux1 .eq. aux1 - 1) aux1 = 0.0
-         if(aux2 .eq. aux2 - 1) aux2 = 0.0
-         if(aux3 .eq. aux3 - 1) aux3 = 0.0
+         if(aux1 .eq. aux1 - 1.0D0) aux1 = 0.0D0
+         if(aux2 .eq. aux2 - 1.0D0) aux2 = 0.0D0
+         if(aux3 .eq. aux3 - 1.0D0) aux3 = 0.0D0
       else
          ! There is no N limitation
          aux1 = 0.0D0
@@ -924,17 +941,17 @@ contains
       endif
 
       ! CALCULATE THE AMOUNT OF C THAT GOES TO STORAGE (Assimilated but not allocated)
-      aux1 = aux1 * (leaf_n2c**(-1))  ! g(C) m-2 in leaves that cannot be allocated
-      aux2 = aux2 * (awood_n2c**(-1)) ! g(C) m-2 in awood that cannot be allocated
-      aux3 = aux3 * (froot_n2c**(-1)) ! g(C) m-2 in froots that cannot be allocated
+      aux1 = aux1 * (leaf_n2c**(-1D0))  ! g(C) m-2 in leaves that cannot be allocated
+      aux2 = aux2 * (awood_n2c**(-1D0)) ! g(C) m-2 in awood that cannot be allocated
+      aux3 = aux3 * (froot_n2c**(-1D0)) ! g(C) m-2 in froots that cannot be allocated
 
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
 
       !After calculation this C can be stored
       carbon_to_storage_n = aux1 + aux2 + aux3
@@ -948,13 +965,13 @@ contains
       npp_awoodn = n_npp_pot * aawood
       npp_frootn = n_npp_pot * afroot
 
-      if(isnan(npp_leafn)) npp_leafn = 0.0
-      if(isnan(npp_awoodn)) npp_awoodn = 0.0
-      if(isnan(npp_frootn)) npp_frootn = 0.0
+      if(isnan(npp_leafn)) npp_leafn = 0.0D0
+      if(isnan(npp_awoodn)) npp_awoodn = 0.0D0
+      if(isnan(npp_frootn)) npp_frootn = 0.0D0
 
-      if(npp_leafn .eq. npp_leafn - 1) npp_leafn = 0.0
-      if(npp_awoodn .eq. npp_awoodn - 1) npp_awoodn = 0.0
-      if(npp_frootn .eq. npp_frootn - 1) npp_frootn = 0.0
+      if(npp_leafn .eq. npp_leafn - 1.0D0) npp_leafn = 0.0D0
+      if(npp_awoodn .eq. npp_awoodn - 1.0D0) npp_awoodn = 0.0D0
+      if(npp_frootn .eq. npp_frootn - 1.0D0) npp_frootn = 0.0D0
 
       ! END N limitation ------------------------------------------------------------
 
@@ -966,34 +983,34 @@ contains
          aux2 = abs(test_p_limitation) * aawood          ! allocation coefficients
          aux3 = abs(test_p_limitation) * afroot
                ! Check if it's nan
-         if(isnan(aux1)) aux1 = 0.0
-         if(isnan(aux2)) aux2 = 0.0
-         if(isnan(aux3)) aux3 = 0.0
+         if(isnan(aux1)) aux1 = 0.0D0
+         if(isnan(aux2)) aux2 = 0.0D0
+         if(isnan(aux3)) aux3 = 0.0D0
          ! ! Check if it's inf
-         if(aux1 .eq. aux1 - 1) aux1 = 0.0
-         if(aux2 .eq. aux2 - 1) aux2 = 0.0
-         if(aux3 .eq. aux3 - 1) aux3 = 0.0
+         if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+         if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+         if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
       else
-         aux1 = 0.0
-         aux2 = 0.0
-         aux3 = 0.0
+         aux1 = 0.0D0
+         aux2 = 0.0D0
+         aux3 = 0.0D0
          p_npp_pot = npp_pot
          carbon_to_storage_p = 0.0D0
          goto 99
       endif
 
       ! CALCULATE THE AMOUNT OF C THAT GOES TO STORAGE (Assimilated but not allocated)
-      aux1 = aux1 * (leaf_p2c**(-1))  ! g(C) m-2 in leaves that cannot be allocated
-      aux2 = aux2 * (awood_p2c**(-1)) ! g(C) m-2 in awood that cannot be allocated
-      aux3 = aux3 * (froot_p2c**(-1)) ! g(C) m-2 in froots that cannot be allocated
+      aux1 = aux1 * (leaf_p2c**(-1.0D0))  ! g(C) m-2 in leaves that cannot be allocated
+      aux2 = aux2 * (awood_p2c**(-1.0D0)) ! g(C) m-2 in awood that cannot be allocated
+      aux3 = aux3 * (froot_p2c**(-1.0D0)) ! g(C) m-2 in froots that cannot be allocated
       ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
 
       carbon_to_storage_p = aux1 + aux2 + aux3
       ! C to be allocated
@@ -1006,13 +1023,13 @@ contains
       npp_awoodp = p_npp_pot * aawood
       npp_frootp = p_npp_pot * afroot
 
-      if(isnan(npp_leafp)) npp_leafp = 0.0
-      if(isnan(npp_awoodp)) npp_awoodp = 0.0
-      if(isnan(npp_frootp)) npp_frootp = 0.0
+      if(isnan(npp_leafp)) npp_leafp = 0.0D0
+      if(isnan(npp_awoodp)) npp_awoodp = 0.0D0
+      if(isnan(npp_frootp)) npp_frootp = 0.0D0
 
-      if(npp_leafp .eq. npp_leafp - 1) npp_leafp= 0.0
-      if(npp_awoodp .eq. npp_awoodp - 1) npp_awoodp = 0.0
-      if(npp_frootp .eq. npp_frootp - 1) npp_frootp = 0.0
+      if(npp_leafp .eq. npp_leafp - 1) npp_leafp= 0.0D0
+      if(npp_awoodp .eq. npp_awoodp - 1) npp_awoodp = 0.0D0
+      if(npp_frootp .eq. npp_frootp - 1) npp_frootp = 0.0D0
 
       ! END P limitation-------------------------------------------------------------
 
@@ -1096,17 +1113,17 @@ contains
          root_litter = 0.0D0
 
       else
-         root_litter = ((1D3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-
-         if(isnan(root_litter)) root_litter = 0.0
-         if(root_litter .eq. root_litter - 1) root_litter = 0.0
+         root_litter = ((1D3 * scf1) * (tfroot * 365.242D0)**(-1.0D0)) !/ tfroot! g(C) m-
+         if(isnan(root_litter)) root_litter = 0.0D0
+         if(root_litter .eq. root_litter - 1.0D0) root_litter = 0.0D0
       endif
 
       if(scl1 .le. 0.0D0) then
-         leaf_litter = 0.0
+         leaf_litter = 0.0D0
       else
-         leaf_litter = ((1D3 * scl1) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
-         if(isnan(leaf_litter)) leaf_litter = 0.0
-         if(leaf_litter .eq. leaf_litter - 1) leaf_litter = 0.0
+         leaf_litter = ((1D3 * scl1) * (tleaf * 365.242D0)**(-1.0D0)) !/ tleaf ! g(C) m-2
+         if(isnan(leaf_litter)) leaf_litter = 0.0D0
+         if(leaf_litter .eq. leaf_litter - 1.0D0) leaf_litter = 0.0D0
       endif
 
       ! calculate the C content of each compartment in g m-2
@@ -1117,68 +1134,68 @@ contains
       scf2 = scf2_tmp ! g(C) m-2 day-1
 
       ! ## if it's a woody strategy:
-      if(tawood .gt. 0.0 .and. aawood .gt. 0.0 .and. sca1 .gt. 0.0) then
-         cwd = ((1D3 * sca1) * (tawood * 365.242)**(-1)) !/ tawood! g(C) m-2
+      if(tawood .gt. 0.0D0 .and. aawood .gt. 0.0D0 .and. sca1 .gt. 0.0D0) then
+         cwd = ((1D3 * sca1) * (tawood * 365.242D0)**(-1.0D0)) !/ tawood! g(C) m-2
          sca2_tmp = (1D3 * sca1) + npp_awood - cwd  ! g(C) m-2
          sca2 = sca2_tmp ! results in g(C) m-2 day-1
       else
-         cwd = 0.0
+         cwd = 0.0D0
       endif
 
       ! Nutrient resorption
       ! N resorbed
       aux1 = (leaf_litter * leaf_n2c) * rfrac_leaf   ! g(N) m-2
       aux2 = (root_litter * froot_n2c) * rfrac_froot ! g(N) m-2
-      if(aawood .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_n2c) * rfrac_wood       ! g(N) m-2
       else
-         aux3 = 0.0
+         aux3 = 0.0D0
       endif
       ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
 
       ! N resorbed goes to storage pool
       storage_out(2) = aux1 + aux2 + aux3         ! g(N) m-2
 
       aux1 =  (leaf_litter * leaf_n2c) - aux1    !nitrogen in litter
       aux2 =  (root_litter * froot_n2c) - aux2
-      if(aawood .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_n2c) - aux3
       else
-         aux3 = 0.0
+         aux3 = 0.0D0
       endif
 
       ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
 
-      if(leaf_litter .gt. 0.0) then
+      if(leaf_litter .gt. 0.0D0) then
          litter_nutrient_ratios(1) = aux1 / leaf_litter ! N:C litter ratio g(N) g(C)-1
       else
-         litter_nutrient_ratios(1) = 0.0
+         litter_nutrient_ratios(1) = 0.0D0
       endif
 
-      if(root_litter .gt. 0.0) then
+      if(root_litter .gt. 0.0D0) then
          litter_nutrient_ratios(2) = aux2 / root_litter ! N:C litter ratio g(N) g(C)-1
       else
-         litter_nutrient_ratios(2) = 0.0
+         litter_nutrient_ratios(2) = 0.0D0
       endif
 
       ! NOT EVERY PLS HAVE A WOOD POOL
       ! If it is a woody strategy
-      if(aawood .gt. 0.0) then
-         if(cwd .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
+         if(cwd .gt. 0.0D0) then
             litter_nutrient_ratios(3) = aux3 / cwd      ! N:C litter ratio g(N) g(C)-1
          else
              litter_nutrient_ratios(3) = 0.0D0
@@ -1191,53 +1208,53 @@ contains
       ! P resorbed
       aux1 = (leaf_litter * leaf_p2c) * rfrac_leaf
       aux2 = (root_litter * froot_p2c) * rfrac_froot
-      if(aawood .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_p2c) * rfrac_wood
       else
-         aux3 = 0.0
+         aux3 = 0.0D0
       endif
       ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1.0D0) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1.0D0) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1.0D0) aux3 = 0.0D0
 
       storage_out(3) = aux1 + aux2 + aux3
 
       aux1 =  (leaf_litter * leaf_p2c) - aux1    !nitrogen in litter
       aux2 =  (root_litter * froot_p2c) - aux2
-      if(aawood .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_p2c) - aux3
       else
-         aux3 = 0.0
+         aux3 = 0.0D0
       endif
       ! Check if it's nan
-      if(isnan(aux1)) aux1 = 0.0
-      if(isnan(aux2)) aux2 = 0.0
-      if(isnan(aux3)) aux3 = 0.0
+      if(isnan(aux1)) aux1 = 0.0D0
+      if(isnan(aux2)) aux2 = 0.0D0
+      if(isnan(aux3)) aux3 = 0.0D0
       ! ! Check if it's inf
-      if(aux1 .eq. aux1 - 1) aux1 = 0.0
-      if(aux2 .eq. aux2 - 1) aux2 = 0.0
-      if(aux3 .eq. aux3 - 1) aux3 = 0.0
+      if(aux1 .eq. aux1 - 1) aux1 = 0.0D0
+      if(aux2 .eq. aux2 - 1) aux2 = 0.0D0
+      if(aux3 .eq. aux3 - 1) aux3 = 0.0D0
 
-      if(leaf_litter .gt. 0.0) then
+      if(leaf_litter .gt. 0.0D0) then
          litter_nutrient_ratios(4) = aux1 / leaf_litter ! P:C litter ratio g(P) g(C)-1
       else
-         litter_nutrient_ratios(4) = 0.0
+         litter_nutrient_ratios(4) = 0.0D0
       endif
 
-      if(root_litter .gt. 0.0) then
+      if(root_litter .gt. 0.0D0) then
          litter_nutrient_ratios(5) = aux2 / root_litter ! P:C litter ratio g(P) g(C)-1
       else
-         litter_nutrient_ratios(5) = 0.0
+         litter_nutrient_ratios(5) = 0.0D0
       endif
 ! NOT EVERY PLS HAVE A WOOD POOL
       ! If it is a woody strategy
-      if(aawood .gt. 0.0) then
-         if(cwd .gt. 0.0) then
+      if(aawood .gt. 0.0D0) then
+         if(cwd .gt. 0.0D0) then
             litter_nutrient_ratios(6) = aux3 / cwd      ! N:C litter ratio g(N) g(C)-1
          else
              litter_nutrient_ratios(6) = 0.0D0
@@ -1252,44 +1269,52 @@ contains
       no_cell = .false.
       end_pls_day = .false.
 
+      if(isnan(scl2)) scl2 = 0.0D0
+      if(isnan(scf2)) scf2 = 0.0D0
+      if(scl2 .eq. scl2 - 1.0D0) scl2 = 0.0D0
+      if(scf2 .eq. scf2 - 1.0D0) scf2 = 0.0D0
+      if(isnan(sca2)) sca2 = 0.0D0
+      if(sca2 .eq. sca2 - 1.0D0) sca2 = 0.0D0
+
+
       if(.not. no_cell) then
-         scl2 = scl2 * 1e-3
-         scf2 = scf2 * 1e-3
-         if(aawood .gt. 0.0) then
-            sca2 = sca2 * 1e-3
+         scl2 = scl2 * 1.0D-3
+         scf2 = scf2 * 1.0D-3
+         if(aawood .gt. 0.0D0) then
+            sca2 = sca2 * 1.0D-3
          else
-            sca2 = 0.0
+            sca2 = 0.0D0
          endif
       endif
 
       if(no_allocation .and. .not. no_cell) then
-         nuptk = 0.0
-         puptk = 0.0
+         nuptk = 0.0D0
+         puptk = 0.0D0
          end_pls_day = .false.
       endif
 
 10    continue
       if(no_cell) then
          end_pls_day = .true.
-         storage_out = 0.0
-         scl2 = 0.0
-         scf2 = 0.0
-         sca2 = 0.0
-         leaf_litter = 0.0
-         cwd = 0.0
-         root_litter = 0.0
-         nuptk = 0.0
-         puptk = 0.0
-         litter_nutrient_ratios = 0.0
+         storage_out = 0.0D0
+         scl2 = 0.0D0
+         scf2 = 0.0D0
+         sca2 = 0.0D0
+         leaf_litter = 0.0D0
+         cwd = 0.0D0
+         root_litter = 0.0D0
+         nuptk = 0.0D0
+         puptk = 0.0D0
+         litter_nutrient_ratios = 0.0D0
       endif
 
 
-      if(scl2 .lt. 0.0) scl2 = 0.0
-      if(scf2 .lt. 0.0) scf2 = 0.0
-      if(sca2 .lt. 0.0) sca2 = 0.0
+      if(scl2 .lt. 0.0D0) scl2 = 0.0D0
+      if(scf2 .lt. 0.0D0) scf2 = 0.0D0
+      if(sca2 .lt. 0.0D0) sca2 = 0.0D0
 
-      if(nuptk .lt. 0.0) nuptk = 0.0
-      if(puptk .lt. 0.0) puptk = 0.0
+      if(nuptk .lt. 0.0D0) nuptk = 0.0D0
+      if(puptk .lt. 0.0D0) puptk = 0.0D0
 
       return
 
