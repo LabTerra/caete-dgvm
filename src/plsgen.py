@@ -129,7 +129,7 @@ def table_gen(NPLS):
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
-    rtime = vec_ranging(np.random.normal(0, 1, r_ceil), 0.08333333334, 8.3)
+    rtime = vec_ranging(np.random.normal(0.0, 1.0, r_ceil), 0.08333333334, 8.3)
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float32)
 

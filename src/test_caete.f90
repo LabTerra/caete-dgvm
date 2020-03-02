@@ -18,17 +18,17 @@ program test_carbon3
    ! call test_water_function()
 
 
-   ! print *,
-   ! print *,
-   ! print *, "Testing/debugging CARBON3"
+   print *,
+   print *,
+   print *, "Testing/debugging CARBON3"
 
-   !  call test_c3()
+    call test_c3()
 
-   ! print *,
-   ! print *,
-   ! print *, "Testing/debugging Allocation"
+   print *,
+   print *,
+   print *, "Testing/debugging Allocation"
 
-   ! call test_alloc()
+   call test_alloc()
 
 
    print *,
@@ -108,32 +108,39 @@ program test_carbon3
    !---------------------------------------------------------------------
    ! TEST CARBON3
 
-   ! subroutine test_c3()
+   subroutine test_c3()
 
-   !    integer(i_4) :: index, j
-   !    real(r_4) :: soilt=23.0, water_s=0.9, ll=1.0, lf=1.0, lw=1.0
-   !    real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
-   !    real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
-   !    real(r_4), dimension(8) :: snr = 0.0
-   !    real(r_4) :: hr, nupt, pupt
+      integer(i_4) :: index, j
+      real(r_4) :: soilt=23.0, water_s=0.9
+      real(r_8) :: ll=1.0, lf=1.0, lw=1.0
+      real(r_4), dimension(6) :: lnr = (/0.001, 0.001, 0.001, 0.001, 0.001, 0.01/)
+      real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
+      real(r_4), dimension(8) :: snr = 0.0, snr_i = 0
+      real(r_4) :: hr, nupt, pupt
+      real(r_4) :: avail_p, inorg_n, inorg_p,sorbed_p
 
-   !    pupt = 0.2
-   !    nupt = 0.1
+      avail_p = 0.0
+      inorg_n = 0.0
+      inorg_p = 0.0
+      sorbed_p = 0.0
+      pupt = 0.2
+      nupt = 0.1
 
-   !    do index = 1,100000
-   !       call carbon3(soilt,water_s, ll, lw, lf, lnr, cl, cs, nupt, pupt, cl_out, cs_out, snr, hr)
-   !       do j = 1,2
-   !          cs(j) = cs_out(j)
-   !          cl(j) = cl_out(j)
-   !       end do
-   !    end do
+      do index = 1,10000000
+         call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, nupt, pupt, avail_p, inorg_n, inorg_p,&
+         & sorbed_p, cl_out, cs_out, snr, hr)
+         do j = 1,2
+            cs(j) = cs_out(j)
+            cl(j) = cl_out(j)
+         end do
+      end do
 
-   !    print *, snr,"<- snr"
-   !    print *, hr,"<- hr"
-   !    print *, cl,"<- cl"
-   !    print *, cs,"<- cs"
+      print *, snr,"<- snr"
+      print *, hr,"<- hr"
+      print *, cl,"<- cl"
+      print *, cs,"<- cs"
 
-   ! end subroutine test_c3
+   end subroutine test_c3
 
 
    subroutine test_alloc()
@@ -144,7 +151,7 @@ program test_carbon3
                                            &  0.22799999999999973, 0.0, 0.05658099806223465,0.0749577527005275,&
                                            &  0.02557946262317787, 0.007156888889925779,0.007339313026394539,&
                                            &  0.00636147002287577/)  ! PLS attributes
-      real(r_4) :: npp = 0.1  ! npp (KgC/m2/yr) from assimilation process
+      real(r_4) :: npp = 1.5  ! npp (KgC/m2/yr) from assimilation process
       real(r_8) :: scl1 = 0.5d0 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8) :: sca1 = 7.0d0 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8) :: scf1 = 0.5d0! previous day carbon content on fine roots compartment (KgC/m2)

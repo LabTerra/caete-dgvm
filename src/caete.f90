@@ -128,7 +128,7 @@ module caete
       !  c     --------------------------------E N D----------------------------
 
       !  c     ------------------------- internal variables---------------------
-      integer(i_4) :: k, index, nindex
+      integer(i_4) :: k, index
       real(r_8),dimension(nt1) :: gsoil    !Soil ice kg m-2
       real(r_8),dimension(nt1) :: ssoil    !Soil snow kg m-2
       real(r_8),dimension(nt1) :: snowm    !Snowmelt kg m-2
@@ -194,10 +194,8 @@ module caete
       real(r_4) :: t2ww
       real(r_4) :: t3ww
 
-      real(r_4) :: aux1, aux2
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpcom_int
-      logical(l_1),dimension(npls) :: gridocpcom_log
       integer(i_4) :: mypid_int, ls, npq
       character(len=29) :: filename
       character(len=7) :: mypid
@@ -278,7 +276,32 @@ module caete
 
       !  ### End model initialization -------------------------------------------------
 
-
+         ! Daily budget
+         ! ====================
+         ! Variables that I will fill with data in call daily_budget
+      ep_daily                = 0.0
+      wfim                    = 0.0
+      gfim                    = 0.0
+      sfim                    = 0.0
+      snowmelt_com            = 0.0
+      runoff_com              = 0.0
+      e_com                   = 0.0
+      gpp_com                 = 0.0
+      ar_com                  = 0.0
+      npp_com                 = 0.0
+      lai_com                 = 0.0
+      f5_com                  = 0.0
+      canopy_res_com          = 0.0
+      rm_com                  = 0.0
+      rg_com                  = 0.0
+      cleafcom                = 0.0
+      cawoodcom               = 0.0
+      cfrootcom               = 0.0
+      gridocpcom              = 0.0
+      wue_com                 = 0.0
+      cue_com                 = 0.0
+      c_def_com               = 0.0
+      hr_com                  = 0.0
       !     ======================
       !     START TIME INTEGRATION
       !     ======================
@@ -297,36 +320,11 @@ module caete
          ipar = (0.5 * par(k)) / 2.18e5 ! W m-2 to mol m-2 s-1 ! 0.5 converts RSDS to PAR
          ru   = rhs(k) / 100.0          ! Relative humidity
 
-         ! Daily budget
-         ! ====================
-         ! Variables that I will fill with data in call daily_budget
-         ep_daily                = 0.0
-         wfim                    = 0.0
-         gfim                    = 0.0
-         sfim                    = 0.0
-         snowmelt_com            = 0.0
-         runoff_com              = 0.0
-         e_com                   = 0.0
-         gpp_com                 = 0.0
-         ar_com                  = 0.0
-         npp_com                 = 0.0
-         lai_com                 = 0.0
-         f5_com                  = 0.0
-         canopy_res_com          = 0.0
-         rm_com                  = 0.0
-         rg_com                  = 0.0
-         cleafcom                = 0.0
-         cawoodcom               = 0.0
-         cfrootcom               = 0.0
-         gridocpcom              = 0.0
-         wue_com                 = 0.0
-         cue_com                 = 0.0
-         c_def_com               = 0.0
-         hr_com                  = 0.0
 
-         if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
-         if (av_p_in .gt. sp_available_p) av_p_in = sp_available_p
-
+         ! if(k .lt. 30000) then
+            ! if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
+            ! if (av_p_in .gt. sp_available_p) av_p_in = sp_available_p
+         ! endif
 
          call daily_budget(dt, wini, gini, sini, td, ta, pr, spre, ipar, ru &
               &, in_p_in, in_n_in, av_p_in, so_p_in, storage_pool_com, cleaf1_pft &
@@ -443,21 +441,23 @@ module caete
          csoil_in = soil_carbon(:,k)
          snr_in   = snr(:,k)
 
-         if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
-         if (av_p_in .gt. sp_available_p) then
-             av_p_in = sp_available_p
-             so_p_in = 0.0
-             in_p_in = 0.0
-         endif
+         if((k + run) .lt. 30000) then
+            if (in_n_in .gt. sp_available_n) in_n_in = sp_available_n
+            if (av_p_in .gt. sp_available_p) then
+               av_p_in = sp_available_p
+               so_p_in = 0.0
+               in_p_in = 0.0
+            endif
 
-         if (avail_p(k) .gt. sp_available_p)then
-             avail_p(k) = sp_available_p
-             inorg_p(k) = 0.0
-             sorbed_p(k) = 0.0
-         endif
+            if (avail_p(k) .gt. sp_available_p)then
+               avail_p(k) = sp_available_p
+               inorg_p(k) = 0.0
+               sorbed_p(k) = 0.0
+            endif
 
-         if (inorg_n(k) .gt. sp_available_n) inorg_n(k) = sp_available_n
-         ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
+            if (inorg_n(k) .gt. sp_available_n) inorg_n(k) = sp_available_n
+         endif
+            ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
          dl_final = dl
          dr_final = dr
@@ -471,11 +471,11 @@ module caete
 
          if(text_ts) then
             do npq = 1,npls
-               gridocpcom_log(npq) = (gridocpcom(npq) .gt. 0.0)
-            enddo
-
-            do npq = 1, npls
-               gridocpcom_int(npq) = gridocpcom_log(npq)
+               if(gridocpcom(npq) .gt. 0.0) then
+                  gridocpcom_int(npq) = 1
+               else
+                  gridocpcom_int(npq) = 0
+               endif
             enddo
 
             ls = sum(gridocpcom_int)
@@ -517,7 +517,7 @@ module caete
       clf = cleaf1_pft
       caf = cawood1_pft
       cff = cfroot1_pft
-      grid_area = gridocpcom
+      grid_area = gridocpcom!real(grd, kind=r_4)
 
 
       if(text_ts) close(12345)

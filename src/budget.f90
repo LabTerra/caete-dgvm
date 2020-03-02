@@ -124,8 +124,6 @@ contains
       real(r_4) :: psnow                !Snowfall (mm/day)
       real(r_4) :: prain                !Rainfall (mm/day)
       real(r_4) :: emax
-      real(r_4) :: disp_n
-      real(r_4) :: disp_p
 
       real(r_4),dimension(npls) :: rimelt               !Runoff due to soil ice melting
       real(r_4),dimension(npls) :: smelt                !Snowmelt (mm/day)

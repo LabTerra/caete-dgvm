@@ -597,7 +597,7 @@ contains
          ! else if(delta .gt. 0.0) then
          jp1 = (-b-(sqrt(delta)))/(2.0*a)
          jp2 = (-b+(sqrt(delta)))/(2.0*a)
-         jp = amin1(jp1,jp2)
+         jp = dmin1(jp1,jp2)
          ! else
          !    jp = 0.0
          ! endif
@@ -612,7 +612,7 @@ contains
          ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0d0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0d0*a2)
-         f1a = amin1(j1,j2)
+         f1a = dmin1(j1,j2)
          ! else
          !    f1a = 0.0
          ! endif
@@ -667,7 +667,7 @@ contains
          ! else if(delta2 .gt. 0.0) then
          j1 = (-b2-(sqrt(delta2)))/(2.0*a2)
          j2 = (-b2+(sqrt(delta2)))/(2.0*a2)
-         f1a = amin1(j1,j2)
+         f1a = dmin1(j1,j2)
          ! else
          !    f1a = 0.0
          ! endif
@@ -942,7 +942,11 @@ contains
 
       ! CALCULATE THE AMOUNT OF C THAT GOES TO STORAGE (Assimilated but not allocated)
       aux1 = aux1 * (leaf_n2c**(-1D0))  ! g(C) m-2 in leaves that cannot be allocated
-      aux2 = aux2 * (awood_n2c**(-1D0)) ! g(C) m-2 in awood that cannot be allocated
+      if (aawood .gt. 0.0) then
+         aux2 = aux2 * (awood_n2c**(-1D0)) ! g(C) m-2 in awood that cannot be allocated
+      else
+         aux2 = 0.0D0
+      endif
       aux3 = aux3 * (froot_n2c**(-1D0)) ! g(C) m-2 in froots that cannot be allocated
 
       if(isnan(aux1)) aux1 = 0.0D0
@@ -1001,7 +1005,11 @@ contains
 
       ! CALCULATE THE AMOUNT OF C THAT GOES TO STORAGE (Assimilated but not allocated)
       aux1 = aux1 * (leaf_p2c**(-1.0D0))  ! g(C) m-2 in leaves that cannot be allocated
-      aux2 = aux2 * (awood_p2c**(-1.0D0)) ! g(C) m-2 in awood that cannot be allocated
+      if (aawood .gt. 0.0) then
+         aux2 = aux2 * (awood_p2c**(-1.0D0)) ! g(C) m-2 in awood that cannot be allocated
+      else
+         aux2 = 0.0D0
+      endif
       aux3 = aux3 * (froot_p2c**(-1.0D0)) ! g(C) m-2 in froots that cannot be allocated
       ! Check if it's nan
       if(isnan(aux1)) aux1 = 0.0D0
@@ -1577,16 +1585,16 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1e3)) * 15.0 * exp(0.03*temp))
+         rms64 = ((n2cw * (csa * 1e3)) * 27.0 * exp(0.07*temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1e3)) * 15.0 * exp(0.03*temp))
+      rml64 = ((n2cl * (cl1_mr * 1e3)) * 27.0 * exp(0.07*temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 15.0 * exp(0.03*temp))
+      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 27.0 * exp(0.07*temp))
 
-      storage_resp = ((ston * stoc) * 15.0 * exp(0.03*temp))
+      storage_resp = ((ston * stoc) * 27.0 * exp(0.07*temp))
 
       rm64 = (rml64 + rmf64 + rms64 + storage_resp) * 1e-3
 
