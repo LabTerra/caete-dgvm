@@ -47,7 +47,7 @@ contains
 
       ! POOLS OF LITTER AND SOIL
       integer(i_4),parameter :: pl=2,ps=2
-      integer(i_4) :: index, i, j
+      integer(i_4) :: index, i
 
       !     Inputs
       !     ------
@@ -103,7 +103,7 @@ contains
 
       !Auxiliary variables
       real(r_4) :: aux1, aux2, aux3, aux4
-      real(r_4) :: leaf_l, cwd, root_l    ! Mass of C comming from living pools g(C)m⁻²
+      real(r_4) :: leaf_l, cwd, root_l, total_litter  ! Mass of C comming from living pools g(C)m⁻²
 
 
       ! START
@@ -132,17 +132,6 @@ contains
          if(snr_in(i) .eq. snr_in(i) - 1.0D0) snr_aux(i) = 0.0D0
       enddo
 
-      nmass_org(1) = snr_aux(1) * cl(1)
-      nmass_org(2) = snr_aux(2) * cl(2)
-      nmass_org(3) = snr_aux(3) * cs(1)
-      nmass_org(4) = snr_aux(4) * cs(2)
-
-      pmass_org(1) = snr_aux(5) * cl(1)
-      pmass_org(2) = snr_aux(6) * cl(2)
-      pmass_org(3) = snr_aux(7) * cs(1)
-      pmass_org(4) = snr_aux(8) * cs(2)
-
-
       ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios
       ! (lnr) [MM⁻¹]
       leaf_n  = leaf_l * lnr(1) ! g(nutrient) m-2
@@ -165,10 +154,24 @@ contains
          endif
       enddo
 
-      ! C:N:P CYCLING
+      ! C:N:P CYCLING NUMERICAL SOLUTION
+
+
+      ! ORGANIC NUTRIENTS in SOIL
+      nmass_org(1) = snr_aux(1) * cl(1)                                      ! g(N)m-2
+      nmass_org(2) = snr_aux(2) * cl(2)
+      nmass_org(3) = snr_aux(3) * cs(1)
+      nmass_org(4) = snr_aux(4) * cs(2)
+
+      pmass_org(1) = snr_aux(5) * cl(1)                                      ! g(P)m-2
+      pmass_org(2) = snr_aux(6) * cl(2)
+      pmass_org(3) = snr_aux(7) * cs(1)
+      pmass_org(4) = snr_aux(8) * cs(2)
+
+      total_litter = leaf_l + root_l + cwd                                   ! g m-2
 
       !LITTER I
-      aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon from vegetation
+      aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon from vegetation g m-2
       aux2 = cdec(1) * clit_atm                                              ! processed (dacayed) Carbon lost to ATM
       aux3 = cdec(1) - aux2                                                  ! Carbon going to cl_out(2) (next pool)
       cl_out(1) = (cl(1) - cdec(1)) + aux1                                   ! Update Litter Carbon 1
@@ -203,10 +206,10 @@ contains
       ps_nitrogen(1) = nmass_org(3) + (wood_n * frac1)        ! Calculate the organic N/P pool
       ps_phosphorus(1) = pmass_org(3) + (wood_p * frac1)      ! g(N/P)m-2
 
-      !Before update Organic pools - Transfer some nutrients to the last pool (2%)
-      aux1 = 0.02 * ps_nitrogen(1)
+      !Before update Organic pools - Transfer some nutrients to the last pool (0.2%)
+      aux1 = 0.002 * ps_nitrogen(1)
       nmass_org(3) = ps_nitrogen(1) - aux1                     ! Update Organic N pool
-      aux2 = 0.02 * ps_phosphorus(1)
+      aux2 = 0.002 * ps_phosphorus(1)
       pmass_org(3) = ps_phosphorus(1) - aux2                         ! Update Organic P pool
 
 
@@ -222,7 +225,8 @@ contains
 
       ! THIS SECTION - Mineralized nutrients =====================================================
       ! The amounts of Minerilized nutrients are dependent on N:C and P:C mass ratios of soil pools
-      ! NUTRIENT RATIOS in SOIL
+
+      ! update NUTRIENT RATIOS in SOIL
       do index = 1,4
          if(index .lt. 3) then
             aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1

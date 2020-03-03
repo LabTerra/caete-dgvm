@@ -115,10 +115,13 @@ module caete
       real(r_4),dimension(nt1),   intent(out) :: cwd          ! 36  ! CWM
       real(r_4),dimension(nt1),   intent(out) :: litter_fr    ! 37  ! CWM
 
+      ! Litter Nutrient Ratisos :: variables(6)         [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
       real(r_4),dimension(6,nt1), intent(out) :: lnr          ! 38 ! Litter nutrient ratios
-      real(r_4),dimension(3,nt1), intent(out) :: storage_pool ! 39 ! Rapid Auxiliary daily storage pool for carbon and nutrients g m⁻²
 
+      real(r_4),dimension(3,nt1), intent(out) :: storage_pool ! 39 ! Rapid Auxiliary daily storage pool for carbon and nutrients g m⁻²
       real(r_4),dimension(4,nt1), intent(out) :: soil_carbon  ! 40 ! CSOIL_POOL carbon gC m-2
+
+     ! Soil Nutrient Ratios :: variables(8)            [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
       real(r_4),dimension(8,nt1), intent(out) :: snr          ! 41 ! Soil nutrient ratios g/g
       real(r_4),dimension(nt1),   intent(out) :: avail_p      ! 42
       real(r_4),dimension(nt1),   intent(out) :: inorg_n      ! 43

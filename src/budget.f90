@@ -159,6 +159,7 @@ contains
       real(r_4),dimension(8, npls) :: snr_aux = 0.0
       real(r_4),dimension(npls) :: in_p, in_n, av_p, so_p
 
+      real(r_8) :: litter_fr_aux, litter_l_aux, cwd_aux
 
       !     Precipitation
       !     =============
@@ -247,6 +248,9 @@ contains
       do p = 1,npls
 
          dt1 = dt(:,p) ! Pick up the pls functional attributes list of PLS npls
+         litter_fr_aux = 0.0D0
+         litter_l_aux = 0.0D0
+         cwd_aux = 0.0D0
 
          end_pls = .false.
 
@@ -332,8 +336,11 @@ contains
             roff(p) = roff(p) + rimelt(p) !Total runoff
          endif
 !!!!====================================================
+         litter_fr_aux = litter_fr(p) !* ocp_coeffs(p)
+         litter_l_aux = litter_l(p) !* ocp_coeffs(p)
+         cwd_aux = cwd(p) !* ocp_coeffs(p)
 
-         call carb3(ts, w(p)/wmax, litter_l(p), cwd(p), litter_fr(p), real(lnr(:,p), r_4), clitter(:,p),&
+         call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux, real(lnr(:,p), r_4), clitter(:,p),&
                   & csoil(:, p), snr_internal(:,p), real(n_uptake(p), r_4), real(p_uptake(p), r_4),&
                   & av_p(p), in_n(p), in_p(p), so_p(p), litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
