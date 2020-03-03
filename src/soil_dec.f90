@@ -47,7 +47,7 @@ contains
 
       ! POOLS OF LITTER AND SOIL
       integer(i_4),parameter :: pl=2,ps=2
-      integer(i_4) :: index
+      integer(i_4) :: index, i, j
 
       !     Inputs
       !     ------
@@ -99,6 +99,7 @@ contains
       real(r_4),dimension(pl+ps) :: het_resp, cdec
       real(r_4),dimension(pl+ps) :: aux_ratio_n, aux_ratio_p
       real(r_4),dimension(pl+ps) :: nutri_min_n, nutri_min_p
+      real(r_4),dimension(8) :: snr_aux
 
       !Auxiliary variables
       real(r_4) :: aux1, aux2, aux3, aux4
@@ -125,15 +126,21 @@ contains
       snr = 0.0
 
       ! Soil Nutrient ratios and organic nutrients g m-2
-      nmass_org(1) = snr_in(1) * cl(1)
-      nmass_org(2) = snr_in(2) * cl(2)
-      nmass_org(3) = snr_in(3) * cs(1)
-      nmass_org(4) = snr_in(4) * cs(2)
+      do  i = 1,8
+         snr_aux(i) = snr_in(i)
+         if(isnan(snr_in(i))) snr_aux(i) = 0.0D0
+         if(snr_in(i) .eq. snr_in(i) - 1.0D0) snr_aux(i) = 0.0D0
+      enddo
 
-      pmass_org(1) = snr_in(5) * cl(1)
-      pmass_org(2) = snr_in(6) * cl(2)
-      pmass_org(3) = snr_in(7) * cs(1)
-      pmass_org(4) = snr_in(8) * cs(2)
+      nmass_org(1) = snr_aux(1) * cl(1)
+      nmass_org(2) = snr_aux(2) * cl(2)
+      nmass_org(3) = snr_aux(3) * cs(1)
+      nmass_org(4) = snr_aux(4) * cs(2)
+
+      pmass_org(1) = snr_aux(5) * cl(1)
+      pmass_org(2) = snr_aux(6) * cl(2)
+      pmass_org(3) = snr_aux(7) * cs(1)
+      pmass_org(4) = snr_aux(8) * cs(2)
 
 
       ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios

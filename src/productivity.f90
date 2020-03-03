@@ -167,9 +167,9 @@ contains
 
       !     Leaf area index (m2/m2)
       sla = spec_leaf_area(tleaf)
-      !laia = real(leaf_area_index(cl1_prod, sla), r_4)
-      laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
-      laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
+      laia = real(leaf_area_index(cl1_prod, sla), r_4)
+      !laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
+      !laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
 
       !     Canopy gross photosynthesis (kgC/m2/yr)
       !     =======================================x

@@ -95,7 +95,7 @@ module caete
       real(r_4),dimension(npls),  intent(out) :: grid_area    ! 18  ! gridcell area fraction of pfts! ratio (0-1)
       real(r_4),dimension(nt1),   intent(out) :: wue          ! 19  ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1;
       real(r_4),dimension(nt1),   intent(out) :: cue          ! 20  ! 2 - npp/gpp;
-      real(r_4),dimension(nt1),   intent(out) :: cdef         ! 21  ! 3 - kgC m-2
+      real(r_4),dimension(nt1),   intent(out) :: cdef         ! 21  ! 3 - g m-2 day-1
       real(r_4),dimension(npls),  intent(out) :: wfim         ! 22  ! Kg m-2
       real(r_4),dimension(npls),  intent(out) :: gfim         ! 23  ! Kg m-2
       real(r_4),dimension(npls),  intent(out) :: sfim         ! 24  ! Kg m-2  final day water pools (snow; water; ice)
@@ -245,12 +245,9 @@ module caete
 
       !82 columns-----------------------------------------------------------------
 
-      ! Initialize variables
-      cleaf_cwm          = 0.0     ! leaf biomass (KgC/m2)
-      cawood_cwm         = 0.0     ! aboveground wood biomass (KgC/m2)
-      cfroot_cwm         = 0.0     ! fine root biomass (KgC/m2)
-      grid_area          = 0.0     ! occupation coefficient
+      ! Initialize variables OUTPUTS
       emaxm              = 0.0     ! Maximum evapotranspiration
+      tsoil              = 0.0
       photo_cwm          = 0.0     ! daily photosynthesis (kgC/m2/y)
       aresp_cwm          = 0.0     ! daily autotrophic respiration (kgC/m2/y)
       npp_cwm            = 0.0     ! daily net primary productivity (sum of PLSs) (kgC/m2/y)
@@ -264,43 +261,30 @@ module caete
       evapm_cwm          = 0.0     ! Actual evapotranspiration mm/day
       wsoil_cwm          = 0.0     ! Soil moisture (mm)
       rm_cwm             = 0.0     ! Maintenance respiration
-      rg_cwm             = 0.0     ! Growth respiration
+      rg_cwm             = 0.0
+      cleaf_cwm          = 0.0     ! leaf biomass (KgC/m2)
+      cawood_cwm         = 0.0     ! aboveground wood biomass (KgC/m2)
+      cfroot_cwm         = 0.0     ! fine root biomass (KgC/m2)
+      grid_area          = 0.0     ! occupation coefficient
       wue                = 0.0     ! Water use efficiency (Medlyn et al. 2011 Reconciling...)
       cue                = 0.0     ! Carbon Use efficiency (NPP/GPP)
-      soilcarbon_com     = 0.0     ! Carbon in soil g C m-2 (l1, l2, s1, s2)
-      snr_com            = 0.0
-      in_p_com           = 0.0
-      in_n_com           = 0.0
-      av_p_com           = 0.0
-      so_p_com           = 0.0
+      cdef               = 0.0
 
       !  ### End model initialization -------------------------------------------------
 
          ! Daily budget
          ! ====================
          ! Variables that I will fill with data in call daily_budget
-      ep_daily                = 0.0
-      wfim                    = 0.0
-      gfim                    = 0.0
-      sfim                    = 0.0
-      snowmelt_com            = 0.0
-      runoff_com              = 0.0
-      e_com                   = 0.0
-      gpp_com                 = 0.0
-      ar_com                  = 0.0
-      npp_com                 = 0.0
-      lai_com                 = 0.0
-      f5_com                  = 0.0
-      canopy_res_com          = 0.0
-      rm_com                  = 0.0
-      rg_com                  = 0.0
+      soilcarbon_com          = 0.0     ! Carbon in soil g C m-2 (l1, l2, s1, s2)
+      snr_com                 = 0.0
+      in_p_com                = 0.0
+      in_n_com                = 0.0
+      av_p_com                = 0.0
+      so_p_com                = 0.0
       cleafcom                = 0.0
       cawoodcom               = 0.0
       cfrootcom               = 0.0
       gridocpcom              = 0.0
-      wue_com                 = 0.0
-      cue_com                 = 0.0
-      c_def_com               = 0.0
       hr_com                  = 0.0
       !     ======================
       !     START TIME INTEGRATION
@@ -311,6 +295,51 @@ module caete
          else
             call soil_temp_sub(temp(1:1095) - 273.15,tsoil(k))
          endif
+
+                  ! Daily budget
+         ! ====================
+         ! Variables that I will fill with data in call daily_budget
+         ep_daily                = 0.0
+
+         ! dimension(NPLS) - OUTPUTS
+         wfim                    = 0.0
+         gfim                    = 0.0
+         sfim                    = 0.0
+         dl_final                = 0.0
+         dr_final                = 0.0
+         dw_final                = 0.0
+         clf                     = 0.0
+         caf                     = 0.0
+         cff                     = 0.0
+         ! INTERNAL - CATCH outputs from COMMUNITY after budget
+         ! This section clean the values for each day
+         ! dimension(NPLS)
+         snowmelt_com            = 0.0
+         runoff_com              = 0.0
+         e_com                   = 0.0
+         gpp_com                 = 0.0
+         ar_com                  = 0.0
+         npp_com                 = 0.0
+         lai_com                 = 0.0
+         f5_com                  = 0.0
+         canopy_res_com          = 0.0
+         rm_com                  = 0.0
+         rg_com                  = 0.0
+         wue_com                 = 0.0
+         cue_com                 = 0.0
+         c_def_com               = 0.0
+
+         soilcarbon_com          = 0.0     ! Carbon in soil g C m-2 (l1, l2, s1, s2)
+         snr_com                 = 0.0
+         in_p_com                = 0.0
+         in_n_com                = 0.0
+         av_p_com                = 0.0
+         so_p_com                = 0.0
+         cleafcom                = 0.0
+         cawoodcom               = 0.0
+         cfrootcom               = 0.0
+         gridocpcom              = 0.0
+         hr_com                  = 0.0
 
          ! Setting input variables and Converting units
          td   = tsoil(k)

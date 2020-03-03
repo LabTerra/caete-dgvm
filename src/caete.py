@@ -209,10 +209,10 @@ def run_dyn(grd, at=np.copy(d_at)):
     dca = np.zeros(npls,)
     dcf = np.zeros(npls,)
 
-    grd.clin, grd.cfin, grd.cwin = model_funcs.spinup2(0.5, at)
-    # grd.clin = np.zeros(npls,) + 0.1
-    # grd.cfin = np.zeros(npls,) + 0.1
-    # grd.cwin = np.zeros(npls,) + 0.1
+    # grd.clin, grd.cfin, grd.cwin = model_funcs.spinup2(0.5, at)
+    grd.clin = np.zeros(npls,) + 0.1
+    grd.cfin = np.zeros(npls,) + 0.1
+    grd.cwin = np.zeros(npls,) + 0.1
 
     grd.csoil = np.zeros(4,) + 1.0
     grd.snr = np.zeros(8,) + 0.0001
