@@ -38,9 +38,10 @@ module soil_dec
 
 contains
 
-   subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd, root_litter, lnr, cl, cs, &
-                    &  snr_in, nupt, pupt, avail_p, inorg_n, inorg_p,&
-                    & sorbed_p, cl_out, cs_out, snr, hr)
+   subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
+                    &        root_litter, lnr, cl, cs, &
+                    &         snr_in, avail_p, inorg_n, inorg_p,&
+                    &          sorbed_p, cl_out, cs_out, snr, hr)
 
       real(r_4),parameter :: clit_atm = 0.7
       real(r_4),parameter :: cwd_atm = 0.22
@@ -60,7 +61,7 @@ contains
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
       real(r_4),dimension(8), intent(in) :: snr_in   ! Current soil nutrient ratios
-      real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
+      !real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
 
       !     Outputs
       !     -------
@@ -76,8 +77,8 @@ contains
       real(r_4),dimension(4) :: nmass_org = 0.0
       real(r_4),dimension(4) :: pmass_org = 0.0
 
-      real(r_4),dimension(4) :: soil_nr    ! Soil pools Nutrient Ratios (2N + 2P)
-      real(r_4),dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
+      !real(r_4),dimension(4) :: soil_nr    ! Soil pools Nutrient Ratios (2N + 2P)
+      !real(r_4),dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
       !TODO ! Insert output: Total mineralized N and P
       !INTERNAL VARIABLES
       real(r_4),dimension(pl) :: pl_nitrogen = 0.0   ! Nitrogênio da serapilheira -
@@ -245,26 +246,11 @@ contains
          endif
       enddo
 
-      ! **** To GLOBAL VARS
-      litt_nr(1) = aux_ratio_n(1)
-      litt_nr(2) = aux_ratio_n(2)
-      soil_nr(1) = aux_ratio_n(3)
-      soil_nr(2) = aux_ratio_n(4)
-      litt_nr(3) = aux_ratio_p(1)
-      litt_nr(4) = aux_ratio_p(2)
-      soil_nr(3) = aux_ratio_p(3)
-      soil_nr(4) = aux_ratio_p(4)
-
-      ! OUTPUT SOIL NUTRIENT RATIOS
-      do index = 1,8
-         if (index .lt. 5) snr(index) = aux_ratio_n(index)
-         if (index .gt. 4) snr(index) = aux_ratio_p(index-4)
-      end do
 
       ! USE NUTRIENT RATIOS AND HET_RESP TO CALCULATE MINERALIZED NUTRIENTS
       do index=1,4
-         nutri_min_n(index) = het_resp(index)*aux_ratio_n(index)
-         nutri_min_p(index) = het_resp(index)*aux_ratio_p(index)
+         nutri_min_n(index) = het_resp(index) * aux_ratio_n(index)
+         nutri_min_p(index) = het_resp(index) * aux_ratio_p(index)
       enddo
 
       ! UPDATE N and P ORGANIC in SOIL POOLS
@@ -273,17 +259,46 @@ contains
          pmass_org(index) = pmass_org(index) - nutri_min_p(index)
       enddo
 
-      ! UPDATE INORGANIC POOLS
-      inorg_n =  inorg_n + sum(nutri_min_n) - nupt
-      ! BNF
-      ! INLCUDE SORPTION DYNAMICS
-      inorg_p = inorg_p + sum(nutri_min_p)
-      sorbed_p = sorbed_p_equil(inorg_p)
-      avail_p = inorg_p - sorbed_p - pupt !+ available_p
+      ! Recalculate SNR
+      ! update NUTRIENT RATIOS in SOIL
+      do index = 1,4
+         if(index .lt. 3) then
+            aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1
+            aux_ratio_p(index) = pmass_org(index) / cl_out(index) ! g(P)g(C)-1
+         else
+            if (cs_out(index-2) .le. 0.0) then
+               aux_ratio_n(index) = 0.0
+            else
+               aux_ratio_n(index) = nmass_org(index) / cs_out(index-2) ! g(N)g(C)-1
+            endif
+            if (cs_out(index-2) .le. 0.0) then
+               aux_ratio_p(index) = 0.0
+            else
+                aux_ratio_p(index) = pmass_org(index) / cs_out(index-2) ! g(P)g(C)-1
+            endif
+         endif
+      enddo
 
+      ! ! OUTPUT SOIL NUTRIENT RATIOS
+      do index = 1,8
+         if (index .lt. 5) snr(index) = aux_ratio_n(index)
+         if (index .gt. 4) snr(index) = aux_ratio_p(index-4)
+      end do
+
+      ! UPDATE INORGANIC POOLS
       if (inorg_p .lt. 0.0) inorg_p = 0.0
       if (inorg_n .lt. 0.0) inorg_n = 0.0
       if (avail_p .lt. 0.0) avail_p = 0.0
+
+      inorg_n =  inorg_n + sum(nutri_min_n, mask=.not.isnan(nutri_min_n))
+      ! BNF
+      ! INLCUDE SORPTION DYNAMICS
+
+      inorg_p = inorg_p + sum(nutri_min_p, mask=.not.isnan(nutri_min_p))
+      sorbed_p = sorbed_p_equil(inorg_p)
+      avail_p = inorg_p - sorbed_p
+
+
 
       hr = sum(het_resp)
 

@@ -438,19 +438,19 @@ module caete
          soil_carbon(4,k) = real(sum(soilcarbon_com(4,:) *&
                               & grd, mask= .not. isnan(soilcarbon_com(4,:))), r_4)
 
-         snr(1,k) = real(sum(snr_com(1,:) * grd, mask= .not. isnan(snr_com(1,:))), r_4)         != cwm_soil(snr(1,:), grd)
-         snr(2,k) = real(sum(snr_com(2,:) * grd, mask= .not. isnan(snr_com(2,:))), r_4)         != cwm_soil(snr(2,:), grd)
-         snr(3,k) = real(sum(snr_com(3,:) * grd, mask= .not. isnan(snr_com(3,:))), r_4)         != cwm_soil(snr(3,:), grd)
-         snr(4,k) = real(sum(snr_com(4,:) * grd, mask= .not. isnan(snr_com(4,:))), r_4)         != cwm_soil(snr(4,:), grd)
-         snr(5,k) = real(sum(snr_com(5,:) * grd, mask= .not. isnan(snr_com(5,:))), r_4)         != cwm_soil(snr(5,:), grd)
-         snr(6,k) = real(sum(snr_com(6,:) * grd, mask= .not. isnan(snr_com(6,:))), r_4)         != cwm_soil(snr(6,:), grd)
-         snr(7,k) = real(sum(snr_com(7,:) * grd, mask= .not. isnan(snr_com(7,:))), r_4)         != cwm_soil(snr(7,:), grd)
-         snr(8,k) = real(sum(snr_com(8,:) * grd, mask= .not. isnan(snr_com(8,:))), r_4)         != cwm_soil(snr(8,:), grd)
+         snr(1,k) = real(sum((snr_com(1,:) * grd), mask= .not. isnan(snr_com(1,:))), r_4)         != cwm_soil(snr(1,:), grd)
+         snr(2,k) = real(sum((snr_com(2,:) * grd), mask= .not. isnan(snr_com(2,:))), r_4)         != cwm_soil(snr(2,:), grd)
+         snr(3,k) = real(sum((snr_com(3,:) * grd), mask= .not. isnan(snr_com(3,:))), r_4)         != cwm_soil(snr(3,:), grd)
+         snr(4,k) = real(sum((snr_com(4,:) * grd), mask= .not. isnan(snr_com(4,:))), r_4)         != cwm_soil(snr(4,:), grd)
+         snr(5,k) = real(sum((snr_com(5,:) * grd), mask= .not. isnan(snr_com(5,:))), r_4)         != cwm_soil(snr(5,:), grd)
+         snr(6,k) = real(sum((snr_com(6,:) * grd), mask= .not. isnan(snr_com(6,:))), r_4)         != cwm_soil(snr(6,:), grd)
+         snr(7,k) = real(sum((snr_com(7,:) * grd), mask= .not. isnan(snr_com(7,:))), r_4)         != cwm_soil(snr(7,:), grd)
+         snr(8,k) = real(sum((snr_com(8,:) * grd), mask= .not. isnan(snr_com(8,:))), r_4)         != cwm_soil(snr(8,:), grd)
 
-         inorg_p(k) = real(sum(in_p_com * grd, mask=.not. isnan(in_p_com)), r_4)     != cwm_soil(in_p_com, grd)
-         inorg_n(k) = real(sum(in_n_com * grd, mask=.not. isnan(in_n_com)), r_4)     != cwm_soil(in_n_com, grd)
-         avail_p(k) = real(sum(av_p_com * grd, mask=.not. isnan(av_p_com)), r_4)     != cwm_soil(av_p_com, grd)
-         sorbed_p(k) = real(sum(so_p_com * grd, mask=.not. isnan(so_p_com)), r_4)    != cwm_soil(so_p_com, grd)
+         inorg_p(k) = real(sum((in_p_com * grd), mask=.not. isnan(in_p_com)), r_4)     != cwm_soil(in_p_com, grd)
+         inorg_n(k) = real(sum((in_n_com * grd), mask=.not. isnan(in_n_com)), r_4)     != cwm_soil(in_n_com, grd)
+         avail_p(k) = real(sum((av_p_com * grd), mask=.not. isnan(av_p_com)), r_4)     != cwm_soil(av_p_com, grd)
+         sorbed_p(k) = real(sum((so_p_com * grd), mask=.not. isnan(so_p_com)), r_4)    != cwm_soil(so_p_com, grd)
 
 
          ! UPDATE COMMUNITY WEIGHTED VARIABLES
@@ -467,8 +467,8 @@ module caete
 
          !CNP_SOIL
          in_p_in  = inorg_p(k)
-         in_n_in  = inorg_n(k)
-         av_p_in  = avail_p(k)
+         in_n_in  = inorg_n(k) - nupt(k)
+         av_p_in  = avail_p(k) - pupt(k)
          so_p_in  = sorbed_p(k)
          csoil_in = soil_carbon(:,k)
          snr_in   = snr(:,k)

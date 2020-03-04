@@ -35,7 +35,7 @@ module global_par
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
    real(r_4),parameter,public :: rcmax = 2500.0                  ! ResistÊncia estomática máxima s/m
    real(r_4),parameter,public :: rcmin = 100                     ! ResistÊncia estomática mínima s/m
-   real(r_8),parameter,public :: cmin = 1D-4                     ! Minimum to survive kg m-2
+   real(r_8),parameter,public :: cmin = 1D-2                     ! Minimum to survive kg m-2
    real(r_4),parameter,public :: ca = 363.0                      ! ppmv - atm[CO2]
    real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
    real(r_4),parameter,public :: tsnow = -1.0

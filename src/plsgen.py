@@ -129,7 +129,7 @@ def table_gen(NPLS):
 
 # REVER O TEMPO DE RESIDÊNCIA DAS RAÌZES FINAS - VARIAR ENTRE 1 mes e 2 anos
     index0 = 0
-    rtime = vec_ranging(np.random.normal(0.0, 1.0, r_ceil), 0.08333333334, 8.3)
+    rtime = vec_ranging(np.random.uniform(0.0, 1.0, r_ceil), 0.0833333, 8.3)
     while index0 < diffg:
         restime = np.zeros(shape=(3,), dtype=np.float32)
 
@@ -144,7 +144,7 @@ def table_gen(NPLS):
             index0 += 1
     # Creating woody plants (maybe herbaceous)
     index1 = 0
-    rtime_wood = vec_ranging(np.random.normal(0, 1, r_ceil), 1., 100.)
+    rtime_wood = vec_ranging(np.random.uniform(0, 1, r_ceil), 1., 100.)
     while index1 < diffw:
         restime = np.zeros(shape=(3,), dtype=np.float32)
         allocatio = plsa_wood[np.random.randint(0, plsa_wood.shape[0])]
@@ -177,15 +177,15 @@ def table_gen(NPLS):
     # # Nitrogen and Phosphorus content in carbon pools
     # # C : N : P
     # # ----
-    leaf_n2c = np.random.uniform(0.005, 0.01, NPLS)
-    awood_n2c = np.random.uniform(0.005, 0.01, NPLS)
+    leaf_n2c = np.random.uniform(0.001, 0.05, NPLS)
+    awood_n2c = np.random.uniform(0.001, 0.05, NPLS)
     awood_n2c[0:alloc_g.shape[0]] = 0.0
-    froot_n2c = np.random.uniform(0.005, 0.01, NPLS)
+    froot_n2c = np.random.uniform(0.001, 0.05, NPLS)
 
-    leaf_p2c = np.random.uniform(0.001, 0.01, NPLS)
-    awood_p2c = np.random.uniform(0.001, 0.01, NPLS)
+    leaf_p2c = np.random.uniform(0.001, 0.03, NPLS)
+    awood_p2c = np.random.uniform(0.001, 0.03, NPLS)
     awood_p2c[0:alloc_g.shape[0]] = 0.0
-    froot_p2c = np.random.uniform(0.001, 0.01, NPLS)
+    froot_p2c = np.random.uniform(0.001, 0.03, NPLS)
 
     stack = (g1, vcmax, alloc[:, 0], alloc[:, 1], alloc[:, 2],
              alloc[:, 3], alloc[:, 4], alloc[:, 5], c4, leaf_n2c,

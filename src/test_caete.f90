@@ -18,17 +18,17 @@ program test_carbon3
    ! call test_water_function()
 
 
-   print *,
-   print *,
-   print *, "Testing/debugging CARBON3"
-
-    call test_c3()
-
    ! print *,
    ! print *,
-   ! print *, "Testing/debugging Allocation"
+   ! print *, "Testing/debugging CARBON3"
 
-   ! call test_alloc()
+   !  call test_c3()
+
+   print *,
+   print *,
+   print *, "Testing/debugging Allocation"
+
+   call test_alloc()
 
 
    ! print *,
@@ -112,8 +112,9 @@ program test_carbon3
 
       integer(i_4) :: index, j
       real(r_4) :: soilt=23.0, water_s=0.8
-      real(r_8) :: ll=0.1, lf=0.1, lw=0.1
-      real(r_4), dimension(6) :: lnr = (/0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001/)
+      real(r_8) :: ll=1, lf=1, lw=1
+      real(r_4), dimension(6) :: lnr = (/2.5461449101567262E-002, 1.2789730913937092E-002, 4.1226762905716891E-002,&
+                                        & 3.2206000294536350E-003, 3.1807350460439920E-003, 4.0366222383454442E-003/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0, snr_i = 0.0001
       real(r_4) :: hr, nupt, pupt
@@ -126,18 +127,20 @@ program test_carbon3
       pupt = 0.2
       nupt = 0.1
 
-      do index = 1,10000000
-         call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, nupt, pupt, avail_p, inorg_n, inorg_p,&
+      do index = 1,10000
+         call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, avail_p, inorg_n, inorg_p,&
          & sorbed_p, cl_out, cs_out, snr, hr)
          do j = 1,2
             cs(j) = cs_out(j)
             cl(j) = cl_out(j)
          enddo
 
+         inorg_n = inorg_n - nupt
+         avail_p = avail_p - pupt
+
          do j = 1,8
             snr_i(j) = snr(j)
          end do
-
          print *, snr,"<- snr"
          print *, hr,"<- hr"
          print *, cl,"<- cl"
@@ -147,6 +150,7 @@ program test_carbon3
          print *, inorg_p, '<-inp'
          print *, sorbed_p,'<-sop'
       end do
+
 
 
 
@@ -166,8 +170,8 @@ program test_carbon3
       real(r_8) :: scl1 = 0.5d0 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8) :: sca1 = 7.0d0 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8) :: scf1 = 0.5d0! previous day carbon content on fine roots compartment (KgC/m2)
-      real(r_4) :: nmin = 0.3 ! N in mineral N pool(g m-2)
-      real(r_4) :: plab  = 0.2 ! P in labile pool (g m-2)
+      real(r_4) :: nmin = 0.2 ! N in mineral N pool(g m-2)
+      real(r_4) :: plab  = 0.1 ! P in labile pool (g m-2)
       real(r_8),dimension(3) :: storage = (/0.0d0, 0.0d0, 0.0d0/)! Three element array- storage pool([C,N,P]) g m-2
 
       ! OUTPUTS
@@ -185,8 +189,7 @@ program test_carbon3
 
       integer(l_1) :: index
 
-
-      do index = 1,100
+      do index = 1,10
 
          call allocation(dt, npp, nmin,plab,scl1,sca1,scf1,storage,&
          &storage_out,scl2,sca2,scf2,leaf_litter,cwd,root_litter,&

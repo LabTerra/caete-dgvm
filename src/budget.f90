@@ -340,10 +340,25 @@ contains
          litter_l_aux = litter_l(p) !* ocp_coeffs(p)
          cwd_aux = cwd(p) !* ocp_coeffs(p)
 
+         ! if (real(n_uptake(p), r_4) .gt. in_n(p)) then
+         !    print *, 'nupt gt inorg_n'
+         !    call abort
+         ! endif
+
+         ! if (real(p_uptake(p), r_4) .gt. av_p(p)) then
+         !    print *, 'pupt gt avail_p'
+         !    call abort
+         ! endif
+
          call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux, real(lnr(:,p), r_4), clitter(:,p),&
-                  & csoil(:, p), snr_internal(:,p), real(n_uptake(p), r_4), real(p_uptake(p), r_4),&
+                  & csoil(:, p), snr_internal(:,p),&
                   & av_p(p), in_n(p), in_p(p), so_p(p), litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
+
+
+
+         !in_n(p) = in_n(p) - real(n_uptake(p), r_4)
+         !av_p(p) = av_p(p) - real(p_uptake(p), r_4)
 
          do index = 1,8
             snr_internal(index,p) = snr_aux(index,p)
@@ -454,8 +469,8 @@ contains
 
       enddo ! end pls_loop (p)
 
-      ! call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)
-      ! ocpavg = (ocp_coeffs + ocp_coeffs2) / 2.0
+!      call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)
+      ! ocpavg = (ocp_coeffs + ocp_coeffs2
 
       ! CLEAN NANs OF some outputs
       do p = 1,npls
