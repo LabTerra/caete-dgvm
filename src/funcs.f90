@@ -767,6 +767,10 @@ contains
       real(r_8) :: mult_factor
       real(r_8) :: test_n_limitation
       real(r_8) :: test_p_limitation
+      real(r_8) :: transposed_c
+      real(r_8) :: sca1_aux
+      real(r_8) :: scl1_aux
+      real(r_8) :: scf1_aux
 
       ! initialize some outputs
       ! If end_pls_day then PLS in not in the gridcell
@@ -837,18 +841,6 @@ contains
       p_limited = .false.
       no_allocation = .false.
 
-      ! First check for the carbon content in leafs and fine roots (scl1 & scf1).
-      ! A little C content in these pools means a rare strategy that remains in the system
-      ! During the spinup we need to check if these pools are r(n)ea(r)ly in 'steady state'
-
-      ! If there are no carbon in fine roots AND leafs:
-      ! Then PLS 'Die' Label 10 to zero outputs and next pls. Means that the rest of this sub isn't executed
-      if((scf1 .lt. cmin) .and. (scl1 .lt. cmin)) then !
-         no_cell = .true.
-         end_pls_day = .true.
-         goto 10
-      endif
-
       ! Catch the functional/demographic traits of pls
       tleaf  = real(dt(3),kind=r_8) ! RESIDENCE TIME years
       tawood = real(dt(4),kind=r_8)
@@ -864,6 +856,34 @@ contains
       awood_p2c = real(dt(14), kind=r_8)
       froot_p2c = real(dt(15), kind=r_8)
 
+      ! First check for the carbon content in leafs and fine roots (scl1 & scf1).
+      ! A little C content in these pools means a rare strategy that remains in the system
+      ! During the spinup we need to check if these pools are r(n)ea(r)ly in 'steady state'
+
+      ! If there are no carbon in fine roots AND leafs:
+      ! Then PLS 'Die' Label 10 to zero outputs and next pls. Means that the rest of this sub isn't executed
+      if((scf1 .lt. cmin) .and. (scl1 .lt. cmin)) then !
+         no_cell = .true.
+         end_pls_day = .true.
+         goto 10
+      endif
+
+      ! if((scf1 .lt. cmin) .and. (scl1 .lt. cmin)) then !
+      !    if(aawood .gt. 0.0 .and. sca1 .gt. 0.0) then
+      !       transposed_c = 0.1D0 * sca1
+      !       sca1_aux = sca1 - transposed_c
+      !       scl1_aux = scl1 + (transposed_c * 0.5)
+      !       scf1_aux = scf1 + (transposed_c * 0.5)
+      !    else
+      !       no_cell = .true.
+      !       end_pls_day = .true.
+      !       transposed_c = 0.0D0
+      !       sca1_aux = 0.0D0
+      !       scl1_aux = 0.0D0
+      !       scf1_aux = 0.0D0
+      !       goto 10
+      !    endif
+      ! endif
       ! Potential NPP.
       ! transform Kg m-2 yr-1 in g m-2 day-1 plus the C in storage pool.
       ! If there is not NPP then no allocation process! only deallocation label 294
@@ -1164,6 +1184,16 @@ contains
          storage_out(1) = 0.0D0
       endif
 
+      ! LEAF LITTER
+      if(scl1 .le. 0.0D0) then
+         leaf_litter = 0.0D0
+      else
+         leaf_litter = ((1D3 * scl1) * (tleaf * 365.242D0)**(-1.0D0)) !/ tleaf ! g(C) m-2
+         if(isnan(leaf_litter)) leaf_litter = 0.0D0
+         if(leaf_litter .eq. leaf_litter - 1.0D0) leaf_litter = 0.0D0
+      endif
+
+      ! ROOT LITTER
       if (scf1 .le. 0.0D0) then
          root_litter = 0.0D0
 
@@ -1173,13 +1203,6 @@ contains
          if(root_litter .eq. root_litter - 1.0D0) root_litter = 0.0D0
       endif
 
-      if(scl1 .le. 0.0D0) then
-         leaf_litter = 0.0D0
-      else
-         leaf_litter = ((1D3 * scl1) * (tleaf * 365.242D0)**(-1.0D0)) !/ tleaf ! g(C) m-2
-         if(isnan(leaf_litter)) leaf_litter = 0.0D0
-         if(leaf_litter .eq. leaf_litter - 1.0D0) leaf_litter = 0.0D0
-      endif
 
       ! calculate the C content of each compartment in g m-2
       scl2_tmp = (1D3 * scl1) + npp_leaf - leaf_litter

@@ -35,7 +35,7 @@ module global_par
    real(r_4),parameter,public :: tau = (h**2)/(2.0*diffu)        ! e-folding times (months)
    real(r_4),parameter,public :: rcmax = 2500.0                  ! ResistÊncia estomática máxima s/m
    real(r_4),parameter,public :: rcmin = 100                     ! ResistÊncia estomática mínima s/m
-   real(r_8),parameter,public :: cmin = 1D-2                     ! Minimum to survive kg m-2
+   real(r_8),parameter,public :: cmin = 1D-5                     ! Minimum to survive kg m-2
    real(r_4),parameter,public :: ca = 363.0                      ! ppmv - atm[CO2]
    real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
    real(r_4),parameter,public :: tsnow = -1.0
@@ -49,7 +49,7 @@ module global_par
    real(r_8),parameter,public :: rfrac_wood = 0.45D0
    real(r_4),parameter,public :: ks = 0.25                       !  P Sorption
    real(r_4),parameter,public :: nodata = -9999.0
-   integer(i_4),parameter,public :: npls = 150                    ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
+   integer(i_4),parameter,public :: npls = 10                    ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: nt1 = 42369                  ! Number of days between 01/1901-12/1970(inclusive)
    integer(i_4),parameter,public :: ntraits = 15                 ! Number of traits for each PLS
    logical(l_1),parameter,public :: debug = .false.              ! Logical variables - For model debug and development

@@ -24,17 +24,17 @@ program test_carbon3
 
    !  call test_c3()
 
-   print *,
-   print *,
-   print *, "Testing/debugging Allocation"
-
-   call test_alloc()
-
-
    ! print *,
    ! print *,
-   ! print *, "Testing/debugging /Budget/Prod/Allocation"
-   ! call test_dbudget
+   ! print *, "Testing/debugging Allocation"
+
+   ! call test_alloc()
+
+
+   print *,
+   print *,
+   print *, "Testing/debugging /Budget/Prod/Allocation"
+   call test_dbudget
 
 
    contains
