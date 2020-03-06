@@ -155,12 +155,14 @@ contains
       real(r_8),dimension(npls) :: p_uptake           ! g m-2
       ! CNP CYCLE VARIABLES
       real(r_4),dimension(2, npls) :: litter_carbon_bdg, soil_carbon_bdg, clitter, csoil
-      real(r_4),dimension(8, npls) :: snr_internal = 0.0
-      real(r_4),dimension(8, npls) :: snr_aux = 0.0
+      real(r_4),dimension(8, npls) :: snr_internal
+      real(r_4),dimension(8, npls) :: snr_aux
       real(r_4),dimension(npls) :: in_p, in_n, av_p, so_p
 
       real(r_8) :: litter_fr_aux, litter_l_aux, cwd_aux
 
+      snr_internal = 0.0
+      snr_aux = 0.0
       !     Precipitation
       !     =============
       psnow = 0.0
@@ -245,6 +247,17 @@ contains
 
       !     Productivity & Growth (ph, ALLOCATION, aresp, vpd, rc2 & etc.) for each PLS
       !     =================================
+
+      do p = 1, npls
+         if(cl1(p) .lt. 0.0D0) cl1(p) = 0.0D0
+         if(cf1(p) .lt. 0.0D0) cf1(p) = 0.0D0
+         if(ca1(p) .lt. 0.0D0) ca1(p) = 0.0D0
+      enddo
+
+      print*, ""
+      print *, cl1, "cl1"
+
+
       do p = 1,npls
 
          dt1 = dt(:,p) ! Pick up the pls functional attributes list of PLS npls
@@ -263,6 +276,7 @@ contains
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
+         if(cl1(p) .lt. 0.0) cl1(p) = 0
 
          call allocation (dt1, nppa(p), in_n(p), av_p(p), cl1(p), ca1(p)&
               &,cf1(p), sto_budg(:,p), day_storage(:,p), cl2(p), ca2(p)&
@@ -270,7 +284,6 @@ contains
               &,lnr(:,p),end_pls)
 
          sto_budg(:,p) = day_storage(:,p)
-
          ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
          if(end_pls) then
             no_pls_run = .true.
@@ -468,6 +481,8 @@ contains
          endif
 
       enddo ! end pls_loop (p)
+      print *, cl2, "cl2"
+      print*, ""
 
 !      call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)
       ! ocpavg = (ocp_coeffs + ocp_coeffs2
