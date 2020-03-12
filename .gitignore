@@ -14,3 +14,4 @@
 /tests/*.npy
 .vscode
 .python_version
+.idea/
