@@ -175,6 +175,10 @@ contains
       real(r_8) :: aux_var0_0x29a = nodata
       real(r_8) :: aux_var0_0x29b = nodata
 
+      !allometry (internal variable just for testing)
+      real(r_8),dimension(npls) :: diam !stem diameter (m) (Smith et al 2001 - SP material)
+      real(r_8),dimension(npls) :: height !height (m) (Sitch et al., 2003)
+      real(r_8),dimension(npls) :: crown_area !crown_area (m2) (Sitch et al., 2003)
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -355,6 +359,16 @@ contains
          cuemes = 0.0
          c_defmes = 0.0
 
+         !!for updating allometry each 30 days
+         if (mod(k,30).eq.0) then
+            if (k.eq.30) then
+               diam = ((4+(cawood1_pft))/((wood_density)*3.14*40))**(1/(2+0.5))
+               !height = k_allom2*(diam**k_allom3)
+               !crown_area = k_allom1*(diam**krp)
+               !print*,'diam',diam,'height',height
+               print*,'here',k,'diam', diam(1)
+            endif
+         endif
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&

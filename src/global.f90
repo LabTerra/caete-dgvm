@@ -69,6 +69,8 @@ module global_par
    real(r_4),parameter,public :: light_ext_factor = 0.5          !light extinction coefficient 
                                                                  !(Smith et al., 2001 thesis)
 
+   real(r_4),parameter,public :: wood_density = 0.35             ! wood density (g/cm-3) (Langan, 2017/ thesis)
+
    integer(i_4),parameter,public :: npls = 500                   ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: nt1 = 42369                  ! Number of days between 01/1901-12/1970(inclusive)
    integer(i_4),parameter,public :: ntraits = 15                 ! Number of traits for each PLS
