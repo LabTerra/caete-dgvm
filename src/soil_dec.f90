@@ -98,8 +98,8 @@ contains
 
       !     Outputs
       !     -------
-      ! creal(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
-      ! real(r_4),dimension(ps),intent(out) :: cs_out
+      real(r_4),dimension(pl),intent(out) :: cl_out ! g(C)m⁻²
+      real(r_4),dimension(ps),intent(out) :: cs_out
       real(r_4),intent(out) :: hr                   !Heterotrophic (microbial) respiration (gC/m2/day)
 !TODO ! Insert output: Total mineralized N and P
 
