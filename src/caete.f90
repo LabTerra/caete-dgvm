@@ -364,6 +364,7 @@ contains
               &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
               &,litter_fr_com,lnr_com)
 
+         
          ! SAVE DAILY VALUES 
          !82 columns---------------------------------------------------------------
          grd = gridocpmes
@@ -466,9 +467,10 @@ contains
 
          ! UPDATE CVEG POOLS FOR NEXT LOOP
          ! CLEAN NANs to prevent failure between cont_runs (pass only numbers to cff, clf, caf)
-         cleaf1_pft  = cleafmes
+         
          cawood1_pft = cawoodmes
          cfroot1_pft = cfrootmes
+         cleaf1_pft  = cleafmes
 
 
         ! gridocpmes_log = gridocpmes .gt. 0.0

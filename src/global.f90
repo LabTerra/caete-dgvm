@@ -48,6 +48,27 @@ module global_par
    real(r_8),parameter,public :: rfrac_froot = 0.50D0
    real(r_8),parameter,public :: rfrac_wood = 0.45D0
    real(r_4),parameter,public :: nodata = -9999.0
+   real(r_4),parameter,public :: kla_sa = 8000.0                 !leafarea:sapwood (unitless)/& 
+                                                                 !Table 3 in Sitch et al(2003)
+
+   real(r_4),parameter,public :: P50 = -1.5                      !xylem tension at whichn50% of 
+                                                                 !hydraulic conductivity is lost !(MPa). Value choosen by us
+
+   real(r_4),parameter,public :: k_allom1 = 100.0                !allometric constant (Table 3 
+                                                                 !in Sitch et al., 2003).
+
+   real(r_4),parameter,public :: krp = 1.6                       !allometric constant (Table 3 
+                                                                 !in Sitch et al., 2003).
+
+   real(r_4),parameter,public :: k_allom2 = 40.0                 !allometric constant (Table 3 
+                                                                 !in Sitch et al., 2003).
+
+   real(r_4),parameter,public :: k_allom3 = 0.5                  !allometric constant (Table 3 
+                                                                 !in Sitch et al., 2003).
+
+   real(r_4),parameter,public :: light_ext_factor = 0.5          !light extinction coefficient 
+                                                                 !(Smith et al., 2001 thesis)
+
    integer(i_4),parameter,public :: npls = 500                   ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
    integer(i_4),parameter,public :: nt1 = 42369                  ! Number of days between 01/1901-12/1970(inclusive)
    integer(i_4),parameter,public :: ntraits = 15                 ! Number of traits for each PLS
