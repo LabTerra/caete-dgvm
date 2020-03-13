@@ -41,7 +41,7 @@ contains
 
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
-
+      use photo, only : spec_leaf_area 
 
       !     --------------------------I N P U T S----------------------------
 
@@ -179,6 +179,9 @@ contains
       real(r_8),dimension(npls) :: diam !stem diameter (m) (Smith et al 2001 - SP material)
       real(r_8),dimension(npls) :: height !height (m) (Sitch et al., 2003)
       real(r_8),dimension(npls) :: crown_area !crown_area (m2) (Sitch et al., 2003)
+      real(r_4),dimension(npls) :: sla !Specific Leaf Area (m2 gC-1) TO BE VARIABLE IN FUTURE DEVELOPMENT
+      real(r_8),dimension(npls) :: leaf_area !Leaf Area (m2) (Seiler et al., 2014 (eq. 4))
+      real(r_8),dimension(npls) :: sap_area !sapwood cross sectional area (m2) (Sitch et al., 2003)
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -358,6 +361,12 @@ contains
          wuemes = 0.0
          cuemes = 0.0
          c_defmes = 0.0
+         
+         ! Calcular SLA
+         do p=1, npls
+            sla(p) = spec_leaf_area (dt(3,p))
+         enddo
+
 
          !!for updating allometry each 30 days
          if (mod(k,30).eq.0) then
@@ -365,8 +374,12 @@ contains
                diam = ((4+(cawood1_pft))/((wood_density)*3.14*40))**(1/(2+0.5))
                height = k_allom2*(diam**k_allom3)
                crown_area = k_allom1*(diam**krp)
+               leaf_area = cleaf1_pft*sla
+               sap_area = leaf_area/kla_sa
+               
+               
                !print*,'diam',diam,'height',height
-               print*,'here',k,'diam', diam(1),height(1),crown_area(1)
+               !print*,'here',k,'diam', diam(1),height(1),crown_area(1)
             endif
          endif
 
