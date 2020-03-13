@@ -363,10 +363,10 @@ contains
          if (mod(k,30).eq.0) then
             if (k.eq.30) then
                diam = ((4+(cawood1_pft))/((wood_density)*3.14*40))**(1/(2+0.5))
-               !height = k_allom2*(diam**k_allom3)
-               !crown_area = k_allom1*(diam**krp)
+               height = k_allom2*(diam**k_allom3)
+               crown_area = k_allom1*(diam**krp)
                !print*,'diam',diam,'height',height
-               print*,'here',k,'diam', diam(1)
+               print*,'here',k,'diam', diam(1),height(1),crown_area(1)
             endif
          endif
 
