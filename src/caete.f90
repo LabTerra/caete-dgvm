@@ -1,4 +1,4 @@
-! Copyright 2017- LabTerra 
+! Copyright 2017- LabTerra
 
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -17,20 +17,20 @@
 module caete
    implicit none
    private
-   
-   public ::  caete_dyn
-   
-contains
-   
-   subroutine caete_dyn(x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
-        &,cleaf_ini,cawood_ini,cfroot_ini,emaxm,tsoil,photo_comm,aresp_comm&
-        &,npp_comm,lai_comm,c_litter,c_soil,het_resp,rcm_comm,f51,runom_comm&
-        &,evapm_comm,wsoil_comm,rm_comm,rg_comm,cleaf_comm,cawood_comm,cfroot_comm&
-        &,grid_area,wue,cue,cdef,wfim,gfim,sfim,dl_final,dw_final,dr_final&
-        &,clf,caf,cff,nitro_min,phop_lab,vcmax,specific_la,nupt,pupt&
-        &,litter_l,cwd,litter_fr,lnr,storage_pool)
 
-      use types
+   public ::  caete_dyn
+
+contains
+
+   subroutine caete_dyn(x,y,run,dt,w0,g0,s0,dcl,dca,dcf,prec,temp,p0,par,rhs&
+      &,cleaf_ini,cawood_ini,cfroot_ini,emaxm,tsoil,photo_comm,aresp_comm&
+      &,npp_comm,lai_comm,c_litter,c_soil,het_resp,rcm_comm,f51,runom_comm&
+      &,evapm_comm,wsoil_comm,rm_comm,rg_comm,cleaf_comm,cawood_comm,cfroot_comm&
+      &,grid_area,wue,cue,cdef,wfim,gfim,sfim,dl_final,dw_final,dr_final&
+      &,clf,caf,cff,nitro_min,phop_lab,vcmax,specific_la,nupt,pupt&
+      &,litter_l,cwd,litter_fr,lnr,storage_pool)
+
+    use types
       use global_par
       use soil_dec, only:  litc   => litter_carbon  ,&
                         &  soic   => soil_carbon    ,&
@@ -50,11 +50,11 @@ contains
       ! integer(i_4), intent(in) :: ndays      ! Number of simulated days
       real(r_4),dimension(ntraits, npls),intent(in) :: dt ! trait table
       real(r_4),dimension(npls),intent(in) :: w0 ! Initial soil water kg m-2
-      real(r_4),dimension(npls),intent(in) :: g0 ! Initial soil ice  
+      real(r_4),dimension(npls),intent(in) :: g0 ! Initial soil ice
       real(r_4),dimension(npls),intent(in) :: s0 ! Initial soil snow
-      
+
       ! podem deixar de ser inputs (chamada de fun ou como parametro global)
-      real(r_4),dimension(npls),intent(in) :: cleaf_ini    ! Initial carbon content in leaves (kg m-2)
+      real(r_4),dimension(3, npls),intent(in) :: cleaf_ini    ! Initial carbon content in leaves (kg m-2)
       real(r_4),dimension(npls),intent(in) :: cawood_ini   ! Initial carbon content in aboveground wood (kg m-2)
       real(r_4),dimension(npls),intent(in) :: cfroot_ini   ! Initial carbon content in fineroots (kg m-2)
 
@@ -67,11 +67,11 @@ contains
       real(r_4),dimension(nt1),intent(in) :: p0         ! entry: Pa; convert to hPa - Atmospheric pressure (mb)
       real(r_4),dimension(nt1),intent(in) :: prec       ! entry: Kg m-2 s-1; convert to mm month-1 - Precipitation (mm/month)
       real(r_4),dimension(nt1),intent(in) :: temp       ! entry: K; convert - Temperature (oC)
-      real(r_4),dimension(nt1),intent(in) :: par        ! entry: RSDS shortwave downward rad. -W m-2; convert - IPAR (Ein/m2/s) molþ m-2 s-1 
+      real(r_4),dimension(nt1),intent(in) :: par        ! entry: RSDS shortwave downward rad. -W m-2; convert - IPAR (Ein/m2/s) molþ m-2 s-1
       real(r_4),dimension(nt1),intent(in) :: rhs        ! entry: %; tranform to ratio (0-1) Relative humidity
 
       ! real(r_4),intent(in) :: n_mineral    ! Initial Mineral Content disponible (kg m-2)
-      ! real(r_4),intent(in) :: p_labile     ! Initial Mineral Content disponible 
+      ! real(r_4),intent(in) :: p_labile     ! Initial Mineral Content disponible
 
       !     -----------------------------E N D-------------------------------
 
@@ -92,36 +92,36 @@ contains
       real(r_8),dimension(nt1),  intent(out) :: evapm_comm    ! Actual evapotranspiration kg m-2 day-1
       real(r_8),dimension(nt1),  intent(out) :: wsoil_comm    ! Soil moisture (kg m-2)
       real(r_8),dimension(nt1),  intent(out) :: wue,cue,cdef ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1; 2 - npp/gpp; 3 - kgC m-2
-      real(r_8),dimension(nt1),  intent(out) :: rm_comm       ! Plant (autotrophic) Maintenance respiration 
+      real(r_8),dimension(nt1),  intent(out) :: rm_comm       ! Plant (autotrophic) Maintenance respiration
       real(r_8),dimension(nt1),  intent(out) :: rg_comm       ! Plant (autotrophic) Growth respiration
       real(r_8),dimension(nt1),  intent(out) :: cleaf_comm    ! leaf biomass (KgC/m2)
       real(r_8),dimension(nt1),  intent(out) :: cawood_comm   ! aboveground wood biomass (KgC/m2)
       real(r_8),dimension(nt1),  intent(out) :: cfroot_comm   ! fine root biomass (KgC/m2)
 
       !  Under construction
-      real(r_4),dimension(nt1),  intent(out) :: nitro_min   ! Nitrogen inorganic pool 
+      real(r_4),dimension(nt1),  intent(out) :: nitro_min   ! Nitrogen inorganic pool
       real(r_4),dimension(nt1),  intent(out) :: phop_lab    ! Phosphorus labile pool
       real(r_4),dimension(nt1),  intent(out) :: vcmax       ! mol m⁻² s⁻¹
       real(r_4),dimension(nt1),  intent(out) :: specific_la ! m²g⁻¹
       real(r_4),dimension(nt1),  intent(out) :: nupt        ! n plant uptake - CWM
-      real(r_4),dimension(nt1),  intent(out) :: pupt        ! p plant uptake - CWM 
+      real(r_4),dimension(nt1),  intent(out) :: pupt        ! p plant uptake - CWM
       real(r_4),dimension(nt1),  intent(out) :: litter_l    ! CWM fluxes from vegetation to soil g m⁻² day⁻¹
       real(r_4),dimension(nt1),  intent(out) :: cwd         ! CWM
       real(r_4),dimension(nt1),  intent(out) :: litter_fr   ! CWM
       real(r_4),dimension(6,nt1),intent(out) :: lnr         ! Litter/Soil nutrient ratios
       real(r_4),dimension(3,nt1),intent(out) :: storage_pool! Rapid Auxiliary daily storage pool for carbon and nutrients
-   
+
       ! COMMUNITY WIDE
-      real(r_4),dimension(npls), intent(out) :: sfim           ! Kg m-2  final day water pools (snow; water; ice) 
+      real(r_4),dimension(npls), intent(out) :: sfim           ! Kg m-2  final day water pools (snow; water; ice)
       real(r_4),dimension(npls), intent(out) :: wfim           ! Kg m-2
       real(r_4),dimension(npls), intent(out) :: gfim           ! Kg m-2
 
       real(r_8),dimension(npls),intent(out) :: grid_area      ! gridcell area fraction of pfts! ratio (0-1)
 
-      real(r_8),dimension(npls),intent(out) :: clf            ! final carbon pools (cveg) for each pft (not scaled to cell area)
-      real(r_8),dimension(npls),intent(out) :: caf            ! KgC m-2 
+      real(r_8),dimension(3, npls),intent(out) :: clf            ! final carbon pools (cveg) for each pft (not scaled to cell area)
+      real(r_8),dimension(npls),intent(out) :: caf            ! KgC m-2
       real(r_8),dimension(npls),intent(out) :: cff
-      
+
       real(r_8),dimension(npls),intent(out) :: dl_final       ! delta(now, last day pool size)
       real(r_8),dimension(npls),intent(out) :: dr_final       ! KgC m-2
       real(r_8),dimension(npls),intent(out) :: dw_final
@@ -130,7 +130,7 @@ contains
 
       !  c     ------------------------- internal variables---------------------
       integer(i_4) :: k, index, nindex
-      real(r_8),dimension(nt1) :: gsoil    !Soil ice kg m-2 
+      real(r_8),dimension(nt1) :: gsoil    !Soil ice kg m-2
       real(r_8),dimension(nt1) :: ssoil    !Soil snow kg m-2
       real(r_8),dimension(nt1) :: snowm    !Snowmelt kg m-2
 
@@ -146,17 +146,17 @@ contains
 
       real(r_4),dimension(npls) :: sini  !kg m-2
       real(r_4),dimension(npls) :: wini  !kg m-2
-      real(r_4),dimension(npls) :: gini  !kg m-2 
+      real(r_4),dimension(npls) :: gini  !kg m-2
 
       real(r_8),dimension(npls) :: dl  ! delta(now, last day pool size)
       real(r_8),dimension(npls) :: dr  !kg m-2
-      real(r_8),dimension(npls) :: dw 
+      real(r_8),dimension(npls) :: dw
 
-      real(r_8),dimension(npls) :: cleaf1_pft   !kg m-2
+      real(r_8),dimension(3,npls) :: cleaf1_pft   !kg m-2
       real(r_8),dimension(npls) :: cawood1_pft  !kg m-2
       real(r_8),dimension(npls) :: cfroot1_pft  !kg m-2
       ! outputs for budget (these variables usualy store monthly values from budget, when the model was stationary)
-      ! Now they catch daily values (community weighted means) coming from budget 
+      ! Now they catch daily values (community weighted means) coming from budget
       real(r_4) :: epmes ! equal for all pfts - potential evapotranspiration(PET)(mm day-1)
       real(r_8),dimension(npls) :: rmes,phmes,smes,rcmes,f5mes
       real(r_8),dimension(npls) :: nppmes,laimes, armes!,_mies,csmes
@@ -164,7 +164,7 @@ contains
       real(r_8),dimension(npls) :: cleafmes,cawoodmes,cfrootmes
       real(r_8),dimension(npls) :: gridocpmes
       real(r_8),dimension(npls) :: wuemes
-      real(r_8),dimension(npls) :: grd 
+      real(r_8),dimension(npls) :: grd
       real(r_4) :: pr,spre,ta,td,ipar,ru
 
       integer(i_4) :: p
@@ -185,7 +185,7 @@ contains
       character(len=9), parameter :: fname = 'pools_din'
       character(len=4), parameter :: fext = '.txt'
 
-      !  END OF DECLARATION 
+      !  END OF DECLARATION
 
 
       ! ### MODEL INITIALIZATION ---------------------
@@ -225,16 +225,16 @@ contains
       ! Inicial mass in pools ()
 
       ! Carbon pools initial values
-      cleaf1_pft =  cleaf_ini    ! Carbon pools
-      cawood1_pft = cawood_ini
-      cfroot1_pft = cfroot_ini
-      
+      cleaf1_pft  = real(cleaf_ini,kind=r_8)    ! Carbon pools
+      cawood1_pft = real(cawood_ini,kind=r_8)
+      cfroot1_pft = real(cfroot_ini,kind=r_8)
+
       ! 'Growth' pools (to be used by growth respiration)
 
-      dl = dcl                   ! Daily Delta in carbon pools 
+      dl = dcl                   ! Daily Delta in carbon pools
       dr = dcf
       dw = dca
-      
+
       ! Soil Waters pools
       wini  = w0  !Soil moisture_initial condition (mm)
       gini  = g0  !Soil ice_initial condition (mm)
@@ -256,12 +256,12 @@ contains
       !82 columns----------------------------------------------------------------------
 
       ! Initialize variables - Internal Variables
-      
+
       cleaf_comm  = 0.0    ! leaf biomass (KgC/m2)
       cawood_comm = 0.0    ! aboveground wood biomass (KgC/m2)
       cfroot_comm = 0.0    ! fine root biomass (KgC/m2)
       grid_area  = 0.0     ! gridcell area fraction of pfts(ratio)
- 
+
       emaxm     =  0.0     ! Maximum evapotranspiration
       photo_comm = 0.0     ! daily photosynthesis (kgC/m2/y)
       aresp_comm = 0.0     ! daily autotrophic respiration (kgC/m2/y)
@@ -278,13 +278,13 @@ contains
       evapm_comm = 0.0     ! Actual evapotranspiration mm/day
       wsoil_comm = 0.0     ! Soil moisture (mm)
       rm_comm    = 0.0     ! Maintenance respiration
-      rg_comm    = 0.0     ! Growth respiration 
+      rg_comm    = 0.0     ! Growth respiration
       wue       = 0.0      ! Water use efficiency (Medlyn et al. 2011 Reconciling...)
       cue       = 0.0      ! Carbon Use efficiency (NPP/GPP)
 
       !  ### End model initialization -------------------------------------------------
 
-      if(debug) then    
+      if(debug) then
          write(1234,*) '--------------------------------'
          write(1234,*) '--part-2-daily loop'
          write(1234,*) '--------------------------------'
@@ -296,7 +296,7 @@ contains
       do k = 1,nt1 ! SUBSTITUTE nt1 for ndays
          if(debug) write(1234,*) '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-LOOP: ', k
 
-         if (k .gt. 1) then 
+         if (k .gt. 1) then
             tsoil(k) = soil_temp(tsoil(k-1), temp(k) - 273.15)
             if(debug) write(1234,*) 'tsoil',tsoil(k), 'loop:', k
          else
@@ -309,8 +309,8 @@ contains
          !    c_litter(:,k)  =litc
          !    c_soil(:,k)    = soic
          ! ! else
-         ! !    c_litter(:,k) = c_litter(:,k-1)     
-         ! !    c_soil(:,k) = c_soil(:,k-1) 
+         ! !    c_litter(:,k) = c_litter(:,k-1)
+         ! !    c_soil(:,k) = c_soil(:,k-1)
          ! endif
          ! ! if(k .eq. 1) then
          ! !    ! if(k .lt. 1e4) then
@@ -318,9 +318,9 @@ contains
          ! !        p_labile = 0.5
          ! !    ! endif
          ! ! endif
-         
+
          ! Converting units
-         td = tsoil(k) 
+         td = tsoil(k)
          spre = p0(k) * 0.01 ! transforamando de Pascal pra mbar (hPa)
          ta = temp(k) - 273.15 ! K to °C
          pr = prec(k) * 86400!2.62974e+06 ! kg m-2 s-1 to mm month-1
@@ -332,7 +332,7 @@ contains
          ! Daily budget
          ! ====================
          ! Variables that I will fill with data in call_daily_budget
-         epmes = 0.0  
+         epmes = 0.0
          wfim = 0.0
          gfim = 0.0
          sfim = 0.0
@@ -364,16 +364,16 @@ contains
               &,specific_la_com,nupt_com,pupt_com,litter_l_com,cwd_com&
               &,litter_fr_com,lnr_com)
 
-         ! SAVE DAILY VALUES 
+         ! SAVE DAILY VALUES
          !82 columns---------------------------------------------------------------
          grd = gridocpmes
          emaxm(k) = epmes
-         ! SOIL WATER 
+         ! SOIL WATER
          gsoil(k)     = real(sum(gfim * grd, mask= .not. isnan(gfim)),r_4)
          ssoil(k)     = real(sum(sfim * grd, mask= .not. isnan(sfim)),r_4)
          wsoil_comm(k) = real(sum(wfim * grd, mask= .not. isnan(wfim)),r_4)
          snowm(k)     = real(sum(smes * grd, mask= .not. isnan(smes)),r_4)
-         runom_comm(k) = real(sum(rmes * grd, mask= .not. isnan(rmes)),r_4)  
+         runom_comm(k) = real(sum(rmes * grd, mask= .not. isnan(rmes)),r_4)
          evapm_comm(k) = real(sum(emes * grd, mask= .not. isnan(emes)),r_4)
          f51(k)       = real(sum(f5mes* grd, mask= .not. isnan(f5mes)),r_4)
          ! PRODUCTIVITY
@@ -387,12 +387,12 @@ contains
          wue(k)       = real(sum(wuemes* grd, mask= .not. isnan(wuemes)),r_4)
          cue(k)       = real(sum(cuemes* grd, mask= .not. isnan(cuemes)),r_4)
          cdef(k)      = real(sum(c_defmes* grd, mask= .not. isnan(c_defmes)),r_4)
-         
+
          ! Physiological traits
          vcmax(k)  = real(sum(vcmax_com* grd, mask= .not. isnan(vcmax_com)),r_4)
          specific_la(k) = real(sum(specific_la_com  * grd,&
               & mask=.not. isnan(specific_la_com)),r_4)
-         
+
          ! nutrient uptake
          nupt(k) = real(sum(nupt_com * grd, mask= .not. isnan(nupt_com)),r_4)
          pupt(k) = real(sum(pupt_com * grd, mask= .not. isnan(pupt_com)),r_4)
@@ -423,7 +423,7 @@ contains
 
          ! UPDATE WATER POOLS
          ! All PLSs receives the same value, the community weighted mean
-         ! This happens to the water and mineral pools, inasmuch as these 
+         ! This happens to the water and mineral pools, inasmuch as these
          ! pools are shared by the community.
 
          t1ww = real(wsoil_comm(k),r_4)
@@ -438,7 +438,7 @@ contains
 
          ! UPDATE Soil Pools
 
-         ! if(run == 0) then 
+         ! if(run == 0) then
          !    call carbon2(td,f51(k),evapm_comm(k),lai_comm(k),&
          !                & litc, soic)
          ! endif
@@ -450,17 +450,17 @@ contains
          litc = c_litter(:,k)
          soic = c_soil(:,k)
 
-         nitro_min(k) = real(n_glob,r_4) ! - (nupt(k) * 1e-3) 
+         nitro_min(k) = real(n_glob,r_4) ! - (nupt(k) * 1e-3)
          phop_lab(k) = real(p_glob,r_4) ! - (pupt(k) * 1e-3)
 
-        
-        ! UPDATE MINERAL POOLS 
+
+        ! UPDATE MINERAL POOLS
         !  n_glob = real(nitro_min(k),r_8)
         !  p_glob = real(phop_lab(k), r_8)
 
          ! UPDATE DELTA CVEG POOLS FOR NEXT ROUND AND/OR LOOP
          ! UPDATE INOUTS
-         dl_final = dl 
+         dl_final = dl
          dr_final = dr
          dw_final = dw
 
@@ -478,7 +478,7 @@ contains
             do npq = 1,npls
                gridocpmes_log(npq) = (gridocpmes(npq) .gt. 0.0)
             enddo
-        
+
             do npq = 1, npls
                gridocpmes_int(npq) = gridocpmes_log(npq)
             enddo
@@ -515,7 +515,7 @@ contains
          endif
 
       enddo ! day_loop(nt1)
-      
+
       ! Change this section to prevent NANs
       clf = cleaf1_pft
       caf = cawood1_pft
@@ -533,16 +533,16 @@ contains
       !    call fill_no_data_8b(aresp_comm, ndays)
       !    call fill_no_data_8b(npp_comm, ndays)
       !    call fill_no_data_8b(lai_comm, ndays)
-         
+
       !    !# loop
       !    ! c_litter has 2 pools
-      !    ! c_soil has 3 pools but the 3rd one is empty (full of zeroes) 
-         
+      !    ! c_soil has 3 pools but the 3rd one is empty (full of zeroes)
+
       !    do nindex = 1, 3
       !       if(nindex < 3) call fill_no_data_4b(c_litter(nindex, :), ndays)
       !       call fill_no_data_4b(c_soil(nindex, :), ndays)
       !    enddo
-         
+
       !    call fill_no_data_4b(het_resp, ndays)
       !    call fill_no_data_8b(rcm_comm, ndays)
       !    call fill_no_data_8b(f51, ndays)
@@ -586,10 +586,10 @@ contains
       endif
 
 1972  format (i12, 18(f15.6),i12)
-   
+
    contains
          subroutine fill_no_data_4b(arr, nd)
-               
+
             use types
             use global_par
 
@@ -597,12 +597,12 @@ contains
             integer(kind=i_4), intent(in) :: nd
 
             arr(nd + 1: nt1) = -9999.0
-            
+
          end subroutine fill_no_data_4b
 
 
          subroutine fill_no_data_8b(arr, nd)
-            
+
             use types
             use global_par
 
@@ -610,7 +610,7 @@ contains
             integer(kind=i_4), intent(in) :: nd
 
             arr(nd + 1: nt1) = -9999.0D0
-            
+
          end subroutine fill_no_data_8b
 
 
@@ -625,7 +625,7 @@ contains
 
          end function cwm
 
-   
+
    end subroutine caete_dyn
 
 end module caete

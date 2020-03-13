@@ -45,26 +45,26 @@ d_at = pls.table_gen(npls)
 
 
 class gridcell_dyn:
-    
+
     """
     Defines the gridcell object - This object stores all the input data,
     the data comming from model runs for each grid point and all the metadata
     describing the life cycle of the gridcell
     """
-    
+
     def __init__(self, x, y):
-    
+
         """Construct the gridcell object"""
-    
+
         # CELL Identifiers
-        self.x = x                            # Grid point x coordinate 
+        self.x = x                            # Grid point x coordinate
         self.y = y                            # Grid point y coordinate
         self.name = str(y) + '-' + str(x)     # Name of the gridcell in the form of 'y-x'
         self.pos = (int(self.x), int(self.y)) # Tuple of (x, y) gridcell position
-        
+
         #TODO
-        self.neighbours = []                  # Neighbours pos of the gridcell 
-        
+        self.neighbours = []                  # Neighbours pos of the gridcell
+
         # Time related attributes and execution control
         #TODO
         self.complete = False   # Indicates if the gridcell already have runs
@@ -79,8 +79,8 @@ class gridcell_dyn:
         self.init_date = None
         self.time_index = None  # Array with the time stamps
         self.calendar = None    # Calendar name
-        self.time_unit = None   # Time unit 
-        self.start_date = None  
+        self.time_unit = None   # Time unit
+        self.start_date = None
         self.end_date = None
 
         # Input data
@@ -144,13 +144,13 @@ class gridcell_dyn:
         self.litter_fr = None
         self.lnr = None
         self.storage_pool = None
-        
-        # TODO 
+
+        # TODO
         # Define the time control system: Storage, Save outputs, flush data from grid - cell - Try to mantain only metadata
         # Let the gridcell object grow but be aware
 
     def init_caete_dyn(self, dt1, name, init_date=None, end_date=None, mode="spinup"):
-        
+
         """ Prepare the gridcell instance for run.
             TODO: Adapt to the dynamics structure
 
@@ -226,7 +226,7 @@ def run_dyn(grd, at=np.copy(d_at)):
     # Include the cut of the time variables
     # def cut_tail(in_array):
     #     return in_array[0:ndays-1]
-    
+
     grd.emaxm = outputs[0]
     grd.tsoil = outputs[1]
     grd.photo = outputs[2]
@@ -252,7 +252,7 @@ def run_dyn(grd, at=np.copy(d_at)):
     grd.wue = outputs[20]
     grd.cue = outputs[21]
     grd.cdef = outputs[22]
-        
+
     grd.wfim = outputs[23]
     grd.gfim = outputs[24]
     grd.sfim = outputs[25]
@@ -309,7 +309,7 @@ def run_dyn(grd, at=np.copy(d_at)):
         grd1.wue = np.hstack((grd1.wue, outputs[20]))
         grd1.cue = np.hstack((grd1.cue, outputs[21]))
         grd1.cdef = np.hstack((grd1.cdef, outputs[22]))
-        
+
         grd1.wfim = outputs[23]
         grd1.gfim = outputs[24]
         grd1.sfim = outputs[25]
@@ -435,7 +435,7 @@ def run_dyn(grd, at=np.copy(d_at)):
     # RUN += int(gp.nt1)
     # spin(grd, RUN)
         # cont_run(grd,RUN)
-# #---------------           
+# #---------------
 
 def model_flush(grd):
     """collect garbage grd"""
@@ -449,7 +449,7 @@ if __name__ == "__main__":
     pass
 
     # Abaixo a implementação do caete estacionário
-    
+
     # if os.path.exists('/home/ecologia/results7'):
     #     pass
     # else:
@@ -470,10 +470,10 @@ if __name__ == "__main__":
     # # classe gridcell (L-579) e depois aplica o modelo a cada uma delas.
     # # Preferi deixar esta classe o mais limpa possível, pois as suans instầncias são modificada em
     # # paralelo e para isso precisam ser pickladas (veja o modulo pickle e também o modulo multiprocessing)
-    
+
     # # Por isso as funções que iniciam e aplicam o modelo a cada instancia de gridcell
     # # não são métodos propriamente ditos e sim, funções que manipulam estas instâncias.
-    
+
     # land_data = []
     # id_n = 0
     # print('init caete --- %d = npls' % npls, end='---> ')
@@ -499,16 +499,16 @@ if __name__ == "__main__":
 
     # # divide land_data when data is too big - npls > i
     # if npls < 5:
-        
+
     #     with mp.Pool(processes=24,maxtasksperchild=20) as p:
     #         result = p.map(rm_apply, land_data)
-            
+
     #     print('\nModelo aplicado a %d localidades-- %d PLSs' % (id_n,npls), end='--->')
     #     print(time.ctime())
 
     #     print('\nCALCULANDO SOMAS', end='--->')
     #     print(time.ctime())
-   
+
     #     #for grd in result:
     #     #    grd_dict(grd)
 
