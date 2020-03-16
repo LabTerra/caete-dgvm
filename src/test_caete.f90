@@ -18,11 +18,11 @@ program test_carbon3
    ! call test_water_function()
 
 
-   ! print *,
-   ! print *,
-   ! print *, "Testing/debugging CARBON3"
+   print *,
+   print *,
+   print *, "Testing/debugging CARBON3"
 
-   !  call test_c3()
+    call test_c3()
 
    ! print *,
    ! print *,
@@ -31,10 +31,10 @@ program test_carbon3
    ! call test_alloc()
 
 
-   print *,
-   print *,
-   print *, "Testing/debugging /Budget/Prod/Allocation"
-   call test_dbudget
+   ! print *,
+   ! print *,
+   ! print *, "Testing/debugging /Budget/Prod/Allocation"
+   ! call test_dbudget
 
 
    contains
@@ -118,16 +118,16 @@ program test_carbon3
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
       real(r_4), dimension(8) :: snr = 0.0, snr_i = 0.0001
       real(r_4) :: hr, nupt, pupt
-      real(r_4) :: avail_p, inorg_n, inorg_p,sorbed_p
+      real(r_4) :: avail_p, inorg_n, inorg_p, sorbed_p, p_defcit, n_defcit
 
       avail_p = 0.0
       inorg_n = 0.0
       inorg_p = 0.0
       sorbed_p = 0.0
-      pupt = 0.2
-      nupt = 0.1
+      pupt = 0.005
+      nupt = 0.001
 
-      do index = 1,10000
+      do index = 1,100
          call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, avail_p, inorg_n, inorg_p,&
          & sorbed_p, cl_out, cs_out, snr, hr)
          do j = 1,2
@@ -135,8 +135,19 @@ program test_carbon3
             cl(j) = cl_out(j)
          enddo
 
-         inorg_n = inorg_n - nupt
-         avail_p = avail_p - pupt
+         if(nupt > inorg_n) then
+            inorg_n = 0.0
+            n_defcit = inorg_n - nupt
+         else
+            inorg_n = inorg_n - nupt
+         endif
+
+         if(pupt > avail_p) then
+            avail_p = 0.0
+            p_defcit = avail_p - pupt
+         else
+            avail_p = avail_p - pupt
+         endif
 
          do j = 1,8
             snr_i(j) = snr(j)
@@ -149,6 +160,8 @@ program test_carbon3
          print *, inorg_n, '<-inn'
          print *, inorg_p, '<-inp'
          print *, sorbed_p,'<-sop'
+         print *, n_defcit, 'minuN'
+         print *, p_defcit, 'minusP'
       end do
 
 

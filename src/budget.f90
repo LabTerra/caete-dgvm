@@ -93,11 +93,11 @@ contains
       real(r_8),intent(out),dimension(npls) :: c_defavg       ! kg(C) m-2
       real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8),intent(out),dimension(npls) :: specific_la    ! m2 g(C)-1
-      real(r_4),intent(out),dimension(4,npls) :: soilc        ! Soil carbon pools (gC m-2)
-      real(r_4),intent(out),dimension(npls) :: inorganic_p
-      real(r_4),intent(out),dimension(npls) :: inorganic_n
-      real(r_4),intent(out),dimension(npls) :: available_p
-      real(r_4),intent(out),dimension(npls) :: sorbed_p
+      real(r_8),intent(out),dimension(8,npls) :: soilc        ! Soil carbon pools (gC m-2)
+      real(r_8),intent(out),dimension(npls) :: inorganic_p
+      real(r_8),intent(out),dimension(npls) :: inorganic_n
+      real(r_8),intent(out),dimension(npls) :: available_p
+      real(r_8),intent(out),dimension(npls) :: sorbed_p
       real(r_8),intent(out),dimension(npls) :: nupt           ! gN m-2 ! Nitrogen uptake
       real(r_8),intent(out),dimension(npls) :: pupt           ! gP m-2 ! Phosphoruns uptake
       real(r_8),intent(out),dimension(npls) :: litter_l       ! gC m-2 ! Litter from leaves
@@ -158,6 +158,7 @@ contains
       real(r_4),dimension(8, npls) :: snr_internal
       real(r_4),dimension(8, npls) :: snr_aux
       real(r_4),dimension(npls) :: in_p, in_n, av_p, so_p
+      real(r_4),dimension(npls) :: av_p_out, in_n_out, in_p_out, so_p_out
 
       real(r_8) :: litter_fr_aux, litter_l_aux, cwd_aux
 
@@ -254,8 +255,8 @@ contains
          if(ca1(p) .lt. 0.0D0) ca1(p) = 0.0D0
       enddo
 
-      print*, ""
-      print *, cl1, "cl1"
+      !print*, ""
+      !print *, cl1, "cl1"
 
 
       do p = 1,npls
@@ -365,7 +366,9 @@ contains
 
          call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux, real(lnr(:,p), r_4), clitter(:,p),&
                   & csoil(:, p), snr_internal(:,p),&
-                  & av_p(p), in_n(p), in_p(p), so_p(p), litter_carbon_bdg(:,p),&
+                  & av_p(p), in_n(p), in_p(p), so_p(p), av_p_out(p),&
+                  & in_n_out(p), in_p_out(p), so_p_out(p),&
+                  & litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
 
 
@@ -431,13 +434,13 @@ contains
          soilc(3:4,p)     = soil_carbon_bdg(:, p)
          nupt(p)          = n_uptake(p)
          pupt(p)          = p_uptake(p)
-         inorganic_p(p)   = in_p(p)
-         inorganic_n(p)   = in_n(p)
-         available_p(p)   = av_p(p)
-         sorbed_p(p)      = so_p(p)
+         inorganic_p(p)   = in_p_out(p)
+         inorganic_n(p)   = in_n_out(p)
+         available_p(p)   = av_p_out(p)
+         sorbed_p(p)      = so_p_out(p)
 
          do index = 1,8
-            snr(index,p)  = snr_internal(index,p)
+            snr(index,p)  = snr_aux(index,p)
          enddo
 
          no_pls_run = .false.
@@ -481,7 +484,7 @@ contains
          endif
 
       enddo ! end pls_loop (p)
-      print *, cl2, "cl2"
+      print *, cl2 - cl1, "minus"
       print*, ""
 
 !      call pft_area_frac(cl1_pft, cf1_pft, ca1_pft, ocp_coeffs2, ocp_wood2)

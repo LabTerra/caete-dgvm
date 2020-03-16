@@ -28,6 +28,9 @@ module soil_dec
    !litter I (1) litter II (2) soilI (3) soil II (4)
    real(r_4), public :: sp_available_p = 0.204299955    ! g m-2 Yang et al., 2013
    real(r_4), public :: sp_available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
+   real(r_4), public :: sp_so_p = 0.0, sp_in_p = 0.0
+   real(r_4), dimension(4), public :: sp_csoil = 0.0
+   real(r_4), dimension(8), public :: sp_snr = 0.0
    !=========================================================================
    ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
    public :: carbon3         ! Subroutine that calculates the C:N:P decay dynamics
@@ -40,8 +43,9 @@ contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
                     &        root_litter, lnr, cl, cs, &
-                    &         snr_in, avail_p, inorg_n, inorg_p,&
-                    &          sorbed_p, cl_out, cs_out, snr, hr)
+                    &        snr_in, avail_p, inorg_n, inorg_p,&
+                    &        sorbed_p, avail_p_out, inorg_p_out,&
+                    &        inorg_n_out, sorbed_p_out, cl_out, cs_out, snr, hr)
 
       real(r_4),parameter :: clit_atm = 0.7
       real(r_4),parameter :: cwd_atm = 0.22
@@ -65,10 +69,16 @@ contains
 
       !     Outputs
       !     -------
-      real(r_4),intent(inout) :: avail_p
-      real(r_4),intent(inout) :: inorg_p                  ! Pool of N biomineralized (gm⁻²)
-      real(r_4),intent(inout) :: inorg_n                  ! Pool of P biomineralized
-      real(r_4),intent(inout) :: sorbed_p                 ! Sorbed P - Secondary Mineral P
+      real(r_4),intent(in) :: avail_p
+      real(r_4),intent(in) :: inorg_p                  ! Pool of N biomineralized (gm⁻²)
+      real(r_4),intent(in) :: inorg_n                  ! Pool of P biomineralized
+      real(r_4),intent(in) :: sorbed_p                 ! Sorbed P - Secondary Mineral P
+
+      real(r_4),intent(out) :: avail_p_out
+      real(r_4),intent(out) :: inorg_p_out
+      real(r_4),intent(out) :: inorg_n_out
+      real(r_4),intent(out) :: sorbed_p_out
+
       real(r_4),dimension(pl),intent(out) :: cl_out       ! g(C)m⁻² State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(out) :: cs_out       ! State Variable -> The size of the carbon pools
       real(r_4),dimension(8), intent(out) :: snr          ! Updated Soil pools Nutrient to C ratios
@@ -285,18 +295,18 @@ contains
          if (index .gt. 4) snr(index) = aux_ratio_p(index-4)
       end do
 
-      ! UPDATE INORGANIC POOLS
-      if (inorg_p .lt. 0.0) inorg_p = 0.0
-      if (inorg_n .lt. 0.0) inorg_n = 0.0
-      if (avail_p .lt. 0.0) avail_p = 0.0
+      ! ! UPDATE INORGANIC POOLS
+      ! if (inorg_p .lt. 0.0) inorg_p = 0.0
+      ! if (inorg_n .lt. 0.0) inorg_n = 0.0
+      ! if (avail_p .lt. 0.0) avail_p = 0.0
 
-      inorg_n =  inorg_n + sum(nutri_min_n, mask=.not.isnan(nutri_min_n))
+      inorg_n_out =  inorg_n + sum(nutri_min_n, mask=.not.isnan(nutri_min_n))
       ! BNF
       ! INLCUDE SORPTION DYNAMICS
 
-      inorg_p = inorg_p + sum(nutri_min_p, mask=.not.isnan(nutri_min_p))
-      sorbed_p = sorbed_p_equil(inorg_p)
-      avail_p = inorg_p - sorbed_p
+      inorg_p_out = inorg_p + sum(nutri_min_p, mask=.not.isnan(nutri_min_p))
+      sorbed_p_out = sorbed_p_equil(inorg_p)
+      avail_p_out = avail_p + inorg_p - sorbed_p
 
 
 
