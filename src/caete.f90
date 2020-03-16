@@ -182,6 +182,8 @@ contains
       real(r_4),dimension(npls) :: sla !Specific Leaf Area (m2 gC-1) TO BE VARIABLE IN FUTURE DEVELOPMENT
       real(r_8),dimension(npls) :: leaf_area !Leaf Area (m2) (Seiler et al., 2014 (eq. 4))
       real(r_8),dimension(npls) :: sap_area !sapwood cross sectional area (m2) (Sitch et al., 2003)
+      !real(r_8),dimension(npls) :: lai !Leaf Area Index of a PLS (unitless)
+      real(r_8),dimension(npls) :: num_ind !calculates the number of individuals per PLS (Smith, 2001 [thesis]/SELFTHINNING HYPOTESIS 
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -363,25 +365,36 @@ contains
          c_defmes = 0.0
          
          ! Calcular SLA
-         do p=1, npls
+         do p = 1, npls
             sla(p) = spec_leaf_area (dt(3,p))
+
          enddo
+
+         ! Calcular LAI - USA O LAI_COMM DIRETO??????
+         !use types, only: r_4, r_8
+         !do p = 1, npls
+            !lai(p) = leaf_area_index (dt(3,p))
+            !print*, 'lai', lai(2), lai(3)
+         !enddo
 
 
          !!for updating allometry each 30 days
          if (mod(k,30).eq.0) then
-            if (k.eq.30) then
+            if (k.eq.30) then  
                diam = ((4+(cawood1_pft))/((wood_density)*3.14*40))**(1/(2+0.5))
                height = k_allom2*(diam**k_allom3)
                crown_area = k_allom1*(diam**krp)
                leaf_area = cleaf1_pft*sla
                sap_area = leaf_area/kla_sa
+               num_ind = diam**(-1.6) !coloco aqui mesmo ou em outra parte do cód.???
+
+               print*, 'num_ind', num_ind (2), num_ind (3)
                
-               
-               !print*,'diam',diam,'height',height
-               !print*,'here',k,'diam', diam(1),height(1),crown_area(1)
             endif
          endif
+
+         !!FOR LAYERS - COMPETITION DYNAMIC
+         
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&

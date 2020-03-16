@@ -91,7 +91,7 @@ contains
       real(r_8) :: lai
 
 
-      lai  = cleaf * 1000. * sla  ! Converts cleaf from (KgC m-2) to (gCm-2)
+      lai  = cleaf * 1000.0 * sla  ! Converts cleaf from (KgC m-2) to (gCm-2)
 
 
    end function leaf_area_index
