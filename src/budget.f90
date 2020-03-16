@@ -112,7 +112,7 @@ contains
 
     real(r_8),dimension(npls) :: ocp_mm
     real(r_8),dimension(npls) :: ocp_coeffs !,ocp_coeffs2
-    logical(l_1),dimension(npls) :: ocp_wood !, ocp_wood2
+    logical(l_1),dimension(npls) :: ocp_wood !, ocp_wood2 - 
 
 !     WBM COMMUNICATION (water balance)
     real(r_4) :: psnow                !Snowfall (mm/day)

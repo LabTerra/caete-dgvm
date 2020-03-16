@@ -184,6 +184,10 @@ contains
       real(r_8),dimension(npls) :: sap_area !sapwood cross sectional area (m2) (Sitch et al., 2003)
       !real(r_8),dimension(npls) :: lai !Leaf Area Index of a PLS (unitless)
       real(r_8),dimension(npls) :: num_ind !calculates the number of individuals per PLS (Smith, 2001 [thesis]/SELFTHINNING HYPOTESIS 
+      real(r_8) :: max_height !the heighest PLS (m)
+      real(r_8) :: num_layer !calculates the layer number (on the max_height). The number of 5 layers was decided in a meeting
+      integer(i_4) :: num_layer_int !transfor to num_layer in integer
+      
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -380,20 +384,30 @@ contains
 
          !!for updating allometry each 30 days
          if (mod(k,30).eq.0) then
-            if (k.eq.30) then  
+            if (k.eq.30) then  !JUST FOR PRINTING VALUES DELETE AFTER
                diam = ((4+(cawood1_pft))/((wood_density)*3.14*40))**(1/(2+0.5))
                height = k_allom2*(diam**k_allom3)
                crown_area = k_allom1*(diam**krp)
                leaf_area = cleaf1_pft*sla
                sap_area = leaf_area/kla_sa
-               num_ind = diam**(-1.6) !coloco aqui mesmo ou em outra parte do cód.???
-
-               
+               num_ind = diam**(-1.6) 
+      
             endif
+         endif
+         
+         max_height = maxval(height)
+         !print*, 'max_height', max_height
+         
+         num_layer = max_height/5
+         num_layer_int = nint(num_layer)
+
+         if (k.eq.84) then !printing for one day
+
+            print*, 'num_layer', num_layer_int
+
          endif
 
          !!FOR LAYERS - COMPETITION DYNAMIC
-         
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
