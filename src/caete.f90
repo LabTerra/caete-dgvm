@@ -388,7 +388,6 @@ contains
                sap_area = leaf_area/kla_sa
                num_ind = diam**(-1.6) !coloco aqui mesmo ou em outra parte do cód.???
 
-               print*, 'num_ind', num_ind (2), num_ind (3)
                
             endif
          endif
