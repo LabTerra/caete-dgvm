@@ -42,7 +42,7 @@ contains
    real(r_4), intent(in) :: w                    !Soil moisture kg m-2
    real(r_4), intent(in) :: ipar                 !Incident photosynthetic active radiation (w/m2)
    real(r_4), intent(in) :: rh,emax !Relative humidity/MAXIMUM EVAPOTRANSPIRATION
-   real(r_8), dimension(3),intent(in) :: cl1_prod
+   real(r_8), dimension(3),intent(in) :: cl1_prod   !total carbon in each cohort
    real(r_8), intent(in) :: cf1_prod, ca1_prod        !Carbon in plant tissues (kg/m2)
    real(r_8), intent(in) :: beta_leaf            !npp allocation to carbon pools (kg/m2/day)
    real(r_8), intent(in) :: beta_awood
@@ -63,9 +63,10 @@ contains
    real(r_4), intent(out) :: rg
    real(r_4), intent(out) :: wue
    real(r_4), intent(out) :: c_defcit     ! Carbon deficit gm-2 if it is positive, aresp was greater than npp + sto2(1)
-   real(r_8), intent(out) :: sla          !specific leaf area (m2/kg)
+   real(r_8), intent(out) :: sla          ! specific leaf area (m2/kg)
    real(r_8), intent(out) :: vm_out
    real(r_8), dimension(3), intent(out) :: sto2
+   real(r_8), dimension(3), intent(out) :: carbon_ratio_cohort  ! Proportion of each cohort in relation to the total carbon (KgC/m2)
 !     Internal
 !     --------
 
@@ -87,6 +88,7 @@ contains
    real(r_4), dimension(3) :: age_limits, leaf_age
    real(r_4), dimension(3) :: penalization_by_age
    real(r_4):: age_crit
+   real(r_8):: cl_total     ! carbon sum of all the cohots (kg/m2)
    integer(i_4) :: i
 
 
@@ -129,7 +131,14 @@ contains
       penalization_by_age(i) = leaf_age_factor(umol_penalties(i), age_crit, leaf_age(i))
    enddo
 
+   ! Obtain total carbon of the cohorts
+   cl_total = sum(cl1_prod(i))
 
+   do i = 1, 3
+      carbon_ratio_cohort(i) = penalization_by_age(i) / cl_total
+   enddo 
+
+   
    n2cl = real(n2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! N in leaf g m-2
    p2cl = real(p2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! P in leaf g m-2
    c4_int = nint(c4)
