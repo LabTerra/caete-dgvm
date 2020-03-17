@@ -426,14 +426,6 @@ contains
             print*, "layer size", layer_size
          endif
 
-         !size_layer_couting = 0.0  
-
-            !do (p=1,12)
-               !size_layer_couting = size_layer_couting + layer_size
-               !print*, 'size_layer_cout', size_layer_couting
-
-            !enddo
-
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
