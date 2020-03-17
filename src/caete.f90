@@ -175,7 +175,7 @@ contains
       real(r_8) :: aux_var0_0x29a = nodata
       real(r_8) :: aux_var0_0x29b = nodata
 
-      !allometry (internal variable just for testing)
+      !Allometry and Light Competition (internal variable just for testing)
       real(r_8),dimension(npls) :: diam !stem diameter (m) (Smith et al 2001 - SP material)
       real(r_8),dimension(npls) :: height !height (m) (Sitch et al., 2003)
       real(r_8),dimension(npls) :: crown_area !crown_area (m2) (Sitch et al., 2003)
@@ -187,7 +187,11 @@ contains
       real(r_8) :: max_height !the heighest PLS (m)
       real(r_8) :: num_layer !calculates the layer number (on the max_height). The number of 5 layers was decided in a meeting
       integer(i_4) :: num_layer_int !transfor to num_layer in integer
-      
+      real(r_8) :: layer_size !Calculates the size os layers (m)
+      integer(i_4) :: layer_size_int !Transform to layer_size in integer number
+      real(r_8),allocatable,dimension(:) :: size_layer_couting !Receive values (allocatable) and initialize the counter for creating a list with the size of all layers
+      !integer(i_4) :: i
+
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
       logical(l_1),dimension(npls) :: gridocpmes_log
@@ -306,6 +310,7 @@ contains
       !     ======================
       !     START TIME INTEGRATION
       !     ======================
+      
       do k = 1,nt1 ! SUBSTITUTE nt1 for ndays
          if(debug) write(1234,*) '-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-LOOP: ', k
 
@@ -395,6 +400,15 @@ contains
             endif
          endif
          
+         !LIGHT COMPETITION LOGIC   
+         !====================================================
+         ! The logic about dynamic to light competition
+         ! includes dividing the grid-cell by layers that
+         ! are formed from different heights of the PLS and
+         ! will influence the amount of light received by 
+         ! each PLS.
+         ! ====================================================
+
          max_height = maxval(height)
          !print*, 'max_height', max_height
          
@@ -402,12 +416,24 @@ contains
          num_layer_int = nint(num_layer)
 
          if (k.eq.84) then !printing for one day
-
             print*, 'num_layer', num_layer_int
-
          endif
 
-         !!FOR LAYERS - COMPETITION DYNAMIC
+         layer_size = max_height/num_layer_int
+         !layer_size_int = nint(layer_size)
+
+         if (k.eq.84) then !printing for one day
+            print*, "layer size", layer_size
+         endif
+
+         !size_layer_couting = 0.0  
+
+            !do (p=1,12)
+               !size_layer_couting = size_layer_couting + layer_size
+               !print*, 'size_layer_cout', size_layer_couting
+
+            !enddo
+
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
