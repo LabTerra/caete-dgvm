@@ -39,7 +39,7 @@ module global_par
    real(r_4),parameter,public :: ca = 363.0                      ! ppmv - atm[CO2]
    real(r_4),parameter,public :: wmax = 500.0                    ! Maximum water soil capacity (Kg m-2)
    real(r_4),parameter,public :: tsnow = -1.0          
-   real(r_4),parameter,public :: tice  = -2.5       
+   real(r_4),parameter,public :: tice  = -2.5      
    real(r_8),parameter,public :: csru = 0.5D0                    ! Root attribute
    real(r_8),parameter,public :: alfm = 1.391D0                  ! Root attribute
    real(r_8),parameter,public :: gm = 3.26D0 * 86400D0           ! (*86400 transform s/mm to dia/mm)
@@ -53,6 +53,7 @@ module global_par
    integer(i_4),parameter,public :: ntraits = 15                 ! Number of traits for each PLS
    logical(l_1),parameter,public :: debug = .false.              ! Logical variables - For model debug and development
    logical(l_1),parameter,public :: text_ts = .true.
+
 
 end module global_par
 
