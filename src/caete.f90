@@ -39,6 +39,7 @@ module caete
       use water, only : soil_temp, soil_temp_sub
       use budget, only : daily_budget
       use soil_dec
+      use soil_pools
 
       !     --------------------------I N P U T S----------------------------
 

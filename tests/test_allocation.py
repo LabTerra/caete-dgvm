@@ -35,7 +35,7 @@ def print_alloc(trait):
     #   real(r_8),dimension(6),intent(out) :: litter_nutrient_ratios ! [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
     #   logical(l_1), intent(out) :: end_pls_day ! ABORT MISSION SIGN
 
-    nmin = 0.5000000000000  # g m-2
+    nmin = 0.3000000000000  # g m-2
     plab = 0.3000000000000  # g m-2
     l_init = 0.01  # Kg m-2
     r_init = 0.01  # Kg m-2

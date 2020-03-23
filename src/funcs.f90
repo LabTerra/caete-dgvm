@@ -1241,8 +1241,8 @@ contains
       ! N resorbed goes to storage pool
       storage_out(2) = aux1 + aux2 + aux3         ! g(N) m-2
 
-      ! QUEPORRA E ESSA?
-      aux1 =  (leaf_litter * leaf_n2c) - aux1    !nitrogen in litter
+      ! UPDATE
+      aux1 =  (leaf_litter * leaf_n2c) - aux1    ! g(N) m-2 nitrogen in litter
       aux2 =  (root_litter * froot_n2c) - aux2
       if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_n2c) - aux3
@@ -1303,7 +1303,7 @@ contains
 
       storage_out(3) = aux1 + aux2 + aux3
 
-      aux1 =  (leaf_litter * leaf_p2c) - aux1    !nitrogen in litter
+      aux1 =  (leaf_litter * leaf_p2c) - aux1
       aux2 =  (root_litter * froot_p2c) - aux2
       if(aawood .gt. 0.0D0) then
          aux3 = (cwd * awood_p2c) - aux3

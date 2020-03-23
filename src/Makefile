@@ -16,7 +16,7 @@ INTERFACES = $(MODNAME).pyf
 FCFLAGS = -g -Wall -Wextra -fcheck=all -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,underflow -fbacktrace -fbounds-check -Wconversion -pedantic
 
-sources = global.f90 utils.f90 funcs.f90 soil_dec.f90 productivity.f90 budget.f90 caete.f90
+sources = global.f90 utils.f90 funcs.f90 soil_pools.f90 soil_dec.f90 productivity.f90 budget.f90 caete.f90
 
 objects = global.o utils.o funcs.o soil_dec.o productivity.o budget.o test_caete.o
 

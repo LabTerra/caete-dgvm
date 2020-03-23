@@ -17,28 +17,22 @@ module soil_dec
 
    use types
    use global_par
-
+   use soil_pools
    implicit none
-   private
 
-
-   ! CONSTANTS FOR CARBON DECAY
    ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
-   real(r_4), dimension(4) :: tr_c = (/2.0, 15.0, 150.0, 3000.0/)
-   !litter I (1) litter II (2) soilI (3) soil II (4)
-   real(r_4), public :: sp_available_p = 0.204299955    ! g m-2 Yang et al., 2013
-   real(r_4), public :: sp_available_n = 0.30775999     ! g m-2 Xu et al. 2013 ?
-   real(r_4), public :: sp_so_p = 0.0, sp_in_p = 0.0
-   real(r_4), dimension(4), public :: sp_csoil = 0.0
-   real(r_4), dimension(8), public :: sp_snr = 0.0
+   real(r_4), dimension(4) :: tr_c = (/10.0, 100.0, 1000.0, 1000.0/)
    !=========================================================================
    ! FUNCTIONS AND SUBROUTINES DEFINED IN SOIL_DEC MODULE
-   public :: carbon3         ! Subroutine that calculates the C:N:P decay dynamics
-   public :: carbon_decay    ! Carbon decay function in response to Temperarute
-   public :: water_effect    ! Soil water content effect on C decay
-   public :: sorbed_p_equil  ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
-   public :: bnf             ! Biological Nitrogen Fixation
-
+   public :: carbon3          ! Subroutine that calculates the C:N:P decay dynamics
+   public :: carbon_decay     ! Carbon decay function in response to Temperarute
+   public :: water_effect     ! Soil water content effect on C decay
+   public :: sorbed_p_equil   ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
+   public :: bnf              ! Biological Nitrogen Fixation
+   ! TODO
+   ! public :: am_acivity       ! Arbuscular Micorrizal activity (Generate an output)
+   ! public :: ptase_activity   ! Acivity of PTASE mediated by plant inputs of C
+   ! public :: exudte_ activity ! Desorption of P from plant exudation of C
 contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
@@ -60,10 +54,12 @@ contains
       real(r_8),intent(in) :: leaf_litter
       real(r_8),intent(in) :: coarse_wd
       real(r_8),intent(in) :: root_litter            ! Mass of C comming from living pools g(C)m⁻²
+      ! (lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)
       real(r_4),dimension(6),intent(in) :: lnr       ! g(Nutrient) g(C)⁻¹ Incoming Nutrient Ratios
 
       real(r_4),dimension(pl),intent(in) :: cl       ! Litter carbon (gC/m2) State Variable -> The size of the carbon pools
       real(r_4),dimension(ps),intent(in) :: cs       ! Soil carbon (gC/m2)   State Variable -> The size of the carbon pools
+     ! Soil Nutrient Ratios :: variables(8)            [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
       real(r_4),dimension(8), intent(in) :: snr_in   ! Current soil nutrient ratios
       !real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
 
@@ -113,15 +109,13 @@ contains
       real(r_4),dimension(8) :: snr_aux
 
       !Auxiliary variables
-      real(r_4) :: aux1, aux2, aux3, aux4
+      real(r_4) :: c_next_pool, n_next_pool, p_next_pool
+      real(r_4) :: n_min_resp_lit, p_min_resp_lit
+      real(r_4) :: incomming_c_lit, incomming_n_lit, incomming_p_lit
+      real(r_4) :: update_c, update_n, update_p
       real(r_4) :: leaf_l, cwd, root_l, total_litter  ! Mass of C comming from living pools g(C)m⁻²
 
-
       ! START
-      leaf_l = real(leaf_litter, r_4)
-      cwd    = real(coarse_wd, r_4)
-      root_l = real(root_litter, r_4)
-
       nutri_min_n = 0.0
       nutri_min_p = 0.0
       aux_ratio_n = 0.0
@@ -130,18 +124,15 @@ contains
       frac1 = 0.95
       frac2 = 1.0 - frac1
 
+
+!     ! CARBON AND NUTRIENTS COMMING FROM VEGETATION
+
+      leaf_l = real(leaf_litter, r_4)
+      cwd    = real(coarse_wd, r_4)
+      root_l = real(root_litter, r_4)
+
       ! Soil Nutrient Ratios structure:
       ! [ 1(l1n2c),2(l2n2c),3(c1dn2c),4(c2n2c),5(l1p2c),6(l2p2c),7(c1p2c),8(c2p2c)]
-
-      ! Soil Nutrient Ratios to output: Set to 0.0
-      snr = 0.0
-
-      ! Soil Nutrient ratios and organic nutrients g m-2
-      do  i = 1,8
-         snr_aux(i) = snr_in(i)
-         if(isnan(snr_in(i))) snr_aux(i) = 0.0D0
-         if(snr_in(i) .eq. snr_in(i) - 1.0D0) snr_aux(i) = 0.0D0
-      enddo
 
       ! find nutrient mass/area) : litter fluxes[ML⁻²] * litter nutrient ratios
       ! (lnr) [MM⁻¹]
@@ -152,23 +143,19 @@ contains
       froot_p = root_l * lnr(5)
       wood_p  = cwd    * lnr(6)
 
-      ! FIRST OF ALL calculate dacay from pools
-      ! CARBON DECAY
-      water_modifier = water_effect(water_sat)
-      do index = 1,4
-         if(index .lt. 3) then
-            ! FOR THE 2 LITTER POOLS
-            cdec(index) = carbon_decay(q10,tsoil,cl(index),tr_c(index)) * water_modifier
-         else
-            ! FOR THE 3 CARBON POOLS
-            cdec(index) = carbon_decay(q10,tsoil,cs(index-2),tr_c(index)) * water_modifier
-         endif
-      enddo
 
       ! C:N:P CYCLING NUMERICAL SOLUTION
-
-
       ! ORGANIC NUTRIENTS in SOIL
+      ! Soil Nutrient Ratios to output: Set to 0.0
+      snr = 0.0
+
+      ! Soil Nutrient ratios and organic nutrients g m-2
+      do  i = 1,8
+         snr_aux(i) = snr_in(i)
+         if(isnan(snr_in(i))) snr_aux(i) = 0.0
+         if(snr_in(i) .eq. snr_in(i) - 1.0) snr_aux(i) = 0.0
+      enddo
+
       nmass_org(1) = snr_aux(1) * cl(1)                                      ! g(N)m-2
       nmass_org(2) = snr_aux(2) * cl(2)
       nmass_org(3) = snr_aux(3) * cs(1)
@@ -181,134 +168,266 @@ contains
 
       total_litter = leaf_l + root_l + cwd                                   ! g m-2
 
+      ! CARBON DECAY
+      water_modifier = water_effect(water_sat)
+      do index = 1,4
+         if(index .lt. 3) then
+            ! FOR THE 2 LITTER POOLS
+            cdec(index) = carbon_decay(q10,tsoil,cl(index),tr_c(index)) * water_modifier
+         else
+            ! FOR THE 3 CARBON POOLS
+            cdec(index) = carbon_decay(q10,tsoil,cs(index-2),tr_c(index)) * water_modifier
+         endif
+      enddo
+
       !LITTER I
-      aux1 = (frac1 * leaf_l) + (frac1 * root_l)                             ! INcoming Carbon from vegetation g m-2
-      aux2 = cdec(1) * clit_atm                                              ! processed (dacayed) Carbon lost to ATM
-      aux3 = cdec(1) - aux2                                                  ! Carbon going to cl_out(2) (next pool)
-      cl_out(1) = (cl(1) - cdec(1)) + aux1                                   ! Update Litter Carbon 1
-      het_resp(1) = aux2                                                     ! Heterotrophic respiration
-      aux4 = aux3                                                            ! Carbon going to the next pool
-      pl_nitrogen(1) = nmass_org(1) + (leaf_n * frac1) + (froot_n * frac1)   ! Calculate the organic N/P pool
-      pl_phosphorus(1) = pmass_org(1) + (leaf_p * frac1) + (froot_p * frac1) ! g(N/P)m-2
-      nmass_org(1) = pl_nitrogen(1)                                          ! Update Organic N pool
-      pmass_org(1) = pl_phosphorus(1)                                        ! Update Organic P pool
+      cl_out(1) = cl(1) - cdec(1)                                          ! Update Litter Carbon 1
+
+      ! Mineralization
+      ! C
+      ! Release od CO2
+      het_resp(1) = cdec(1) * clit_atm                                       ! Heterotrophic respiration ! processed (dacayed) Carbon lost to ATM
+      ! Carbon going to LITTER 2
+      c_next_pool = cdec(1) - het_resp(1)                                    ! Carbon going to cl_out(2) (next pool)
+
+      ! N
+      ! N mineralized by the release of CO2
+      n_min_resp_lit = het_resp(1) * snr_aux(1)
+      ! N going to the LITTER II
+      n_next_pool =  c_next_pool * snr_aux(1)
+
+      ! UPDATE N in Organic MAtter Litter I
+      nmass_org(1) = nmass_org(1) - (n_min_resp_lit + n_next_pool)
+
+      ! UPDATE THE INORGANIC N POOL
+      inorg_n_out = inorg_n + n_min_resp_lit
+      n_min_resp_lit = 0.0
+
+      ! P
+      ! P mineralized by the release of CO2
+      p_min_resp_lit = het_resp(1) * snr_aux(5)
+      ! P going to the next pool
+      p_next_pool = c_next_pool * snr_aux(5)
+
+      ! UPDATE P in Organic MAtter LITTER I
+      pmass_org(1) = pmass_org(1) - (p_min_resp_lit + p_next_pool)
+      ! UPDATE THE INORGANIC N POOL
+      inorg_p_out = inorg_p + p_min_resp_lit
+      p_min_resp_lit = 0.0
+      ! END OF MINERALIZATION PROCESS
+
+      ! UPDATE CNP ORGANIC POOLS
+      ! C
+      incomming_c_lit = (frac1 * leaf_l) + (frac1 * root_l)                  ! INcoming Carbon from vegetation g m-2
+      cl_out(1) = cl_out(1) + incomming_c_lit
+      !N
+      incomming_n_lit = (frac1 * leaf_n) + (frac1 * froot_n)                 ! Iincoming N
+      nmass_org(1) = nmass_org(1) + incomming_n_lit
+      !P
+      incomming_p_lit = (frac1 * leaf_p) + (frac1 * froot_p)                 ! Incoming P
+      pmass_org(1) = pmass_org(1) + incomming_p_lit
+
+      ! UPDATE SNR
+      snr(1) = nmass_org(1) / cl_out(1)
+      snr(5) = pmass_org(1) / cl_out(1)
+      ! END LITTER 1
+
+      ! CLEAN AUX VARIABLES
+      incomming_c_lit = 0.0
+      incomming_n_lit = 0.0
+      incomming_p_lit = 0.0
+      update_c = c_next_pool
+      c_next_pool = 0.0
+      update_n = n_next_pool
+      n_next_pool = 0.0
+      update_p = p_next_pool
+      p_next_pool = 0.0
+
 
       ! LITTER II
-      aux1 = (frac2 * leaf_l) + (frac2 * root_l) + (cwd * frac2) + aux4         ! Incoming Carbon
-      aux2 = cdec(2) * clit_atm                                                 ! C to ATM
-      aux3 = cdec(2) - aux2                                                     ! C going to csoil(1)
-      cl_out(2) = (cl(2) - cdec(2)) + aux1                                      ! Update Litter Carbon 2
-      het_resp(2) = aux2                                                        ! Heterotrophic respiration
-      aux4 = aux3                                                               ! Carbon going to the next pool
-      pl_nitrogen(2) = nmass_org(2) + (leaf_n * frac2) + (froot_n * frac2)&     ! Calculate the organic N/P pool
-                        & + (wood_n *frac2)
-      pl_phosphorus(2) = pmass_org(2) + (leaf_p * frac2) + (froot_p * frac2)&   ! g(N/P)m-2
-                        & + (wood_p*frac2)
-      nmass_org(2) = pl_nitrogen(2)                                             ! Update Organic N pool
-      pmass_org(2) = pl_phosphorus(2)                                           ! Update Organic P pool
+      cl_out(2) = cl(2) - cdec(2)
+
+      ! Mineralization
+      ! C
+      ! Release od CO2
+      het_resp(2) = cdec(2) * clit_atm                                       ! Heterotrophic respiration ! processed (dacayed) Carbon lost to ATM
+      ! Carbon going to SOIL I
+      c_next_pool = cdec(2) - het_resp(2)                                    ! Carbon going to cl_out(2) (next pool)
+
+      ! N
+      ! N mineralized by the release of CO2
+      n_min_resp_lit = het_resp(2) * snr_aux(2)
+      ! N going to the SOIL I
+      n_next_pool =  c_next_pool * snr_aux(2)
+      ! UPDATE N in Organic MAtter LITTER 2
+      nmass_org(2) = nmass_org(2) - (n_min_resp_lit + n_next_pool)
+      ! UPDATE THE INORGANIC N POOL
+      inorg_n_out = inorg_n_out + n_min_resp_lit
+      n_min_resp_lit = 0.0
+
+      ! P
+      ! P mineralized by the release of CO2
+      p_min_resp_lit = het_resp(2) * snr_aux(6)
+      ! P going to the next pool SOIL I
+      p_next_pool = c_next_pool * snr_aux(6)
+
+      ! UPDATE P ORGANIC POOL KITTER 2
+      pmass_org(2) = pmass_org(2) - (p_min_resp_lit + p_next_pool)
+      ! UPDATE THE INORGANIC N POOL
+      inorg_p_out = inorg_p_out + p_min_resp_lit
+      p_min_resp_lit = 0.0
+      ! END OF MINERALIZATION PROCESS
+
+            ! UPDATE CNP ORGANIC POOLS
+      ! C
+      incomming_c_lit = (frac2 * leaf_l) + (frac2 * root_l)                  ! INcoming Carbon from vegetation g m-2
+      cl_out(2) = cl_out(2) + incomming_c_lit + update_c
+      update_c = 0.0
+      !N
+      incomming_n_lit = (frac2 * leaf_n) + (frac2 * froot_n)                 ! Iincoming N
+      nmass_org(2) = nmass_org(2) + incomming_n_lit + update_n
+      update_n = 0.0
+      !P
+      incomming_p_lit = (frac2 * leaf_p) + (frac2 * froot_p)                 ! Incoming P
+      pmass_org(2) = pmass_org(2) + incomming_p_lit + update_p
+      update_p = 0.0
+
+      ! UPDATE SNR
+      snr(2) = nmass_org(2) / cl_out(2)
+      snr(6) = pmass_org(2) / cl_out(2)
+      ! END LITTER II
+
+      ! CLEAN AUX VARIABLES
+      incomming_c_lit = 0.0
+      incomming_n_lit = 0.0
+      incomming_p_lit = 0.0
+      update_c = c_next_pool
+      c_next_pool = 0.0
+      update_n = n_next_pool
+      n_next_pool = 0.0
+      update_p = p_next_pool
+      p_next_pool = 0.0
 
       !SOIL I The same steps commented for the litter pools
-      aux1 = (frac1 * cwd) + aux4                             ! Incoming Carbon
-      aux2 = cdec(3) * cwd_atm                                ! C to ATM
-      aux3 = cdec(3) - aux2                                   ! C to csoil(2)
-      cs_out(1) = (cs(1) - cdec(3)) + aux1                    ! Update Soil Carbon 1
-      het_resp(3) = aux2                                      ! Het resp
-      aux4 = aux3                                             ! Carbon going to the next pool
-      ps_nitrogen(1) = nmass_org(3) + (wood_n * frac1)        ! Calculate the organic N/P pool
-      ps_phosphorus(1) = pmass_org(3) + (wood_p * frac1)      ! g(N/P)m-2
 
-      !Before update Organic pools - Transfer some nutrients to the last pool (0.2%)
-      aux1 = 0.002 * ps_nitrogen(1)
-      nmass_org(3) = ps_nitrogen(1) - aux1                     ! Update Organic N pool
-      aux2 = 0.002 * ps_phosphorus(1)
-      pmass_org(3) = ps_phosphorus(1) - aux2                         ! Update Organic P pool
+      cs_out(1) = cs(1) - cdec(3)
 
+      ! Mineralization
+      ! C
+      ! Release od CO2
+      het_resp(3) = cdec(3) * clit_atm                                       ! Heterotrophic respiration ! processed (dacayed) Carbon lost to ATM
+      ! Carbon going to SOIL 2
+      c_next_pool = cdec(3) - het_resp(3)
+
+      ! N
+      ! N mineralized by the release of CO2
+      n_min_resp_lit = het_resp(3) * snr_aux(3)
+      ! N going to the SOIL II
+      n_next_pool =  c_next_pool * snr_aux(3)
+      ! UPDATE N in Organic MAtter SOIL I
+      nmass_org(3) = nmass_org(3) - (n_min_resp_lit + n_next_pool)
+      ! UPDATE THE INORGANIC N POOL
+      inorg_n_out = inorg_n_out + n_min_resp_lit
+      n_min_resp_lit = 0.0
+
+      ! P
+      ! P mineralized by the release of CO2
+      p_min_resp_lit = het_resp(3) * snr_aux(7)
+      ! P going to the next pool
+      p_next_pool = c_next_pool * snr_aux(7)
+      pmass_org(3) = pmass_org(3) - (p_min_resp_lit + p_next_pool)
+      ! UPDATE THE INORGANIC N POOL
+      inorg_p_out = inorg_p_out + p_min_resp_lit
+      p_min_resp_lit = 0.0
+      ! END OF MINERALIZATION PROCESS
+
+      ! UPDATE CNP ORGANIC POOLS
+      ! C
+      incomming_c_lit = 0.0                  ! INcoming Carbon from vegetation g m-2
+      cs_out(1) = cs_out(1) + incomming_c_lit + update_c
+      update_c = 0.0
+      !N
+      incomming_n_lit = 0.0                 ! Iincoming N
+      nmass_org(3) = nmass_org(3) + incomming_n_lit + update_n
+      update_n = 0.0
+      !P
+      incomming_p_lit = 0.0                 ! Incoming P
+      pmass_org(3) = pmass_org(3) + incomming_p_lit + update_p
+      update_p = 0.0
+
+      ! UPDATE SNR
+      snr(3) = nmass_org(3) / cs_out(1)
+      snr(7) = pmass_org(3) / cs_out(1)
+      ! END SOIL 1
+
+      ! CLEAN AUX VARIABLES
+      incomming_c_lit = 0.0
+      incomming_n_lit = 0.0
+      incomming_p_lit = 0.0
+      update_c = c_next_pool
+      c_next_pool = 0.0
+      update_n = n_next_pool
+      n_next_pool = 0.0
+      update_p = p_next_pool
+      p_next_pool = 0.0
 
       !SOIL II
-      het_resp(4) = cdec(4) * cwd_atm            ! C to atm
-      cs_out(2) = cs(2) - het_resp(4) + aux4     ! Aux 4 is the carbon comming from preceding pool
+      cs_out(2) = cs(2) - cdec(4)
 
-      ps_nitrogen(2) = nmass_org(4) + aux1
-      ps_phosphorus(2) = pmass_org(4) + aux2
+      ! Mineralization
+      ! C
+      ! Release od CO2
+      het_resp(4) = cdec(4)                                       ! Heterotrophic respiration ! processed (dacayed) Carbon lost to ATM
+      ! Carbon going to SOIL 2
 
-      nmass_org(4) = ps_nitrogen(2)
-      pmass_org(4) = ps_phosphorus(2)
+      ! N
+      ! N mineralized by the release of CO2
+      n_min_resp_lit = het_resp(4) * snr_aux(4)
+      ! UPDATE N in Organic MAtter SOIL II
+      nmass_org(4) = nmass_org(4) - n_min_resp_lit
+      ! UPDATE THE INORGANIC N POOL
+      inorg_n_out = inorg_n_out + n_min_resp_lit
+      n_min_resp_lit = 0.0
 
-      ! THIS SECTION - Mineralized nutrients =====================================================
-      ! The amounts of Minerilized nutrients are dependent on N:C and P:C mass ratios of soil pools
+      ! P
+      ! P mineralized by the release of CO2
+      p_min_resp_lit = het_resp(4) * snr_aux(8)
+      ! UPDATE ORGANIC P POOL SOIL II
+      pmass_org(4) = pmass_org(4) - p_min_resp_lit
+      ! UPDATE THE INORGANIC N POOL
+      inorg_p_out = inorg_p_out + p_min_resp_lit
+      p_min_resp_lit = 0.0
+      ! END OF MINERALIZATION PROCESS
 
-      ! update NUTRIENT RATIOS in SOIL
-      do index = 1,4
-         if(index .lt. 3) then
-            aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1
-            aux_ratio_p(index) = pmass_org(index) / cl_out(index) ! g(P)g(C)-1
-         else
-            if (cs_out(index-2) .le. 0.0) then
-               aux_ratio_n(index) = 0.0
-            else
-               aux_ratio_n(index) = nmass_org(index) / cs_out(index-2) ! g(N)g(C)-1
-            endif
-            if (cs_out(index-2) .le. 0.0) then
-               aux_ratio_p(index) = 0.0
-            else
-                aux_ratio_p(index) = pmass_org(index) / cs_out(index-2) ! g(P)g(C)-1
-            endif
-         endif
-      enddo
+      ! UPDATE CNP ORGANIC POOLS
+      ! C
+      incomming_c_lit = 0.0                  ! INcoming Carbon from vegetation g m-2
+      cs_out(2) = cs_out(2) + incomming_c_lit + update_c
+      update_c = 0.0
+      !N
+      incomming_n_lit = 0.0                 ! Iincoming N
+      nmass_org(4) = nmass_org(4) + incomming_n_lit + update_n
+      update_n = 0.0
+      !P
+      incomming_p_lit = 0.0                 ! Incoming P
+      pmass_org(4) = pmass_org(4) + incomming_p_lit + update_p
+      update_p = 0.0
 
+      ! UPDATE SNR
+      snr(4) = nmass_org(4) / cs_out(2)
+      snr(8) = pmass_org(4) / cs_out(2)
 
-      ! USE NUTRIENT RATIOS AND HET_RESP TO CALCULATE MINERALIZED NUTRIENTS
-      do index=1,4
-         nutri_min_n(index) = het_resp(index) * aux_ratio_n(index)
-         nutri_min_p(index) = het_resp(index) * aux_ratio_p(index)
-      enddo
+      ! FINAL CALCULATIONS
 
-      ! UPDATE N and P ORGANIC in SOIL POOLS
-      do index=1,4
-         nmass_org(index) = nmass_org(index) - nutri_min_n(index)
-         pmass_org(index) = pmass_org(index) - nutri_min_p(index)
-      enddo
-
-      ! Recalculate SNR
-      ! update NUTRIENT RATIOS in SOIL
-      do index = 1,4
-         if(index .lt. 3) then
-            aux_ratio_n(index) = nmass_org(index) / cl_out(index) ! g(N)g(C)-1
-            aux_ratio_p(index) = pmass_org(index) / cl_out(index) ! g(P)g(C)-1
-         else
-            if (cs_out(index-2) .le. 0.0) then
-               aux_ratio_n(index) = 0.0
-            else
-               aux_ratio_n(index) = nmass_org(index) / cs_out(index-2) ! g(N)g(C)-1
-            endif
-            if (cs_out(index-2) .le. 0.0) then
-               aux_ratio_p(index) = 0.0
-            else
-                aux_ratio_p(index) = pmass_org(index) / cs_out(index-2) ! g(P)g(C)-1
-            endif
-         endif
-      enddo
-
-      ! ! OUTPUT SOIL NUTRIENT RATIOS
-      do index = 1,8
-         if (index .lt. 5) snr(index) = aux_ratio_n(index)
-         if (index .gt. 4) snr(index) = aux_ratio_p(index-4)
-      end do
-
-      ! ! UPDATE INORGANIC POOLS
-      ! if (inorg_p .lt. 0.0) inorg_p = 0.0
-      ! if (inorg_n .lt. 0.0) inorg_n = 0.0
-      ! if (avail_p .lt. 0.0) avail_p = 0.0
-
-      inorg_n_out =  inorg_n + sum(nutri_min_n, mask=.not.isnan(nutri_min_n))
       ! BNF
-      ! INLCUDE SORPTION DYNAMICS
+      inorg_n_out = inorg_n_out + bnf(0.0)
 
-      inorg_p_out = inorg_p + sum(nutri_min_p, mask=.not.isnan(nutri_min_p))
-      sorbed_p_out = sorbed_p_equil(inorg_p)
-      avail_p_out = avail_p + inorg_p - sorbed_p
+      ! INORGANIC P DYNAMICS
 
+      sorbed_p_out = sorbed_p_equil(inorg_p_out)
 
+      ! Include PTASE AND EXUDATES HERE
+      avail_p_out = inorg_p_out - sorbed_p_out
 
       hr = sum(het_resp)
 
