@@ -28,6 +28,7 @@ module soil_dec
    public :: carbon_decay     ! Carbon decay function in response to Temperarute
    public :: water_effect     ! Soil water content effect on C decay
    public :: sorbed_p_equil   ! Fucntion that caculates the equilibrium between Mineralized P and Sorbed P
+   public :: solution_p_equil
    public :: bnf              ! Biological Nitrogen Fixation
    ! TODO
    ! public :: am_acivity       ! Arbuscular Micorrizal activity (Generate an output)
@@ -37,9 +38,9 @@ contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
                     &        root_litter, lnr, cl, cs, &
-                    &        snr_in, avail_p, inorg_n, inorg_p,&
-                    &        sorbed_p, avail_p_out, inorg_p_out,&
-                    &        inorg_n_out, sorbed_p_out, cl_out, cs_out, snr, hr)
+                    &        snr_in, avail_p, inorg_n, inorg_p, sorbed_p,&
+                    &        avail_p_out, inorg_n_out,&
+                    &        inorg_p_out, sorbed_p_out, cl_out, cs_out, snr, hr)
 
       real(r_4),parameter :: clit_atm = 0.7
       real(r_4),parameter :: cwd_atm = 0.22
@@ -63,16 +64,16 @@ contains
       real(r_4),dimension(8), intent(in) :: snr_in   ! Current soil nutrient ratios
       !real(r_4),intent(in) :: nupt, pupt             ! Nitrogen Uptake; Phosphorus Uptake (g m⁻² day⁻¹)
 
-      !     Outputs
+      !     Output
       !     -------
       real(r_4),intent(in) :: avail_p
-      real(r_4),intent(in) :: inorg_p                  ! Pool of N biomineralized (gm⁻²)
-      real(r_4),intent(in) :: inorg_n                  ! Pool of P biomineralized
-      real(r_4),intent(in) :: sorbed_p                 ! Sorbed P - Secondary Mineral P
+      real(r_4),intent(in) :: inorg_n                  ! Pool of N biomineralized (gm⁻²)
+      real(r_4),intent(in) :: inorg_p                  ! Pool of P biomineralized
+      real(r_4),intent(in) :: sorbed_p
 
       real(r_4),intent(out) :: avail_p_out
-      real(r_4),intent(out) :: inorg_p_out
       real(r_4),intent(out) :: inorg_n_out
+      real(r_4),intent(out) :: inorg_p_out
       real(r_4),intent(out) :: sorbed_p_out
 
       real(r_4),dimension(pl),intent(out) :: cl_out       ! g(C)m⁻² State Variable -> The size of the carbon pools
@@ -83,14 +84,6 @@ contains
       real(r_4),dimension(4) :: nmass_org = 0.0
       real(r_4),dimension(4) :: pmass_org = 0.0
 
-      !real(r_4),dimension(4) :: soil_nr    ! Soil pools Nutrient Ratios (2N + 2P)
-      !real(r_4),dimension(4) :: litt_nr    ! litter pools Nutrient Ratios (2N + 2P)
-      !TODO ! Insert output: Total mineralized N and P
-      !INTERNAL VARIABLES
-      real(r_4),dimension(pl) :: pl_nitrogen = 0.0   ! Nitrogênio da serapilheira -
-      real(r_4),dimension(pl) :: pl_phosphorus = 0.0 ! FORFI do serapilheira
-      real(r_4),dimension(ps) :: ps_nitrogen = 0.0   ! & so forth
-      real(r_4),dimension(ps) :: ps_phosphorus = 0.0
 
       real(r_4) :: leaf_n  ! Mass of Nutrients in MO comming from Vegetation  g(Nutrient) m⁻²
       real(r_4) :: froot_n
@@ -104,8 +97,6 @@ contains
       real(r_4) :: frac1,frac2    ! Constants for litter partitioning
 
       real(r_4),dimension(pl+ps) :: het_resp, cdec
-      real(r_4),dimension(pl+ps) :: aux_ratio_n, aux_ratio_p
-      real(r_4),dimension(pl+ps) :: nutri_min_n, nutri_min_p
       real(r_4),dimension(8) :: snr_aux
 
       !Auxiliary variables
@@ -115,13 +106,7 @@ contains
       real(r_4) :: update_c, update_n, update_p
       real(r_4) :: leaf_l, cwd, root_l, total_litter  ! Mass of C comming from living pools g(C)m⁻²
 
-      ! START
-      nutri_min_n = 0.0
-      nutri_min_p = 0.0
-      aux_ratio_n = 0.0
-      aux_ratio_p = 0.0
-
-      frac1 = 0.95
+      frac1 = 0.75
       frac2 = 1.0 - frac1
 
 
@@ -152,8 +137,8 @@ contains
       ! Soil Nutrient ratios and organic nutrients g m-2
       do  i = 1,8
          snr_aux(i) = snr_in(i)
-         if(isnan(snr_in(i))) snr_aux(i) = 0.0
-         if(snr_in(i) .eq. snr_in(i) - 1.0) snr_aux(i) = 0.0
+         ! if(isnan(snr_in(i))) snr_aux(i) = 0.0
+         ! if(snr_in(i) .eq. snr_in(i) - 1.0) snr_aux(i) = 0.0
       enddo
 
       nmass_org(1) = snr_aux(1) * cl(1)                                      ! g(N)m-2
@@ -212,24 +197,33 @@ contains
       ! UPDATE P in Organic MAtter LITTER I
       pmass_org(1) = pmass_org(1) - (p_min_resp_lit + p_next_pool)
       ! UPDATE THE INORGANIC N POOL
-      inorg_p_out = inorg_p + p_min_resp_lit
+      inorg_p_out = (inorg_p + avail_p + sorbed_p) + p_min_resp_lit
       p_min_resp_lit = 0.0
       ! END OF MINERALIZATION PROCESS
 
       ! UPDATE CNP ORGANIC POOLS
       ! C
-      incomming_c_lit = (frac1 * leaf_l) + (frac1 * root_l)                  ! INcoming Carbon from vegetation g m-2
+      incomming_c_lit = (frac1 * leaf_l) + (frac1 * root_l) + (frac1 * cwd)                  ! INcoming Carbon from vegetation g m-2
       cl_out(1) = cl_out(1) + incomming_c_lit
       !N
-      incomming_n_lit = (frac1 * leaf_n) + (frac1 * froot_n)                 ! Iincoming N
+      incomming_n_lit = (frac1 * leaf_n) + (frac1 * froot_n) + (frac1 * wood_n)                 ! Iincoming N
       nmass_org(1) = nmass_org(1) + incomming_n_lit
       !P
-      incomming_p_lit = (frac1 * leaf_p) + (frac1 * froot_p)                 ! Incoming P
+      incomming_p_lit = (frac1 * leaf_p) + (frac1 * froot_p) + (frac1 * wood_p)                 ! Incoming P
       pmass_org(1) = pmass_org(1) + incomming_p_lit
 
       ! UPDATE SNR
-      snr(1) = nmass_org(1) / cl_out(1)
-      snr(5) = pmass_org(1) / cl_out(1)
+      if (cl_out(1) .le. 0.0) then
+         snr(1) = 0.0
+         snr(5) = 0.0
+         inorg_n_out = inorg_n_out + nmass_org(1)
+         nmass_org(1) = 0.0
+         inorg_p_out = inorg_p_out + pmass_org(1)
+         pmass_org(1) = 0.0
+      else
+         snr(1) = nmass_org(1) / cl_out(1)
+         snr(5) = pmass_org(1) / cl_out(1)
+      endif
       ! END LITTER 1
 
       ! CLEAN AUX VARIABLES
@@ -278,23 +272,32 @@ contains
       p_min_resp_lit = 0.0
       ! END OF MINERALIZATION PROCESS
 
-            ! UPDATE CNP ORGANIC POOLS
+      ! UPDATE CNP ORGANIC POOLS
       ! C
-      incomming_c_lit = (frac2 * leaf_l) + (frac2 * root_l)                  ! INcoming Carbon from vegetation g m-2
+      incomming_c_lit = (frac2 * leaf_l) + (frac2 * root_l) + (frac2 * cwd)                  ! INcoming Carbon from vegetation g m-2
       cl_out(2) = cl_out(2) + incomming_c_lit + update_c
       update_c = 0.0
       !N
-      incomming_n_lit = (frac2 * leaf_n) + (frac2 * froot_n)                 ! Iincoming N
+      incomming_n_lit = (frac2 * leaf_n) + (frac2 * froot_n) + (frac2 * wood_n)                 ! Iincoming N
       nmass_org(2) = nmass_org(2) + incomming_n_lit + update_n
       update_n = 0.0
       !P
-      incomming_p_lit = (frac2 * leaf_p) + (frac2 * froot_p)                 ! Incoming P
+      incomming_p_lit = (frac2 * leaf_p) + (frac2 * froot_p) + (frac2 * wood_p)                 ! Incoming P
       pmass_org(2) = pmass_org(2) + incomming_p_lit + update_p
       update_p = 0.0
 
       ! UPDATE SNR
-      snr(2) = nmass_org(2) / cl_out(2)
-      snr(6) = pmass_org(2) / cl_out(2)
+      if (cl_out(2) .le. 0.0) then
+         snr(2) = 0.0
+         snr(6) = 0.0
+         inorg_n_out = inorg_n_out + nmass_org(2)
+         nmass_org(2) = 0.0
+         inorg_p_out = inorg_p_out + pmass_org(2)
+         pmass_org(2) = 0.0
+      else
+         snr(2) = nmass_org(2) / cl_out(2)
+         snr(6) = pmass_org(2) / cl_out(2)
+      endif
       ! END LITTER II
 
       ! CLEAN AUX VARIABLES
@@ -356,9 +359,17 @@ contains
       update_p = 0.0
 
       ! UPDATE SNR
-      snr(3) = nmass_org(3) / cs_out(1)
-      snr(7) = pmass_org(3) / cs_out(1)
-      ! END SOIL 1
+      if (cs_out(1) .le. 0.0) then
+         snr(3) = 0.0
+         snr(7) = 0.0
+         inorg_n_out = inorg_n_out + nmass_org(3)
+         nmass_org(3) = 0.0
+         inorg_p_out = inorg_p_out + pmass_org(3)
+      else
+         snr(3) = nmass_org(3) / cs_out(1)
+         snr(7) = pmass_org(3) / cs_out(1)
+      endif
+         ! END SOIL 1
 
       ! CLEAN AUX VARIABLES
       incomming_c_lit = 0.0
@@ -413,9 +424,19 @@ contains
       pmass_org(4) = pmass_org(4) + incomming_p_lit + update_p
       update_p = 0.0
 
+
       ! UPDATE SNR
-      snr(4) = nmass_org(4) / cs_out(2)
-      snr(8) = pmass_org(4) / cs_out(2)
+      if (cs_out(2) .le. 0.0) then
+         snr(4) = 0.0
+         snr(8) = 0.0
+         inorg_n_out = inorg_n_out + nmass_org(4)
+         nmass_org(4) = 0.0
+         inorg_p_out = inorg_p_out + pmass_org(4)
+      else
+         snr(4) = nmass_org(4) / cs_out(2)
+         snr(8) = pmass_org(4) / cs_out(2)
+      endif
+
 
       ! FINAL CALCULATIONS
 
@@ -423,11 +444,11 @@ contains
       inorg_n_out = inorg_n_out + bnf(0.0)
 
       ! INORGANIC P DYNAMICS
-
       sorbed_p_out = sorbed_p_equil(inorg_p_out)
+      avail_p_out = solution_p_equil(inorg_p_out)
 
       ! Include PTASE AND EXUDATES HERE
-      avail_p_out = inorg_p_out - sorbed_p_out
+      inorg_p_out = inorg_p_out -(avail_p_out + sorbed_p_out)
 
       hr = sum(het_resp)
 
@@ -474,6 +495,13 @@ contains
       retval = arg * ks
    end function sorbed_p_equil
 
+   function solution_p_equil(arg) result(retval)
+
+      real(r_4), intent(in) :: arg
+      real(r_4) :: retval
+
+      retval = arg * 0.1
+   end function solution_p_equil
 
    function bnf(c_amount) result(n_amount)
 

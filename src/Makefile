@@ -18,7 +18,7 @@ FLFLAGS = -c -g -Wall -fcheck=all -Wextra -ffpe-trap=invalid,zero,overflow,under
 
 sources = global.f90 utils.f90 funcs.f90 soil_pools.f90 soil_dec.f90 productivity.f90 budget.f90 caete.f90
 
-objects = global.o utils.o funcs.o soil_dec.o productivity.o budget.o test_caete.o
+objects = global.o utils.o funcs.o soil_pools.o soil_dec.o productivity.o budget.o test_caete.o
 
 test: $(objects)
 	$(SO_BUILD)
@@ -60,6 +60,12 @@ photo.mod: funcs.o funcs.f90
 
 water.mod: funcs.o funcs.f90
 	$(FC) $(FLFLAGS) funcs.f90
+
+soil_pools.o: soil_pools.f90
+	$(FC) $(FLFLAGS) soil_pools.f90
+
+soil_pools.mod: soil_pools.o soil_pools.f90
+	$(FC) $(FLFLAGS) soil_pools.f90
 
 soil_dec.o: soil_dec.f90
 	$(FC) $(FLFLAGS) soil_dec.f90

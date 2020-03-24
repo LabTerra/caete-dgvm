@@ -277,7 +277,6 @@ contains
 
          !     Carbon/Nitrogen/Phosphorus allocation/deallocation
          !     =====================================================
-         if(cl1(p) .lt. 0.0) cl1(p) = 0
 
          call allocation (dt1, nppa(p), in_n(p), av_p(p), cl1(p), ca1(p)&
               &,cf1(p), sto_budg(:,p), day_storage(:,p), cl2(p), ca2(p)&
@@ -365,8 +364,8 @@ contains
          ! endif
 
          call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux, real(lnr(:,p), r_4), clitter(:,p),&
-                  & csoil(:, p), snr_internal(:,p),&
-                  & av_p(p), in_n(p), in_p(p), so_p(p), av_p_out(p),&
+                  & csoil(:, p), snr_internal(:,p),av_p(p),&
+                  & in_n(p), in_p(p), so_p(p),av_p_out(p),&
                   & in_n_out(p), in_p_out(p), so_p_out(p),&
                   & litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
