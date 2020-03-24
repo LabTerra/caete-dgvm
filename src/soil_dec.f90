@@ -81,7 +81,11 @@ contains
       real(r_4),dimension(8), intent(out) :: snr          ! Updated Soil pools Nutrient to C ratios
       real(r_4),intent(out) :: hr                         ! Heterotrophic (microbial) respiration (gC/m2/day)
 
-      real(r_4),dimension(4) :: nmass_org = 0.0
+
+
+      !Auxiliary variables
+
+      real(r_4),dimension(4) :: nmass_org = 0.0 ! Mass of nutrients in ORGANIC POOLS
       real(r_4),dimension(4) :: pmass_org = 0.0
 
 
@@ -93,25 +97,22 @@ contains
       real(r_4) :: wood_p
 
       real(r_4) :: water_modifier ! Multiplicator for water influence on C decay
-
       real(r_4) :: frac1,frac2    ! Constants for litter partitioning
-
       real(r_4),dimension(pl+ps) :: het_resp, cdec
       real(r_4),dimension(8) :: snr_aux
 
-      !Auxiliary variables
       real(r_4) :: c_next_pool, n_next_pool, p_next_pool
       real(r_4) :: n_min_resp_lit, p_min_resp_lit
       real(r_4) :: incomming_c_lit, incomming_n_lit, incomming_p_lit
       real(r_4) :: update_c, update_n, update_p
       real(r_4) :: leaf_l, cwd, root_l, total_litter  ! Mass of C comming from living pools g(C)m⁻²
 
-      frac1 = 0.75
+      snr = 0.0
+      frac1 = 0.95
       frac2 = 1.0 - frac1
 
 
 !     ! CARBON AND NUTRIENTS COMMING FROM VEGETATION
-
       leaf_l = real(leaf_litter, r_4)
       cwd    = real(coarse_wd, r_4)
       root_l = real(root_litter, r_4)
@@ -131,25 +132,20 @@ contains
 
       ! C:N:P CYCLING NUMERICAL SOLUTION
       ! ORGANIC NUTRIENTS in SOIL
-      ! Soil Nutrient Ratios to output: Set to 0.0
-      snr = 0.0
+
 
       ! Soil Nutrient ratios and organic nutrients g m-2
-      do  i = 1,8
-         snr_aux(i) = snr_in(i)
-         ! if(isnan(snr_in(i))) snr_aux(i) = 0.0
-         ! if(snr_in(i) .eq. snr_in(i) - 1.0) snr_aux(i) = 0.0
-      enddo
 
-      nmass_org(1) = snr_aux(1) * cl(1)                                      ! g(N)m-2
-      nmass_org(2) = snr_aux(2) * cl(2)
-      nmass_org(3) = snr_aux(3) * cs(1)
-      nmass_org(4) = snr_aux(4) * cs(2)
 
-      pmass_org(1) = snr_aux(5) * cl(1)                                      ! g(P)m-2
-      pmass_org(2) = snr_aux(6) * cl(2)
-      pmass_org(3) = snr_aux(7) * cs(1)
-      pmass_org(4) = snr_aux(8) * cs(2)
+      nmass_org(1) = snr_in(1) * cl(1)                                      ! g(N)m-2
+      nmass_org(2) = snr_in(2) * cl(2)
+      nmass_org(3) = snr_in(3) * cs(1)
+      nmass_org(4) = snr_in(4) * cs(2)
+
+      pmass_org(1) = snr_in(5) * cl(1)                                      ! g(P)m-2
+      pmass_org(2) = snr_in(6) * cl(2)
+      pmass_org(3) = snr_in(7) * cs(1)
+      pmass_org(4) = snr_in(8) * cs(2)
 
       total_litter = leaf_l + root_l + cwd                                   ! g m-2
 
@@ -177,9 +173,9 @@ contains
 
       ! N
       ! N mineralized by the release of CO2
-      n_min_resp_lit = het_resp(1) * snr_aux(1)
+      n_min_resp_lit = het_resp(1) * snr_in(1)
       ! N going to the LITTER II
-      n_next_pool =  c_next_pool * snr_aux(1)
+      n_next_pool =  c_next_pool * snr_in(1)
 
       ! UPDATE N in Organic MAtter Litter I
       nmass_org(1) = nmass_org(1) - (n_min_resp_lit + n_next_pool)
@@ -190,9 +186,9 @@ contains
 
       ! P
       ! P mineralized by the release of CO2
-      p_min_resp_lit = het_resp(1) * snr_aux(5)
+      p_min_resp_lit = het_resp(1) * snr_in(5)
       ! P going to the next pool
-      p_next_pool = c_next_pool * snr_aux(5)
+      p_next_pool = c_next_pool * snr_in(5)
 
       ! UPDATE P in Organic MAtter LITTER I
       pmass_org(1) = pmass_org(1) - (p_min_resp_lit + p_next_pool)
@@ -250,9 +246,9 @@ contains
 
       ! N
       ! N mineralized by the release of CO2
-      n_min_resp_lit = het_resp(2) * snr_aux(2)
+      n_min_resp_lit = het_resp(2) * snr_in(2)
       ! N going to the SOIL I
-      n_next_pool =  c_next_pool * snr_aux(2)
+      n_next_pool =  c_next_pool * snr_in(2)
       ! UPDATE N in Organic MAtter LITTER 2
       nmass_org(2) = nmass_org(2) - (n_min_resp_lit + n_next_pool)
       ! UPDATE THE INORGANIC N POOL
@@ -261,9 +257,9 @@ contains
 
       ! P
       ! P mineralized by the release of CO2
-      p_min_resp_lit = het_resp(2) * snr_aux(6)
+      p_min_resp_lit = het_resp(2) * snr_in(6)
       ! P going to the next pool SOIL I
-      p_next_pool = c_next_pool * snr_aux(6)
+      p_next_pool = c_next_pool * snr_in(6)
 
       ! UPDATE P ORGANIC POOL KITTER 2
       pmass_org(2) = pmass_org(2) - (p_min_resp_lit + p_next_pool)
@@ -324,9 +320,9 @@ contains
 
       ! N
       ! N mineralized by the release of CO2
-      n_min_resp_lit = het_resp(3) * snr_aux(3)
+      n_min_resp_lit = het_resp(3) * snr_in(3)
       ! N going to the SOIL II
-      n_next_pool =  c_next_pool * snr_aux(3)
+      n_next_pool =  c_next_pool * snr_in(3)
       ! UPDATE N in Organic MAtter SOIL I
       nmass_org(3) = nmass_org(3) - (n_min_resp_lit + n_next_pool)
       ! UPDATE THE INORGANIC N POOL
@@ -335,9 +331,9 @@ contains
 
       ! P
       ! P mineralized by the release of CO2
-      p_min_resp_lit = het_resp(3) * snr_aux(7)
+      p_min_resp_lit = het_resp(3) * snr_in(7)
       ! P going to the next pool
-      p_next_pool = c_next_pool * snr_aux(7)
+      p_next_pool = c_next_pool * snr_in(7)
       pmass_org(3) = pmass_org(3) - (p_min_resp_lit + p_next_pool)
       ! UPDATE THE INORGANIC N POOL
       inorg_p_out = inorg_p_out + p_min_resp_lit
@@ -393,7 +389,7 @@ contains
 
       ! N
       ! N mineralized by the release of CO2
-      n_min_resp_lit = het_resp(4) * snr_aux(4)
+      n_min_resp_lit = het_resp(4) * snr_in(4)
       ! UPDATE N in Organic MAtter SOIL II
       nmass_org(4) = nmass_org(4) - n_min_resp_lit
       ! UPDATE THE INORGANIC N POOL
@@ -402,7 +398,7 @@ contains
 
       ! P
       ! P mineralized by the release of CO2
-      p_min_resp_lit = het_resp(4) * snr_aux(8)
+      p_min_resp_lit = het_resp(4) * snr_in(8)
       ! UPDATE ORGANIC P POOL SOIL II
       pmass_org(4) = pmass_org(4) - p_min_resp_lit
       ! UPDATE THE INORGANIC N POOL
@@ -442,13 +438,21 @@ contains
 
       ! BNF
       inorg_n_out = inorg_n_out + bnf(0.0)
+      if(inorg_n_out .lt. 0.0) inorg_n_out = 0.0
 
       ! INORGANIC P DYNAMICS
-      sorbed_p_out = sorbed_p_equil(inorg_p_out)
-      avail_p_out = solution_p_equil(inorg_p_out)
+      if(inorg_p_out .lt. 0.0) then
+         sorbed_p_out = 0.0
+         avail_p_out = 0.0
+         inorg_p_out = 0.0
+      else
+         sorbed_p_out = sorbed_p_equil(inorg_p_out)
+         avail_p_out = solution_p_equil(inorg_p_out)
 
-      ! Include PTASE AND EXUDATES HERE
-      inorg_p_out = inorg_p_out -(avail_p_out + sorbed_p_out)
+         ! Include PTASE AND EXUDATES HERE
+         inorg_p_out = inorg_p_out -(avail_p_out + sorbed_p_out)
+
+      endif
 
       hr = sum(het_resp)
 
