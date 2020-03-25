@@ -139,6 +139,7 @@ contains
    enddo 
 
    
+   
    n2cl = real(n2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! N in leaf g m-2
    p2cl = real(p2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! P in leaf g m-2
    c4_int = nint(c4)
