@@ -93,7 +93,7 @@ contains
       real(r_8),intent(out),dimension(npls) :: c_defavg       ! kg(C) m-2
       real(r_8),intent(out),dimension(npls) :: vcmax          ! µmol m-2 s-1
       real(r_8),intent(out),dimension(npls) :: specific_la    ! m2 g(C)-1
-      real(r_8),intent(out),dimension(8,npls) :: soilc        ! Soil carbon pools (gC m-2)
+      real(r_8),intent(out),dimension(4,npls) :: soilc        ! Soil carbon pools (gC m-2)
       real(r_8),intent(out),dimension(npls) :: inorganic_p
       real(r_8),intent(out),dimension(npls) :: inorganic_n
       real(r_8),intent(out),dimension(npls) :: available_p
@@ -363,17 +363,13 @@ contains
          !    call abort
          ! endif
 
-         call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux, real(lnr(:,p), r_4), clitter(:,p),&
+         call carb3(ts, w(p)/wmax, litter_l_aux, cwd_aux, litter_fr_aux,&
+                  & real(lnr(:,p), r_4), clitter(:,p),&
                   & csoil(:, p), snr_internal(:,p),av_p(p),&
-                  & in_n(p), in_p(p), so_p(p),av_p_out(p),&
+                  & in_n(p), in_p(p), so_p(p), av_p_out(p),&
                   & in_n_out(p), in_p_out(p), so_p_out(p),&
                   & litter_carbon_bdg(:,p),&
                   & soil_carbon_bdg(:,p), snr_aux(:,p), het_resp(p))
-
-
-
-         !in_n(p) = in_n(p) - real(n_uptake(p), r_4)
-         !av_p(p) = av_p(p) - real(p_uptake(p), r_4)
 
          do index = 1,8
             snr_internal(index,p) = snr_aux(index,p)

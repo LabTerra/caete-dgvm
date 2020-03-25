@@ -17,7 +17,6 @@ module soil_dec
 
    use types
    use global_par
-   use soil_pools
    implicit none
 
    ! Turnover Rates  == residence_time⁻¹ (years⁻¹)
@@ -37,8 +36,8 @@ module soil_dec
 contains
 
    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
-                    &        root_litter, lnr, cl, cs, &
-                    &        snr_in, avail_p, inorg_n, inorg_p, sorbed_p,&
+                    &        root_litter, lnr, cl, cs, snr_in,&
+                    &        avail_p, inorg_n, inorg_p, sorbed_p,&
                     &        avail_p_out, inorg_n_out,&
                     &        inorg_p_out, sorbed_p_out, cl_out, cs_out, snr, hr)
 

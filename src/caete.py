@@ -225,8 +225,7 @@ def run_dyn(grd, at=np.copy(d_at)):
     # & av_p_init, so_p_init, dcl, dca, dcf, prec, temp, p0, par, rhs,&
     # & cleaf_ini, cawood_ini, cfroot_ini
 
-    outputs = model.caete_dyn(grd.x, grd.y, RUN, at, w0, g0, s0, grd.csoil, grd.snr, grd.inorg_p,
-                              grd.inorg_n, grd.avail_p, grd.sorbed_p, dcl, dca, dcf, grd.pr,
+    outputs = model.caete_dyn(grd.x, grd.y, RUN, at, w0, g0, s0, dcl, dca, dcf, grd.pr,
                               grd.tas, grd.ps, grd.rsds, grd.rhs, grd.clin, grd.cwin, grd.cfin)
 
     grd.emaxm = outputs[0]

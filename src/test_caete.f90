@@ -109,10 +109,11 @@ program test_carbon3
    ! TEST CARBON3
 
    subroutine test_c3()
+      use soil_pools
 
       integer(i_4) :: index, j
       real(r_4) :: soilt=23.0, water_s=0.9
-      real(r_8) :: ll=0.5, lf=0.32, lw=0.07
+      real(r_8) :: ll=5, lf=32, lw=107
       real(r_4), dimension(6) :: lnr = (/2.5461449101567262E-002, 1.2789730913937092E-002, 4.1226762905716891E-002,&
                                         & 3.2206000294536350E-003, 3.1807350460439920E-003, 4.0366222383454442E-003/)
       real(r_4), dimension(2) :: cl = 0.0, cs = 0.0, cl_out = 0.0, cs_out = 0.0
@@ -121,37 +122,29 @@ program test_carbon3
       real(r_4) :: avail_p, inorg_n, inorg_p, sorbed_p, p_defcit, n_defcit
       real(r_4) :: avail_p_out, inorg_n_out, inorg_p_out, sorbed_p_out
 
-      avail_p = 0.1
-      inorg_n = 0.1
-      inorg_p = 0.1
-      sorbed_p = 0.1
-
+        pupt = 0.2
+        nupt = 0.5
       do index = 1,200000
-         call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, inorg_n, inorg_p,&
-         & avail_p_out, inorg_n_out, inorg_p_out, sorbed_p_out, cl_out, cs_out, snr, hr)
+         avail_p = sp_available_p
+         inorg_n = sp_available_p
+         inorg_p = sp_in_p
+         sorbed_p = sp_so_p
+         cl = sp_csoil(1:2)
+         cs = sp_csoil(3:4)
+         snr_i = sp_snr
 
-         do j = 1,2
-            cs(j) = cs_out(j)
-            cl(j) = cl_out(j)
-         enddo
+         call carbon3(soilt, water_s, ll, lw, lf, lnr, cl, cs, snr_i, avail_p, inorg_n, inorg_p,&
+         &  sorbed_p, avail_p_out, inorg_n_out, inorg_p_out, sorbed_p_out, cl_out, cs_out, snr, hr)
 
-         if(nupt > inorg_n) then
-            inorg_n = 0.0
-            n_defcit = inorg_n - nupt
-         else
-            inorg_n = inorg_n - nupt
-         endif
+          sp_available_p = avail_p_out - nupt
+          sp_available_p = inorg_n_out - pupt
+          sp_in_p = inorg_p_out
+          sp_so_p = sorbed_p_out
+          sp_csoil(1:2) = cl_out
+          sp_csoil(3:4) = cs_out
+          sp_snr = snr
 
-         if(pupt > avail_p) then
-            avail_p = 0.0
-            p_defcit = avail_p - pupt
-         else
-            avail_p = avail_p - pupt
-         endif
 
-         do j = 1,8
-            snr_i(j) = snr(j)
-         end do
          print *, snr,"<- snr"
          print *, hr,"<- hr"
          print *, cl,"<- cl"

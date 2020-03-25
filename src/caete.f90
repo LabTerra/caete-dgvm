@@ -22,8 +22,7 @@ module caete
 
    contains
 
-   subroutine caete_dyn(x, y, run, dt, w0, g0, s0, csoil_init, snr_init,&
-        & in_p_init, in_n_init, av_p_init, so_p_init, dcl, dca, dcf, prec,&
+   subroutine caete_dyn(x, y, run, dt, w0, g0, s0, dcl, dca, dcf, prec,&
         & temp, p0, par, rhs, cleaf_ini, cawood_ini, cfroot_ini, emaxm, tsoil,&
         & photo_cwm, aresp_cwm, npp_cwm, lai_cwm, hr_cwm, rcm_cwm, f51,&
         & runom_cwm, evapm_cwm, wsoil_cwm, rm_cwm, rg_cwm, cleaf_cwm,&
@@ -51,12 +50,14 @@ module caete
       real(r_4),dimension(npls),intent(in) :: g0 ! Initial soil ice
       real(r_4),dimension(npls),intent(in) :: s0 ! Initial soil snow
 
-      real(r_4),dimension(4),intent(in) :: csoil_init
-      real(r_4),dimension(8),intent(in) :: snr_init
-      real(r_4),intent(in) :: in_p_init
-      real(r_4),intent(in) :: in_n_init
-      real(r_4),intent(in) :: av_p_init
-      real(r_4),intent(in) :: so_p_init
+      ! , csoil_init, snr_init,&
+      !  & in_p_init, in_n_init, av_p_init, so_p_init
+      ! real(r_4),dimension(4),intent(in) :: csoil_init
+      ! real(r_4),dimension(8),intent(in) :: snr_init
+      ! real(r_4),intent(in) :: in_p_init
+      ! real(r_4),intent(in) :: in_n_init
+      ! real(r_4),intent(in) :: av_p_init
+      ! real(r_4),intent(in) :: so_p_init
 
       ! initial value for betaleaf (daily delta cmass) Gained C - Used to calculate Growth Respiration
       real(r_8),dimension(npls),intent(in) :: dcl ! Leaf - deltaC(day, day-1) kg m-2
@@ -184,7 +185,7 @@ module caete
       real(r_8),dimension(npls) :: wue_com
 
       real(r_8),dimension(4,npls) :: soilcarbon_com
-      real(r_8),dimension(8,npls) :: snr_com
+      real(r_4),dimension(8,npls) :: snr_com
       real(r_8),dimension(npls)   :: in_p_com
       real(r_8),dimension(npls)   :: in_n_com
       real(r_8),dimension(npls)   :: av_p_com
@@ -518,14 +519,12 @@ module caete
          dr_final = dr
          dw_final = dw
 
-         if(spnp .eq. 1) then
-            sp_in_p         = in_p_in
-            sp_available_n  = in_n_in
-            sp_available_p  = av_p_in
-            sp_so_p         = so_p_in
-            sp_csoil        = csoil_in
-            sp_snr          = snr_in
-         endif
+         sp_in_p         = in_p_in
+         sp_available_n  = in_n_in
+         sp_available_p  = av_p_in
+         sp_so_p         = so_p_in
+         sp_csoil        = csoil_in
+         sp_snr          = snr_in
 
          ! UPDATE CVEG POOLS FOR NEXT
          ! CLEAN NANs to prevent failure between cont_runs (pass only numbers to cff, clf, caf)
