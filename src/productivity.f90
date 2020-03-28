@@ -66,7 +66,6 @@ contains
    real(r_8), intent(out) :: sla          ! specific leaf area (m2/kg)
    real(r_8), intent(out) :: vm_out
    real(r_8), dimension(3), intent(out) :: sto2
-   real(r_8), dimension(3), intent(out) :: carbon_ratio_cohort  ! Proportion of each cohort in relation to the total carbon (KgC/m2)
 !     Internal
 !     --------
 
@@ -81,8 +80,8 @@ contains
    real(r_4) :: p2cl
    integer(i_4) :: c4_int
 
-   real(r_4), dimension(3) :: f1       !Leaf level gross photosynthesis (molCO2/m2/s)
-   real(r_4), dimension(3) :: f1a      !auxiliar_f1
+   real(r_4), dimension(3) :: f1, ph_aux      !Leaf level gross photosynthesis (molCO2/m2/s)
+   real(r_4) :: f1a      !auxiliar_f1
    logical :: no_cell = .false.
    real(r_4), dimension(3) :: umol_penalties = (/-0.4, 1.0, 0.6/)
    real(r_4), dimension(3) :: age_limits, leaf_age
@@ -110,7 +109,7 @@ contains
     n2cf_resp = dt(12)
     p2cl = dt(13)
 
-
+    ! Simulation of leaf demography
    ! Obtain critical age
    age_crit = (tleaf / 3.0) * 2.0
 
@@ -132,16 +131,10 @@ contains
    enddo
 
    ! Obtain total carbon of the cohorts
-   cl_total = sum(cl1_prod(i))
+   cl_total = sum(cl1_prod)
 
-   do i = 1, 3
-      carbon_ratio_cohort(i) = penalization_by_age(i) / cl_total
-   enddo 
-
-   
-   
-   n2cl = real(n2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! N in leaf g m-2
-   p2cl = real(p2cl * (sum(cl1_prod, dim=1) * 1e3), r_4) ! P in leaf g m-2
+   n2cl = real(n2cl * (cl_total * 1e3), r_4) ! N in leaf g m-2
+   p2cl = real(p2cl * (cl_total * 1e3), r_4) ! P in leaf g m-2
    c4_int = nint(c4)
 
    if(debug) then
@@ -160,7 +153,6 @@ contains
 
     call photosynthesis_rate(temp,p0,ipar,light_limit,c4_int,n2cl,&
          & p2cl,tleaf,sto1,f1a,vm_out,sto2)
-
 
     if(debug) then
        write(1234,*) 'f1a -->',f1a
@@ -194,52 +186,37 @@ contains
 !     ----------------------------------------------
     f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
 
-    if(debug) then
-       write(1234,*) 'f5c ->', f5
-    endif
-
 !     Photosysthesis minimum and maximum temperature
 !     ----------------------------------------------
 
-    if ((temp.ge.-10.0).and.(temp.le.50.0)) then
-       f1 = f1a * f5 ! :water stress factor ! Ancient floating-point underflow spring (from CPTEC-PVM2)
-    else
+   if ((temp.ge.-10.0).and.(temp.le.50.0)) then
+      do i = 1,3
+         f1(i) = f1a * f5 * penalization_by_age(i) ! :water stress factor ! Ancient floating-point underflow spring (from CPTEC-PVM2)
+      enddo
+   else
        f1 = 0.0      !Temperature above/below photosynthesis windown
-    endif
-
-    if(debug) then
-       write(1234,*) 'f1 (after f5)->', f1
-    endif
-
+   endif
 
 !     Leaf area index (m2/m2)
     sla = spec_leaf_area(tleaf)
-    laia = real(leaf_area_index(cl1_prod, sla), r_4)
-! laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
+    laia = real(leaf_area_index(cl_total, sla), r_4)
+
+    ! laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
 ! laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
-
-
-    if(debug) then
-       write(1234,*) 'tleaf ->', tleaf
-       write(1234,*) 'SLA ->', sla
-       write(1234,*) 'LAI ->', laia
-       write(1234,*) 'betaleaf ->', beta_leaf
-       write(1234,*) 'betawood ->', beta_awood
-       write(1234,*) 'betaroot ->', beta_froot
-    endif
 
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x
-    ph =  gross_ph(f1,cl1_prod,sla)       ! kg m-2 year-1
-
-
+    do i = 1,3
+      ph_aux(i) =  gross_ph(f1(i),cl1_prod(i), sla)       ! kg m-2 year-1
+    enddo
+    ph = sum(ph_aux)/3.0
     if(debug) then
        write(1234,*) 'ph ->', ph
     endif
 !     Autothrophic respiration
 !     ========================
 !     Maintenance respiration (kgC/m2/yr) (based in Ryan 1991)
-    rm = m_resp(temp,cl1_prod,cf1_prod,ca1_prod,sto2&
+    rm = m_resp(temp,cl_total,cf1_prod,ca1_prod,sto2&
          &,n2cl_resp,n2cw_resp,n2cf_resp,awood)
 
 ! c     Growth respiration (KgC/m2/yr)(based in Ryan 1991; Sitch et al.
@@ -256,7 +233,7 @@ contains
     if ((temp.ge.-10.0).and.(temp.le.50.0)) then
        ar = rm + rg
     else
-       ar = 0.0               !Temperature above/below respiration windown
+       ar = 0.0   !Temperature above/below respiration windown
     endif
 
 !     Net primary productivity(kgC/m2/yr)
@@ -281,19 +258,6 @@ contains
 
     no_cell = .false.
 
-
-    if(debug) then
-       write(1234,*) 'sto2 ->', sto2
-       write(1234,*) 'nppa ->', nppa
-       write(1234,*) 'ar ->', ar
-       write(1234,*) 'cdef ->', c_defcit
-    endif
-
-
-    if(debug) then
-       write(1234,*) '-----END Message from productivity--- ---------'
-       write(1234,*) '-----------------------------------------------'
-    endif
 
 999 continue
     if(no_cell) then

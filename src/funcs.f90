@@ -202,14 +202,14 @@ contains
    !=================================================================
    !=================================================================
 
-   function xylem_conductance(Psi_soil, Psi_g, P50, vulnerability_curve) result(V)    ! based in Eller et al. 2018
+   function xylem_conductance(psi_soil, psi_g, p50, vulnerability_curve) result(v)    ! based in Eller et al. 2018
       use types
-      use global_par, only:rho, g, ...
+      use global_par
 
-      real(r_4), intent(in) :: Psi_solo, Psi_g, P50, vulnerability_curve
+      real(r_4), intent(in) :: psi_soil, psi_g, p50, vulnerability_curve
       real(r_4) :: V
 
-      V = 1.0 / (1.0 + ((Psi_solo - Psi_g) / P50) ** vulnerability_curve)
+      v = 1.0 / (1.0 + ((psi_soil - psi_g) / p50) ** vulnerability_curve)
 
    end function
 
@@ -1536,16 +1536,16 @@ contains
       ! only for woody PLSs
       if(aawood_mr .gt. 0.0) then
          csa = sapwood * ca1_mr
-         rms64 = ((n2cw * (csa * 1e3)) * 27.0 * exp(0.07*temp))
+         rms64 = ((n2cw * (csa * 1e3)) * 15.0 * exp(0.03*temp))
       else
          rms64 = 0.0
       endif
 
-      rml64 = ((n2cl * (cl1_mr * 1e3)) * 27.0 * exp(0.07*temp))
+      rml64 = ((n2cl * (cl1_mr * 1e3)) * 15.0 * exp(0.03*temp))
 
-      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 27.0 * exp(0.07*temp))
+      rmf64 = ((n2cf * (cf1_mr * 1e3)) * 15.0 * exp(0.03*temp))
 
-      storage_resp = ((ston * stoc) * 27.0 * exp(0.07*temp))
+      storage_resp = ((ston * stoc) * 15.0 * exp(0.03*temp))
 
       rm64 = (rml64 + rmf64 + rms64 + storage_resp) * 1e-3
 
