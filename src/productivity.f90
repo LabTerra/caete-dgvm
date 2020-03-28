@@ -130,7 +130,7 @@ contains
       penalization_by_age(i) = leaf_age_factor(umol_penalties(i), age_crit, leaf_age(i))
    enddo
 
-   ! Obtain total carbon of the cohorts
+   ! Obtain total carbon of the leaf (cohorts ?)
    cl_total = sum(cl1_prod)
 
    n2cl = real(n2cl * (cl_total * 1e3), r_4) ! N in leaf g m-2
@@ -154,35 +154,19 @@ contains
     call photosynthesis_rate(temp,p0,ipar,light_limit,c4_int,n2cl,&
          & p2cl,tleaf,sto1,f1a,vm_out,sto2)
 
-    if(debug) then
-       write(1234,*) 'f1a -->',f1a
-       if(f1a < 0.0) then
-          print *, 'f1a less than 0 aborting'
-          call abort
-       endif
-    endif
-
-    if(debug) then
-       write(1234,*)
-    endif
 
 ! VPD
 !========
     vpd = vapor_p_defcit(temp,rh)
 
-    if(debug) then
-       write(1234,*) 'VPD -->', vpd
-    endif
-
-!Stomatal resistence
+! Stomatal resistence
 !===================
     rc = canopy_resistence(vpd, f1a, g1)
 
 ! Novo calculo da WUE
-
     wue = water_ue(f1a, rc, p0, vpd)
 
-!     Water stress response modifier (dimensionless)
+! Water stress response modifier (dimensionless)
 !     ----------------------------------------------
     f5 =  water_stress_modifier(w, cf1_prod, rc, emax)
 
@@ -197,12 +181,13 @@ contains
        f1 = 0.0      !Temperature above/below photosynthesis windown
    endif
 
-!     Leaf area index (m2/m2)
+!   Leaf area index (m2/m2)
+   ! TODO we need to think in the lai calcuulatio kjdkajfh
     sla = spec_leaf_area(tleaf)
-    laia = real(leaf_area_index(cl_total, sla), r_4)
+    laia = real(leaf_area_index(cl1_prod(2), sla), r_4)
 
     ! laia = real(f_four(90,cl1_prod,sla), r_4)          ! sunlai
-! laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
+    ! laia = laia + (real(f_four(20,cl1_prod,sla), r_4)) ! shadelai
 
 !     Canopy gross photosynthesis (kgC/m2/yr)
 !     =======================================x
@@ -210,6 +195,7 @@ contains
       ph_aux(i) =  gross_ph(f1(i),cl1_prod(i), sla)       ! kg m-2 year-1
     enddo
     ph = sum(ph_aux)/3.0
+
     if(debug) then
        write(1234,*) 'ph ->', ph
     endif
@@ -257,7 +243,6 @@ contains
     endif
 
     no_cell = .false.
-
 
 999 continue
     if(no_cell) then

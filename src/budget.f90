@@ -280,7 +280,7 @@ contains
           write(1234,*) 'stop(p)', sto_budg(:,p)
        endif
 
-       call allocation (dt1,nppa(p),mineral_n,labile_p,cl1(p),ca1(p)&
+       call allocation (dt1,nppa(p),mineral_n,labile_p,cl1(:,p),ca1(p)&
             &,cf1(p),sto_budg(:,p),day_storage(:,p),cl2(p),ca2(p)&
             &,cf2(p),litter_l(p),cwd(p)&
             &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)

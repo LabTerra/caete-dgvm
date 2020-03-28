@@ -669,7 +669,7 @@ contains
       ! variables I/O
       real(r_4),dimension(ntraits),intent(in) :: dt  ! PLS attributes
       real(r_4),intent(in) :: npp  ! npp (KgC/m2/yr) from assimilation process
-      real(r_8),intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
+      real(r_8),dimension(3), intent(in) :: scl1 ! previous day carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(in) :: sca1 ! previous day carbon content on aboveground woody biomass compartment(KgC/m2)
       real(r_8),intent(in) :: scf1 ! previous day carbon content on fine roots compartment (KgC/m2)
       real(r_8),intent(in) :: nmin ! N in mineral N pool(kg m-2)
@@ -677,7 +677,7 @@ contains
       real(r_8),dimension(3),intent(in) :: storage ! Three element array- storage pool([C,N,P]) g m-2
       ! O
       real(r_8),dimension(3),intent(out) :: storage_out
-      real(r_8),intent(out) :: scl2 ! final carbon content on leaf compartment (KgC/m2)
+      real(r_8),dimension(3),intent(out) :: scl2 ! final carbon content on leaf compartment (KgC/m2)
       real(r_8),intent(out) :: sca2 ! final carbon content on aboveground woody biomass compartment (KgC/m2)
       real(r_8),intent(out) :: scf2 ! final carbon content on fine roots compartment (KgC/m2)
       real(r_8),intent(out) :: cwd  ! coarse wood debris (to litter)(C) g m-2
@@ -690,7 +690,7 @@ contains
       ! internal variables
       real(r_8) :: scf2_128 = 0.0 ! Store veg carbon pool in a 64bit fp
       real(r_8) :: sca2_128 = 0.0
-      real(r_8) :: scl2_128 = 0.0
+      real(r_8), dimension(3) :: scl2_128 = 0.0
       real(r_8) :: npp_pot  = 0.0 ! potential npp g m-2 day-1
 
       real(r_8) :: noutn, noutp ! plant N/P uptake given Nutrient Limitation (g(N\P) m-2)
@@ -698,7 +698,7 @@ contains
       real(r_8) :: npp_awood, npp_froot, npp_leaf ! Partitioned npp (g(C) m-2 day-1)
       real(r_8) :: npp_awoodn, npp_frootn, npp_leafn
       real(r_8) :: npp_awoodp, npp_frootp, npp_leafp
-      real(r_8) :: total_n, total_p ! total npp given N or P limitation g(C) m-2 day-1
+      real(r_8) :: total_n, total_p, leafscl2, leafscl3! total npp given N or P limitation g(C) m-2 day-1
 
       ! Auxiliary variables to calculate Plant Nutrient Uptake
       real(r_8) :: aux1, aux2, aux3
@@ -738,7 +738,7 @@ contains
 
       ! If there are no carbon in fine roots AND leafs:
       ! Then PLS 'Die' Label 10 to zero outputs and next pls. Means that the rest of this sub isn't executed
-      if(((scf1 .lt. cmin) .and. (scl1 .lt. cmin))) then !
+      if(((scf1 .lt. cmin) .and. (sum(scl1) .lt. cmin))) then !
          no_cell = .true.
          end_pls_day = .true.
          goto 10
@@ -1065,7 +1065,7 @@ contains
       endif
 
 
-      ! DEALLOCATION PROCESS
+      ! (DE)ALLOCATION PROCESS(ES)
       ! ## Make calculations only for leaf and froots that are commmom to all PLSs
       ! Carbon pool times Turnover Rate (inverse of residence time)
       ! Shit happens here (UNDERFLOW) .edit. NO MORE?
@@ -1081,11 +1081,16 @@ contains
          storage_out(1) = 0.0
       endif
 
-      root_litter = ((1e3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2
-      leaf_litter = ((1e3 * scl1) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
-
+      leaf_litter = ((1e3 * scl1(3)) * (tleaf * 365.242)**(-1)) !/ tleaf ! g(C) m-2
+      leafscl2 = ((1e3 * scl1(1)) * (tleaf * 365.242)**(-1))
+      leafscl3 = ((1e3 * scl1(3)) * (tleaf * 365.242)**(-1))
       ! calculate the C content of each compartment
-      scl2_128 = (1e3 * scl1) + npp_leaf - leaf_litter
+      scl2_128(1) = (1e3 * scl1(1)) + npp_leaf - leafscl2
+      scl2_128(2) = (1e3 * scl1(2)) + leafscl2 - leafscl3
+      scl2_128(3) = (1e3 * scl1(3)) - leaf_litter + leafscl3
+      scf2_128 = (1e3 * scf1) + npp_froot - root_litter
+
+      root_litter = ((1e3 * scf1) * (tfroot * 365.242)**(-1)) !/ tfroot! g(C) m-2
       scf2_128 = (1e3 * scf1) + npp_froot - root_litter
 
       scf2 = real(scf2_128,r_4) ! g(C) m-2 day-1
