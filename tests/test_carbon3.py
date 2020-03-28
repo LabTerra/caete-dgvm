@@ -15,6 +15,8 @@ def zeroes(*args):
     return np.zeros(shape=args, dtype=np.float32)
 
 
+experiment = ['inc_uptake', 'inc_litter_flow', 'dec_uptake', ]
+
 #    subroutine carbon3(tsoil, water_sat, leaf_litter, coarse_wd,&
 #                     &        root_litter, lnr, cl, cs, &
 #                     &         snr_in,
@@ -28,10 +30,10 @@ def zeroes(*args):
 # hr
 # LNR [(l1n2c),(l2n2c),(c1dn2c),(c2n2c),(l1p2c),(l2p2c),(c1p2c),(c2p2c)]
 # SNR [(lln2c),(rln2c),(cwdn2c),(llp2c),(rlp2c),(cwdp2c)]
-header = ['Het. Respiration (g(C)m⁻²)', 'Available N (g(N)m⁻²)', 'Inorganic P (g(P)m⁻²)',
-          'Sorbed P (g(P)m⁻²)', 'Available P (g(P)m⁻²)', 'Litter I (g(C)m⁻²)', 'Litter II (g(C)m⁻²)', 'Soil I (g(C)m⁻²)', 'Soil II (g(C)m⁻²)',
-          'N:C Litter I (gg⁻¹)', 'N:C Litter II (gg⁻¹)', 'N:C Soil I (gg⁻¹)', 'N:C Soil II (gg⁻¹)', 'P:C Litter II (gg⁻¹)',
-          'P:C Litter II (gg⁻¹)', 'P:C Soil I (gg⁻¹)', 'P:C Soil II (gg⁻¹)']
+header = ['Het. Respiration', 'Available N', 'Inorganic P',
+          'Sorbed P', 'Available P', 'Litter I)', 'Litter II)', 'Soil I)', 'Soil II)',
+          'N:C Litter I', 'N:C Litter II', 'N:C Soil I', 'N:C Soil II', 'P:C Litter I',
+          'P:C Litter II', 'P:C Soil I', 'P:C Soil II']
 
 
 def reset_soil():
@@ -69,16 +71,25 @@ with open('carbon3_test.csv', 'w') as fh:
     CSV_WRITER.writerow(header)
     # start inputs
     # lnr = zeroes(6) + 0.01 * np.random.randint(0, 2)
-    for x in range(20000):
-        leaf_litter = np.random.uniform(0, 2) * 10
-        root_litter = np.random.uniform(0, 2) * 10
-        cwd = np.random.uniform(0, 2) * 10
 
-        # nupt = np.random.uniform(0, 2) * 7.4e-3
-        # pupt = np.random.uniform(0, 2) * 7.4e-3
-        # UPDATE_ input VARIABLES
-        lnr = zeroes(6) + 0.03 * np.random.randint(0, 2)
-        lnr[3:] = lnr[3:] * 0.8
+    for x in range(40000):
+        lnr_std = zeroes(6) + 0.03  # * np.random.randint(0, 2)
+        lnr_std[3:] = lnr_std[3:] * 0.8
+        if x > 50000:
+            leaf_litter = np.random.uniform(0, 2) * 10 * 2
+            root_litter = np.random.uniform(0, 2) * 10 * 2
+            cwd = np.random.uniform(0, 2) * 10 * 2
+        else:
+            leaf_litter = np.random.uniform(0, 2) * 10
+            root_litter = np.random.uniform(0, 2) * 10
+            cwd = np.random.uniform(0, 2) * 10
+        if x > 20000:
+            lnr = zeroes(6) + 0.03  # * np.random.randint(0, 2)
+            lnr[3:] = lnr[3:] * 0.8
+        else:
+            lnr = zeroes(6) + 0.003  # * np.random.randint(0, 2)
+            lnr[3:] = lnr[3:] * 0.8
+
         snr_in = funcs.sp_snr
         avail_p = funcs.sp_available_p
         inorg_n = funcs.sp_available_n
@@ -87,13 +98,12 @@ with open('carbon3_test.csv', 'w') as fh:
         cl = funcs.sp_csoil[0:2]
         cs = funcs.sp_csoil[2:]
 
-        nupt = est_uptake(lnr, leaf_litter, root_litter, cwd, 'n')
-        pupt = est_uptake(lnr, leaf_litter, root_litter, cwd, 'p')
+        nupt = est_uptake(lnr_std, leaf_litter, root_litter, cwd, 'n')
+        pupt = est_uptake(lnr_std, leaf_litter, root_litter, cwd, 'p')
 
-
-        if x > 10000:
-            pupt = pupt * 1.5
-            nupt = nupt * 1.5
+        if x > 50000:
+            pupt = pupt * 2
+            nupt = nupt * 2
 
         df = carbon3.carbon3(23, 0.8, leaf_litter, root_litter, cwd, lnr, cl, cs,
                              snr_in, avail_p, inorg_n, inorg_p, sorbed_p)
@@ -132,23 +142,37 @@ os.system('rm -rf carbon3_test.csv')
 
 dt = data.iloc(1)
 
+n1 = 'n2c_inc_litter_Q.png'
+n2 = 'p2c_inc_litter_Q.png'
+n3 = 'in_nut_inc_litter_Q.png'
+n4 = 'cpools_inc_litter_Q.png'
+n5 = 'in_nut_comp_inc_litter_Q.png'
 
 dt[9:13].plot(cmap=plt.get_cmap('cool'))
 plt.xlabel('Iterations')
 plt.ylabel('g(N) g(C)⁻¹')
+plt.savefig(n1, dpi=700)
 plt.show()
 
-dt[13:].plot(cmap=plt.get_cmap('cool'))
+dt[13:].plot(cmap=plt.get_cmap('rainbow'))
 plt.xlabel('Iterations')
 plt.ylabel('g(P) g(C)⁻¹')
+plt.savefig(n2, dpi=700)
 plt.show()
 
 dt[1:5].rolling(1000).mean().plot(cmap=plt.get_cmap('cividis'))
 plt.xlabel('Iterations')
 plt.ylabel('g(Nutrient) m⁻²')
+plt.savefig(n3, dpi=700)
 plt.show()
 
 dt[5:9:].plot(cmap=plt.get_cmap('cividis'))
 plt.xlabel('Iterations')
 plt.ylabel('g(C) m⁻²')
+plt.savefig(n4, dpi=700)
+plt.show()
+
+dt[1:5].rolling(1000).mean().plot(
+    subplots=True, figsize=(6, 6), cmap=plt.get_cmap('viridis'))
+plt.savefig(n5, dpi=700)
 plt.show()
