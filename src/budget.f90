@@ -302,7 +302,7 @@ contains
           cue(p) = nppa(p)/ph(p)
        endif
 
-       dleaf(p) = cl2(p) - cl1(:,p)  !kg m-2
+       dleaf(:,p) = cl2(p) - cl1(:,p)  !kg m-2
        dwood(p) = ca2(p) - ca1(p)
        droot(p) = cf2(p) - cf1(p)
 
