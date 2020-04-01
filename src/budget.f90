@@ -66,7 +66,7 @@ contains
     real(r_8),dimension(3,npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
     real(r_8),dimension(npls),intent(inout) :: cf1_pft  !                 froot
     real(r_8),dimension(npls),intent(inout) :: ca1_pft  !                 cawood
-    real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+    real(r_8),dimension(3,npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
     real(r_8),dimension(npls),intent(inout) :: droot
     real(r_8),dimension(npls),intent(inout) :: dwood
 
@@ -238,7 +238,7 @@ contains
 !      & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,sto2)
 
        call prod(dt1,ocp_wood(p),temp,p0,w(p),ipar,rh,emax,cl1(:,p)&
-            &,ca1(p),cf1(p),dleaf(p),dwood(p),droot(p)&
+            &,ca1(p),cf1(p),dleaf(:,p),dwood(p),droot(p)&
             &,sto_budg(:,p),ph(p),ar(p),nppa(p),laia(p)&
             &,f5(p),vpd(p),rm(p),rg(p),rc2(p),wue(p),c_def(p)&
             &,vcmax(p),specific_la(p),day_storage(:,p))
@@ -290,7 +290,7 @@ contains
 ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
        if(end_pls) then
           no_cell = .true.
-          dleaf(p) = 0.0
+          dleaf(:,p) = 0.0
           dwood(p) = 0.0
           droot(p) = 0.0
           goto 666 ! gt hell
@@ -302,7 +302,7 @@ contains
           cue(p) = nppa(p)/ph(p)
        endif
 
-       dleaf(p) = cl2(p) - cl1(p)  !kg m-2
+       dleaf(:,p) = cl2(p) - cl1(:,p)  !kg m-2
        dwood(p) = ca2(p) - ca1(p)
        droot(p) = cf2(p) - cf1(p)
 
