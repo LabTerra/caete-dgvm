@@ -274,7 +274,7 @@ contains
           write(1234,*) 'nppa(p)', nppa(p)
           write(1234,*) 'mineral_n', mineral_n
           write(1234,*) 'labile_p', labile_p
-          write(1234,*) 'cl1(p)', cl1(p)
+          write(1234,*) 'cl1(:,p)', cl1(:,p)
           write(1234,*) 'cf1(p)', cf1(p)
           write(1234,*) 'ca1(p)', ca1(p)
           write(1234,*) 'stop(p)', sto_budg(:,p)
@@ -302,7 +302,7 @@ contains
           cue(p) = nppa(p)/ph(p)
        endif
 
-       dleaf(p) = cl2(p) - cl1(p)  !kg m-2
+       dleaf(p) = cl2(p) - cl1(:,p)  !kg m-2
        dwood(p) = ca2(p) - ca1(p)
        droot(p) = cf2(p) - cf1(p)
 
@@ -398,21 +398,21 @@ contains
 
        if(c_def(p) .gt. 0.0) then
           if(dt1(7) .gt. 0.0) then
-             cl1_pft(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
+             cl1_pft(:,p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
              ca1_pft(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
              cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
           else
-             cl1_pft(p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
+             cl1_pft(:,p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
              ca1_pft(p) = 0.0
              cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
           endif
        else
           if(dt1(7) .gt. 0.0) then
-             cl1_pft(p) = cl2(p)
+             cl1_pft(:,p) = cl2(p)
              ca1_pft(p) = ca2(p)
              cf1_pft(p) = cf2(p)
           else
-             cl1_pft(p) = cl2(p)
+             cl1_pft(:,p) = cl2(p)
              ca1_pft(p) = 0.0
              cf1_pft(p) = cf2(p)
           endif
@@ -420,7 +420,7 @@ contains
 
        no_cell = .false.
 
-!  if(cf1_pft(p).le.0.0 .and. cl1_pft(p).le.0.0) then
+!  if(cf1_pft(p).le.0.0 .and. cl1_pft(:,p).le.0.0) then
 !     no_cell = .true.
 !  else if(ca1_pft(p).lt. 0.0 .and. dt1(7) .gt. 0.0) then
 !     no_cell = .true.
@@ -460,7 +460,7 @@ contains
           cleafavg_pft(p)  = 0.0
           cawoodavg_pft(p) = 0.0
           cfrootavg_pft(p) = 0.0
-          cl1_pft(p) = 0.0
+          cl1_pft(:,p) = 0.0
           ca1_pft(p) = 0.0
           cf1_pft(p) = 0.0
           w2(p) = 0.0
