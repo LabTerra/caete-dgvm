@@ -404,8 +404,8 @@ contains
          litter_fr(k) = real(sum(litter_fr_com * grd,&
               & mask=.not.isnan(litter_fr_com)),r_4)
 
-         cleaf_comm(:,k) = real(sum(cleafmes * grd,&
-              &mask=.not. isnan(cleafmes)),r_4)
+         cleaf_comm(:,k) = real(sum(cleafmes(:,p) * grd,&
+              &mask=.not. isnan(cleafmes(:,p))),r_4)
          cawood_comm(k) = real(sum(cawoodmes * grd,&
               &mask=.not. isnan(cawoodmes)),r_4)
          cfroot_comm(k) = real(sum(cfrootmes * grd,&
