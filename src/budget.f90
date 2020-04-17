@@ -66,7 +66,7 @@ contains
     real(r_8),dimension(3,npls),intent(inout) :: cl1_pft  ! initial BIOMASS cleaf compartment
     real(r_8),dimension(npls),intent(inout) :: cf1_pft  !                 froot
     real(r_8),dimension(npls),intent(inout) :: ca1_pft  !                 cawood
-    real(r_8),dimension(3,npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
+    real(r_8),dimension(npls),intent(inout) :: dleaf  ! CHANGE IN cVEG (DAILY BASIS) TO GROWTH RESP
     real(r_8),dimension(npls),intent(inout) :: droot
     real(r_8),dimension(npls),intent(inout) :: dwood
 
@@ -86,7 +86,7 @@ contains
     real(r_8),intent(out),dimension(npls) :: rcavg          !Daily canopy resistence s/m
     real(r_8),intent(out),dimension(npls) :: f5avg          !Daily canopy resistence s/m
     real(r_8),intent(out),dimension(npls) :: rmavg,rgavg    !maintenance/growth respiration (Kg m-2 day-1)
-    real(r_8),intent(out),dimension(npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
+    real(r_8),intent(out),dimension(3, npls) :: cleafavg_pft   !Carbon in plant tissues (kg m-2)
     real(r_8),intent(out),dimension(npls) :: cawoodavg_pft  !
     real(r_8),intent(out),dimension(npls) :: cfrootavg_pft  !
     real(r_8),intent(out),dimension(npls) :: ocpavg         ! [0-1]
@@ -144,7 +144,8 @@ contains
     real(r_4),dimension(npls) ::  wue, cue, c_def
     real(r_8),dimension(3, npls) :: cl1
     real(r_8),dimension(npls) ::  cf1,ca1 ! carbon pre-allocation
-    real(r_8),dimension(npls) ::  cl2,cf2,ca2 ! carbon pos-allocation
+    real(r_8),dimension(3, npls) ::  cl2
+    real(r_8),dimension(npls) ::  cf2,ca2 ! carbon pos-allocation
     real(r_8),dimension(3,npls) :: day_storage   ! g m-2
 
 
@@ -238,7 +239,7 @@ contains
 !      & nppa,laia,f5,vpd,rm,rg,rc,wue,c_defcit,vm_out,sla,sto2)
 
        call prod(dt1,ocp_wood(p),temp,p0,w(p),ipar,rh,emax,cl1(:,p)&
-            &,ca1(p),cf1(p),dleaf(:,p),dwood(p),droot(p)&
+            &,ca1(p),cf1(p),dleaf(p),dwood(p),droot(p)&
             &,sto_budg(:,p),ph(p),ar(p),nppa(p),laia(p)&
             &,f5(p),vpd(p),rm(p),rg(p),rc2(p),wue(p),c_def(p)&
             &,vcmax(p),specific_la(p),day_storage(:,p))
@@ -281,7 +282,7 @@ contains
        endif
 
        call allocation (dt1,nppa(p),mineral_n,labile_p,cl1(:,p),ca1(p)&
-            &,cf1(p),sto_budg(:,p),day_storage(:,p),cl2(p),ca2(p)&
+            &,cf1(p),sto_budg(:,p),day_storage(:,p),cl2(:,p),ca2(p)&
             &,cf2(p),litter_l(p),cwd(p)&
             &,litter_fr(p),nupt(p),pupt(p),lnr(:,p),end_pls)
 
@@ -290,7 +291,7 @@ contains
 ! Se o PFT nao tem carbono goto 666-> TUDO ZERO
        if(end_pls) then
           no_cell = .true.
-          dleaf(:,p) = 0.0
+          dleaf(p) = 0.0
           dwood(p) = 0.0
           droot(p) = 0.0
           goto 666 ! gt hell
@@ -302,7 +303,7 @@ contains
           cue(p) = nppa(p)/ph(p)
        endif
 
-       dleaf(:,p) = cl2(p) - cl1(:,p)  !kg m-2
+       dleaf(p) = sum(cl2) - sum(cl1)  !kg m-2
        dwood(p) = ca2(p) - ca1(p)
        droot(p) = cf2(p) - cf1(p)
 
@@ -385,7 +386,7 @@ contains
 !  litter_fr(p) = litter_fr(p) !* ocp_coeffs(p)
 !  lnr(:,p) = lnr(:,p) !* ocp_coeffs(p)
 
-       cleafavg_pft(p)  =  cl2(p) !- ((c_def(p) * 0.00273791) / 3.0)
+       cleafavg_pft(:,p)  =  cl2(:,p) !- ((c_def(p) * 0.00273791) / 3.0)
        cawoodavg_pft(p) =  ca2(p) !- ((c_def(p) * 0.00273791) / 3.0)
        cfrootavg_pft(p) =  cf2(p) !- ((c_def(p) * 0.00273791) / 3.0)
        wueavg(p) = wue(p)  !!* ocp_coeffs(p)
@@ -396,27 +397,27 @@ contains
        ocpavg(p) = ocp_coeffs(p)
 
 
-       if(c_def(p) .gt. 0.0) then
-          if(dt1(7) .gt. 0.0) then
-             cl1_pft(:,p) = cl2(p) - ((c_def(p) * 1e-3) * 0.333333333)
-             ca1_pft(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
-             cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
-          else
-             cl1_pft(:,p) = cl2(p) - ((c_def(p) * 1e-3) * 0.5)
-             ca1_pft(p) = 0.0
-             cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
-          endif
-       else
-          if(dt1(7) .gt. 0.0) then
-             cl1_pft(:,p) = cl2(p)
-             ca1_pft(p) = ca2(p)
-             cf1_pft(p) = cf2(p)
-          else
-             cl1_pft(:,p) = cl2(p)
-             ca1_pft(p) = 0.0
-             cf1_pft(p) = cf2(p)
-          endif
-       endif
+!       if(c_def(p) .gt. 0.0) then
+!          if(dt1(7) .gt. 0.0) then
+!             cl1_pft(:,p) = cl2(:,p) - ((c_def(p) * 1e-3) * 0.333333333)
+!             ca1_pft(p) = ca2(p) - ((c_def(p) * 1e-3) * 0.333333333)
+!             cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.333333333)
+!          else
+!             cl1_pft(:,p) = cl2(:,p) - ((c_def(p) * 1e-3) * 0.5)
+!             ca1_pft(p) = 0.0
+!             cf1_pft(p) = cf2(p) - ((c_def(p) * 1e-3) * 0.5)
+!          endif
+!       else
+!          if(dt1(7) .gt. 0.0) then
+!             cl1_pft(:,p) = cl2(:,p)
+!             ca1_pft(p) = ca2(p)
+!             cf1_pft(p) = cf2(p)
+!          else
+!             cl1_pft(:,p) = cl2(:,p)
+!             ca1_pft(p) = 0.0
+!             cf1_pft(p) = cf2(p)
+!          endif
+!       endif
 
        no_cell = .false.
 
@@ -457,7 +458,7 @@ contains
           litter_fr(p) = 0.0
           lnr(:,p) = 0.0
           ocpavg(p) = 0.0
-          cleafavg_pft(p)  = 0.0
+          cleafavg_pft(:,p)  = 0.0
           cawoodavg_pft(p) = 0.0
           cfrootavg_pft(p) = 0.0
           cl1_pft(:,p) = 0.0
@@ -479,7 +480,7 @@ contains
 
 ! CLEAN NANs OF some outputs
     do p = 1,npls
-       if(isnan(cleafavg_pft(p))) cleafavg_pft(p) = 0.0
+       if(isnan(sum(cleafavg_pft))) cleafavg_pft(:,p) = 0.0
        if(isnan(cawoodavg_pft(p))) cawoodavg_pft(p) = 0.0
        if(isnan(cfrootavg_pft(p))) cfrootavg_pft(p) = 0.0
     end do
