@@ -94,7 +94,7 @@ contains
       real(r_8),dimension(nt1),  intent(out) :: wue,cue,cdef ! 1 - molCO2 m-2 s-1 (molH2O m-2 s-1)-1; 2 - npp/gpp; 3 - kgC m-2
       real(r_8),dimension(nt1),  intent(out) :: rm_comm       ! Plant (autotrophic) Maintenance respiration
       real(r_8),dimension(nt1),  intent(out) :: rg_comm       ! Plant (autotrophic) Growth respiration
-      real(r_8),dimension(3, nt1),  intent(out) :: cleaf_comm    ! leaf biomass (KgC/m2)
+      real(r_8),dimension(nt1),  intent(out) :: cleaf_comm    ! leaf biomass (KgC/m2)
       real(r_8),dimension(nt1),  intent(out) :: cawood_comm   ! aboveground wood biomass (KgC/m2)
       real(r_8),dimension(nt1),  intent(out) :: cfroot_comm   ! fine root biomass (KgC/m2)
 
@@ -404,8 +404,8 @@ contains
          litter_fr(k) = real(sum(litter_fr_com * grd,&
               & mask=.not.isnan(litter_fr_com)),r_4)
 
-         cleaf_comm(:,k) = real(sum(cleafmes(:,p) * grd,&
-              &mask=.not. isnan(cleafmes(:,p))),r_4)
+         cleaf_comm(k) = real(sum(sum(cleafmes) * grd,&
+              &mask=.not. isnan(sum(cleafmes))),r_4)
          cawood_comm(k) = real(sum(cawoodmes * grd,&
               &mask=.not. isnan(cawoodmes)),r_4)
          cfroot_comm(k) = real(sum(cfrootmes * grd,&
@@ -487,7 +487,7 @@ contains
             ls = sum(gridocpmes_int)
 
             write(12345,1972)  k + run &
-                 & ,cleaf_comm(:,k)&
+                 & ,cleaf_comm(k)&
                  & ,cawood_comm(k)&
                  & ,cfroot_comm(k)&
                  & ,c_litter(1,k)&
