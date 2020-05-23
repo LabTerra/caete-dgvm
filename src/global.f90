@@ -48,7 +48,7 @@ module global_par
    real(r_8),parameter,public :: rfrac_froot = 0.50D0
    real(r_8),parameter,public :: rfrac_wood = 0.45D0
    real(r_4),parameter,public :: nodata = -9999.0
-   real(r_4),parameter,public :: vulnerability_curve = 4         ! Vulnerability curve of xylem
+   real(r_4),parameter,public :: vulnerability_curve = 4.0         ! Vulnerability curve of xylem
    real(r_4),parameter,public :: g = 9.8                         ! Gravity (m/s2)
    real(r_4),parameter,public :: rho = 997.0                     ! Density of water (Kg/m3)
    integer(i_4),parameter,public :: npls = 500                   ! Number of Plant Life Strategies-PLSs simulated (Defined at compile time)
