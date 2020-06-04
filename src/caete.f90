@@ -176,13 +176,27 @@ contains
       real(r_8) :: aux_var0_0x29b = nodata
 
       !Allometry and Light Competition (internal variable just for testing)
+
+      type :: layer_array
+         real(r_8) :: sum_height
+         integer(i_4) :: num_height !!corresponds to the number of pls
+         real(r_8) :: mean_height
+         real(r_8) :: layer_height
+         real(r_8) :: sum_LAI !LAI sum in a layer
+         real(r_8) :: mean_LAI !mean LAI in a layer
+         real(r_8) :: beers_law !layer's light extinction
+         real(r_8) :: li !layer's light incidence
+         real(r_8) :: lu !layer's light used (relates to light extinction - Beers Law)
+         real(r_8) :: la !light availability
+      end type layer_array
+
       real(r_8),dimension(npls) :: diam !stem diameter (m) (Smith et al 2001 - SP material)
       real(r_8),dimension(npls) :: height !height (m) (Sitch et al., 2003)
       real(r_8),dimension(npls) :: crown_area !crown_area (m2) (Sitch et al., 2003)
       real(r_4),dimension(npls) :: sla !Specific Leaf Area (m2 gC-1) TO BE VARIABLE IN FUTURE DEVELOPMENT
       real(r_8),dimension(npls) :: leaf_area !Leaf Area (m2) (Seiler et al., 2014 (eq. 4))
       real(r_8),dimension(npls) :: sap_area !sapwood cross sectional area (m2) (Sitch et al., 2003)
-      !real(r_8),dimension(npls) :: lai !Leaf Area Index of a PLS (unitless)
+      real(r_8),dimension(npls) :: lai !Leaf Area Index (m2/m2)
       real(r_8),dimension(npls) :: num_ind !calculates the number of individuals per PLS (Smith, 2001 [thesis]/SELFTHINNING HYPOTESIS 
       real(r_8) :: max_height !the heighest PLS (m)
       real(r_8) :: num_layer !calculates the layer number (on the max_height). The number of 5 layers was decided in a meeting
@@ -190,7 +204,10 @@ contains
       real(r_8) :: layer_size !Calculates the size os layers (m)
       integer(i_4) :: layer_size_int !Transform to layer_size in integer number
       real(r_8),allocatable,dimension(:) :: size_layer_couting !Receive values (allocatable) and initialize the counter for creating a list with the size of all layers
-      !integer(i_4) :: i
+      integer(i_4) :: i,j
+      integer(i_4) :: last_with_pls
+  
+      type(layer_array), allocatable :: layer(:)
 
       ! Next are auxiliary to tests
       integer(i_4),dimension(npls) :: gridocpmes_int
@@ -410,22 +427,74 @@ contains
          ! ====================================================
 
          max_height = maxval(height)
-         !print*, 'max_height', max_height
-         
-         num_layer = max_height/5
-         num_layer_int = nint(num_layer)
+         print*, 'max_height',max_height
+    
+         num_layer = nint(max_height/5)
+         print*, 'num_layer',num_layer
 
-         if (k.eq.84) then !printing for one day
-            print*, 'num_layer', num_layer_int
-         endif
+         allocate(layer(1:num_layer))
+    
+         last_with_pls = num_layer
 
-         layer_size = max_height/num_layer_int
-         !layer_size_int = nint(layer_size)
+         layer_size = max_height/num_layer
+         print*, 'layer_size', layer_size
 
-         if (k.eq.84) then !printing for one day
-            print*, "layer size", layer_size
-         endif
+         layer(i)%layer_height=0
 
+         do i=1,num_layer
+            layer(i)%layer_height=layer_size*i
+            print*, 'layer_height',layer(i)%layer_height, i
+         enddo
+
+         layer(i)%num_height=0
+         layer(i)%sum_height=0
+         layer(i)%mean_height=0
+         layer(i)%sum_LAI=0
+   
+
+         do i=1, num_layer
+            do j=1,npls
+               if ((layer(i)%layer_height.ge.height(j)).and.&
+                  &(layer(i-1)%layer_height.lt.height(j))) then
+
+                  layer(i)%sum_height=&
+                  &layer(i)%sum_height+height(j)
+
+                  layer(i)%num_height=&
+                  &layer(i)%num_height+1
+
+                  layer(i)%sum_LAI=&
+                  &layer(i)%sum_LAI+LAI(j)
+                                      
+               endif
+            enddo
+
+            layer(i)%mean_height=layer(i)%sum_height/&
+               &layer(i)%num_height
+
+            if(layer(i)%sum_height.eq.0.) then
+               layer(i)%mean_height=0.
+            endif
+
+            layer(i)%mean_LAI=layer(i)%sum_LAI/&
+               &layer(i)%num_height
+                  !print*,'mean_LAI',layer(i)%mean_LAI
+
+            if(layer(i)%sum_LAI.eq.0.) then
+                  layer(i)%mean_LAI=0.
+                  !print*, 'mean_LAI2', layer(i)%mean_LAI
+            endif
+        
+        print*,'lyr',i,'mean_height',&
+            &layer(i)%mean_height,'lai',&
+            &layer(i)%mean_LAI
+      enddo
+
+      layer(i)%li = 0
+
+      layer(i)%la = 0
+
+      layer(i)%lu = 0
 
          call daily_budget(dt, wini, gini,sini,td,ta,pr,spre,ipar,ru,n_glob,p_glob&
               &,storage_pool_com,cleaf1_pft,cawood1_pft,cfroot1_pft&
