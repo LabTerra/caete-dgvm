@@ -211,49 +211,40 @@ contains
       real(r_4),intent(in) :: theta_sat           !g H20/g solo 
       real(r_4),intent(in) :: psi_sat             !MPa
       real(r_4),intent(in) :: b                   !S/ unidade
-      real(r_4) :: pot_soil  
+      real(r_4) :: psi_soil  
 
-      psi_soil = Psi_sat * (theta/theta_sat)**(-b)
+      psi_soil = psi_sat * (theta_sat)**(-b) !conferir fórmula
   
    endfunction 
 
    !=================================================================
    !=================================================================
 
-   function xylem_conductance(psi_soil, psi_g, p50, vulnerability_curve, h) result(v)    ! based in Eller et al. 2018
+   function xylem_conductance(psi_soil, p50, h) result(v)    ! based in Eller et al. 2018
       use types, only: r_4, r_8
-      use global_par
-      use global_par, only: vulnerability_curve, g, rho
+      use global_par, only: vulnerability_curve, gvt, rho
 
-      real(r_4), intent(in) :: psi_soil, psi_g, p50, vulnerability_curve
+      real(r_4), intent(in) :: psi_soil, p50, h
       real(r_4) :: v    !mmol m-2 s-1 MPa-1
 
       real(r_4) :: psi_g
 
-      psi_soil = soil_potential(theta_sat, psi_sat, b)
-      h = height calculation() !puxar - height calculation implemented by Bia and Ba 
-
       !gravitational potential to calculate the psi of xylem 
-      psi_g = rho * g * h * 1e-6      !converts Pa to MPa  !ver sinal de atribuição
+      psi_g = rho * gvt * h * 1e-6      !converts Pa to MPa  !ver sinal de atribuição
 
       v = 1.0 / (1.0 + ((psi_soil - psi_g) / p50) ** vulnerability_curve)
-
-      !embolism mortality
-      if (v .le. 0.12) then 
-      no_cell = .true.  !PLS die
-      endif
 
    end function
 
    !=================================================================
    !=================================================================
 
-   function water_stress_modifier(v, cfroot, rc, ep) result(f5)
+   function water_stress_modifier(w, cfroot, rc, ep) result(f5)
       use types, only: r_4, r_8
       use global_par, only: csru, wmax, alfm, gm, rcmin
       !implicit none
 
-      real(r_4),intent(in) :: v      !maximum xylem condutance mm
+      real(r_4),intent(in) :: w      
       real(r_8),intent(in) :: cfroot !carbon in fine roots kg m-2
       real(r_4),intent(in) :: rc     !Canopy resistence 1/(micromol(CO2) m-2 s-1)
       real(r_4),intent(in) :: ep     !potential evapotranspiration
@@ -266,10 +257,9 @@ contains
       real(r_8) :: d
       real(r_8) :: f5_64
 
-      wa = w/wmax      !tirar? "f5_64=wa"
-      v = xylem_conductance(psi_xym, psi_50, vulnerability_curve, h)
+      wa = w/wmax     
 
-      pt = csru*(cfroot*1000.) * v  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
+      pt = csru*(cfroot*1000.) * w  !(based in Pavlick et al. 2013; *1000. converts kgC/m2 to gC/m2)
       if(rc .gt. 0.0) then
          gc = (1.0/(rc * 1.15741e-08))  ! s/m
       else
@@ -283,7 +273,7 @@ contains
          f5_64 = exp(-0.1 * f5_64)
          f5_64 = 1.0 - f5_64
       else
-         f5_64 = wa  !n troquei p/ 'v' pq to com dúvida
+         f5_64 = wa  
       endif
 
       f5 = real(f5_64,4)
