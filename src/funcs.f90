@@ -38,6 +38,7 @@ module photo
         stomatal_conductance   ,&
         ! scarbon_decaiment      ,& ! (f), Carbon decay borrowed from Pavlick et al. 2012
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
+        water_density          ,& ! (f), Density of water (Kg/m3)
         tetens                 ,& ! (f), Maximum vapor pressure (hPa)
         nrubisco               ,& ! (f), Fraction of N not in lignin (disponible to rubisco)
         nlignin                ,& ! (f), Fraction of N in lignin
@@ -220,11 +221,11 @@ contains
    !=================================================================
    !=================================================================
 
-   function xylem_conductance(psi_soil, p50, h) result(v)    ! based in Eller et al. 2018
+   function xylem_conductance(psi_soil, p50, h, rho) result(v)    ! based in Eller et al. 2018
       use types, only: r_4, r_8
-      use global_par, only: vulnerability_curve, gvt, rho
+      use global_par, only: vulnerability_curve, gvt
 
-      real(r_4), intent(in) :: psi_soil, p50, h
+      real(r_4), intent(in) :: psi_soil, p50, h, rho
       real(r_4) :: v    !mmol m-2 s-1 MPa-1
 
       real(r_4) :: psi_g
@@ -414,6 +415,20 @@ contains
       !Vapor Pressure Deficit
       vpd_0 = (es - vpd_ac) / 10.
    end function vapor_p_defcit
+
+   !=================================================================
+   !=================================================================
+
+   function water_density (tsoil) result(rho)
+      ! Returns density of water
+      use types
+    
+      real(r_4),intent(in) :: tsoil     ! soil temperature (oC)
+      real(r_4) :: rho
+
+      rho = 1000 * (1 - ((tsoil + 288.9414) / 508929 * (tsoil + 68.129630)) * (tsoil - 3.9863) ** 2)
+  
+   endfunction 
 
    !=================================================================
    !=================================================================
