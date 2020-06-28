@@ -39,6 +39,7 @@ module photo
         ! scarbon_decaiment      ,& ! (f), Carbon decay borrowed from Pavlick et al. 2012
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
         water_density          ,& ! (f), Density of water (Kg/m3)
+        xylem_potential88      ,& ! (f), water potential of xylem when the plant loses 88% of hydraulic conductance (MPa)
         tetens                 ,& ! (f), Maximum vapor pressure (hPa)
         nrubisco               ,& ! (f), Fraction of N not in lignin (disponible to rubisco)
         nlignin                ,& ! (f), Fraction of N in lignin
@@ -333,7 +334,6 @@ contains
    !=================================================================
    !=================================================================
 
-
    function stomatal_conductance(vpd_in,f1_in,g1) result(gs)
     ! return stomatal resistence based on Medlyn et al. 2011a
     ! Coded by Helena Alves do Prado
@@ -427,6 +427,22 @@ contains
       real(r_4) :: rho
 
       rho = 1000 * (1 - ((tsoil + 288.9414) / 508929 * (tsoil + 68.129630)) * (tsoil - 3.9863) ** 2)
+  
+   endfunction 
+
+   !=================================================================
+   !=================================================================
+
+   function xylem_potential88 (p50) result(p88)
+      !Returns water potential of xylem when the plant loses 88% of hydraulic conductance
+      use types
+      use global_par, only: vulnerability_curve
+    
+      !Analytical solution to calculate P88 from P50
+      real(r_4),intent(in) :: p50           !MPa 
+      real(r_4) :: p88    !MPa
+
+      p88 = 7.33 ** (1/vulnerability_curve) * p50
   
    endfunction 
 
