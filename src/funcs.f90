@@ -214,7 +214,7 @@ contains
       real(r_4),intent(in) :: b                   !S/ unidade
       real(r_4) :: psi_soil  
 
-      psi_soil = psi_sat * theta_sat ** -b 
+      psi_soil = psi_sat * theta_sat ** (-b) 
   
    endfunction 
 
@@ -226,13 +226,13 @@ contains
       use global_par, only: vulnerability_curve, gvt, rho
 
       real(r_4), intent(in) :: psi_soil, p50, h
-      real(r_4) :: v    !mmol m-2 s-1 MPa-1
+      real(r_4) :: v    !mol m-2 s-1 MPa-1
 
       real(r_4) :: psi_g
 
       !gravitational potential to calculate the psi of xylem 
       psi_g = rho * gvt * h * 1e-6      !converts Pa to MPa  
-
+      
       v = 1.0 / (1.0 + ((psi_soil - psi_g) / p50) ** vulnerability_curve)
 
    end function
