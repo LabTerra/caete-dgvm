@@ -36,6 +36,7 @@ module photo
         photosynthesis_rate    ,& ! (s), leaf level CO2 assimilation rate (molCO2 m-2 s-1)
         canopy_resistence      ,& ! (f), Canopy resistence (from Medlyn et al. 2011a) (s/m) == m s-1
         stomatal_conductance   ,&
+        transpiration          ,& ! (f), transpiration
         ! scarbon_decaiment      ,& ! (f), Carbon decay borrowed from Pavlick et al. 2012
         vapor_p_defcit         ,& ! (f), Vapor pressure defcit  (kPa)
         xylem_potential88      ,& ! (f), water potential of xylem when the plant loses 88% of hydraulic conductance (MPa)
@@ -368,19 +369,33 @@ contains
  !=================================================================
  !=================================================================
 
-   function water_ue(a, g, p0, vpd) result(wue)
+   function transpiration(g, p0, vpd, lai) result(e_in)
+     use types, only: r_4
+     !adicionar unidade
+
+     real(r_4),intent(in) :: g, p0, vpd, lai
+     ! g = condutancia; p0 = pressao atm; vpd = vpd
+     real(r_4) :: e_in
+
+     real(r_4) :: g_in, p0_in
+
+     g_in = (1./g) * 41. ! convertendo a resistencia em condutancia mol m-2 s-1
+     p0_in = p0 /10. ! convertendo pressao atm (mbar/hPa) em kPa
+
+     e_in = (g_in * (vpd/p0_in)) * lai ! calculando transpiracao e escalonando para o dossel (* lai)
+
+   end function transpiration
+
+ !=================================================================
+ !=================================================================
+
+   function water_ue(a, e_in) result(wue)
       use types, only: r_4
-      !implicit none
+      !ver se vai ficar escalonada para o dossel ou não 
 
-      real(r_4),intent(in) :: a, g, p0, vpd
-      ! a = assimilacao; g = condutancia; p0 = pressao atm; vpd = vpd
+      real(r_4),intent(in) :: a, e_in
+      ! a = assimilacao; e_in = transpiração escalonada para o dossel
       real(r_4) :: wue
-
-      real(r_4) :: g_in, p0_in, e_in
-
-      g_in = (1./g) * 41. ! convertendo a resistencia em condutancia mol m-2 s-1
-      p0_in = p0 /10. ! convertendo pressao atm (mbar/hPa) em kPa
-      e_in = g_in * (vpd/p0_in) ! calculando transpiracao
 
       if(a .eq. 0 .or. e_in .eq. 0) then
          wue = 0
